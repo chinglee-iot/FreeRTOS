@@ -140,13 +140,21 @@ typedef unsigned long    UBaseType_t;
     vFakePortAssertIfInterruptPriorityInvalid()
 #define portENTER_CRITICAL()             vFakePortEnterCriticalSection()
 #define portEXIT_CRITICAL()              vFakePortExitCriticalSection()
+#define portGET_ISR_LOCK()               vFakePortGetISRLock()
+#define portRELEASE_ISR_LOCK()           vFakePortReleaseISRLock()
+#define portGET_TASK_LOCK()              vFakePortGetTaskLock()
+#define portRELEASE_TASK_LOCK()          vFakePortReleaseTaskLock()
 
+#define portCHECK_IF_IN_ISR()            vFakePortCheckIfInISR()
+#define portRESTORE_INTERRUPTS( x )      vFakePortRestoreInterrupts( x )
 #define portPRE_TASK_DELETE_HOOK( pvTaskToDelete, pxPendYield ) \
     vPortCurrentTaskDying( ( pvTaskToDelete ), ( pxPendYield ) )
 #define portSETUP_TCB( pxTCB )           portSetupTCB_CB( pxTCB );
 #define  portASSERT_IF_IN_ISR()          vFakePortAssertIfISR();
 
-
+#define portGET_CORE_ID()                vFakePortGetCoreID()
+#define portYIELD_CORE( x )              vFakePortYieldCore(x)
+#if 0
 static uint8_t ucPortCountLeadingZeros( uint32_t ulBitmap )
 {
     uint8_t ucReturn;
@@ -162,15 +170,11 @@ static uint8_t ucPortCountLeadingZeros( uint32_t ulBitmap )
     ( uxReadyPriorities ) &= ~( 1UL << ( uxPriority ) )
 #define portGET_HIGHEST_PRIORITY( uxTopPriority, uxReadyPriorities ) \
     uxTopPriority = ( 31UL - ( uint32_t ) ucPortCountLeadingZeros( ( uxReadyPriorities ) ) )
-
+#endif
 /* Task function macros as described on the FreeRTOS.org WEB site. */
-#define portTASK_FUNCTION_PROTO( vFunction, pvParameters ) \
-    volatile int fool_static = 0;                          \
-    void vFunction( void * ( pvParameters ) )
+    #define portTASK_FUNCTION_PROTO( vFunction, pvParameters )    void vFunction( void * pvParameters )
+    #define portTASK_FUNCTION( vFunction, pvParameters )          void vFunction( void * pvParameters )
 
-#define portTASK_FUNCTION( vFunction, pvParameters ) \
-    volatile int fool_static2 = 0;                   \
-    void vFunction( void * ( pvParameters ) )
 
 /*-----------------------------------------------------------*/
 
