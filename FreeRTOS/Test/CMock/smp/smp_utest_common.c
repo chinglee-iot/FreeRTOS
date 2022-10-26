@@ -59,11 +59,11 @@ extern volatile TickType_t xPendedTicks;
 extern volatile BaseType_t xNumOfOverflows;
 extern volatile TickType_t xNextTaskUnblockTime;
 extern UBaseType_t uxTaskNumber;
-extern TaskHandle_t xIdleTaskHandles[];
+extern TaskHandle_t xIdleTaskHandles[configNUM_CORES];
 extern volatile UBaseType_t uxSchedulerSuspended;
 extern volatile UBaseType_t uxDeletedTasksWaitingCleanUp;
 extern List_t * volatile pxDelayedTaskList;
-
+extern volatile TCB_t *  pxCurrentTCBs[ configNUM_CORES ];
 
 /* ==========================  CALLBACK FUNCTIONS  ========================== */
 
@@ -99,28 +99,18 @@ BaseType_t xPortStartSchedulerStubCallback( int cmock_num_calls )
 
 void vFakePortYieldCoreStubCallback( int xCoreID, int cmock_num_calls )
 {
-    //printf("JZ: Yield Core %d\n",xCoreID);
     vTaskSwitchContextForCore( xCoreID );
-    //vTaskSwitchContext();
 }
 
 void vFakePortYieldStubCallback( int cmock_num_calls )
 {
     uint8_t i;
-//printf("JZ: Yield Port\n");
-    /* Initialize each core with a task */
+
     for (i = 0; i < configNUM_CORES; i++) {
         vTaskSwitchContextForCore(i);
     }
-    //vTaskSwitchContext();
 }
 
-#if 0
-void smp_assert_callback(bool x, char* file, int line, int cmock_num_calls)
-{
-    printf("Assert %s:%d:%s\n", file, line, (x ? "True" : "False"));
-}
-#endif
 /* ============================= Unity Fixtures ============================= */
 
 void commonSetUp( void )
@@ -132,7 +122,6 @@ void commonSetUp( void )
     vFakePortYield_StubWithCallback( vFakePortYieldStubCallback );
 
     vFakeAssert_Ignore();
-    //vFakeAssert_StubWithCallback(smp_assert_callback);
     vFakePortEnterCriticalSection_Ignore();
     vFakePortExitCriticalSection_Ignore();
 
@@ -145,15 +134,16 @@ void commonSetUp( void )
     vFakePortReleaseISRLock_Ignore();
     vFakePortReleaseTaskLock_Ignore();
     vFakePortCheckIfInISR_IgnoreAndReturn(0);
-    //vFakePortYield_Ignore();
     vPortCurrentTaskDying_Ignore();
-    portSetupTCB_CB_Ignore(); //suspect
+    portSetupTCB_CB_Ignore();
     ulFakePortSetInterruptMask_IgnoreAndReturn(0);
     vFakePortClearInterruptMask_Ignore();
 
     memset( &pxReadyTasksLists, 0x00, configMAX_PRIORITIES * sizeof( List_t ) );
     memset( &xDelayedTaskList1, 0x00, sizeof( List_t ) );
     memset( &xDelayedTaskList2, 0x00, sizeof( List_t ) );
+    memset( &xIdleTaskHandles, 0x00, (configNUM_CORES * sizeof( TaskHandle_t )) );
+    memset( &pxCurrentTCBs, 0x00, (configNUM_CORES * sizeof( TCB_t * )) );
 
     uxDeletedTasksWaitingCleanUp = 0;
     uxCurrentNumberOfTasks = ( UBaseType_t ) 0U;
