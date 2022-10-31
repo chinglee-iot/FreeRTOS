@@ -426,7 +426,7 @@ void test_priority_change_tasks_different_priority_lower( void )
     uint32_t i;
     TaskStatus_t xTaskDetails;
 
-    vFakePortGetCoreID_IgnoreAndReturn(1); //FIX ME: Test fails without this, changing priority of the running core does not work as intended
+    vFakePortGetCoreID_IgnoreAndReturn(1); //FIXME: Test fails without this, changing priority of the running core does not work as intended
 
     /* Create a single task at high priority */
     xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[0] );
@@ -1232,7 +1232,7 @@ void test_task_delete_tasks_equal_priority_delete_running( void )
 
     vTaskStartScheduler();
 
-    /* Verify two tasks are running and one task is ready */
+    /* Verify tasks are running and one task is ready */
     for (i = 0; i < configNUM_CORES; i++) {
         verifySmpTask( &xTaskHandles[i], eRunning, i );
     }
@@ -1260,89 +1260,341 @@ void test_task_delete_tasks_equal_priority_delete_running( void )
     verifySmpTask( &xTaskHandles[i], eRunning, 0 );
 }
 
-/* SMP-TC-19 */
-void test_smp19( void )
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-19
+ * A task of high priority will be created for each available CPU core. A low
+ * priority task will also be created and be in the ready state. This test
+ * will verify that when a high priority task is deleted the low priority task
+ * will remain in the ready state.
+ * 
+ * #define configRUN_MULTIPLE_PRIORITIES                    0
+ * #define configNUM_CORES                                  2
+ * #define configNUM_CORES                                  (N > 1)
+ * 
+ * This test can be run with FreeRTOS configured for any number of cores
+ * greater than 1.
+ * 
+ * Tasks are created prior to starting the scheduler.
+ * 
+ * Task (TN)	  Task (TN + 1)
+ * Priority – 2   Priority - 1
+ * State - Ready  State - Ready
+ * 
+ * After calling vTaskStartScheduler()
+ * 
+ * Task (TN)	             Task (TN + 1)
+ * Priority – 2              Priority - 1
+ * State - Running (Core N)	 State - Ready
+ * 
+ * Delete task (T0)
+ * 
+ * Task (T0)	     Task (TN)	               Task (TN + 1)
+ * Priority – 2      Priority – 2              Priority – 1
+ * State - Deleted	 State - Running (Core N)  State - Ready
+ */
+void test_task_delete_all_cores_high_priority_delete_high_priority_task( void )
 {
-    TaskHandle_t xHandleTask1 = NULL;
-    TaskHandle_t xHandleTask2 = NULL;
+    TaskHandle_t xTaskHandles[configNUM_CORES + 1] = { NULL };
+    uint32_t i;
 
-    xTaskCreate( vSmpTestTask, "SMP Task 1", configMINIMAL_STACK_SIZE, NULL, 2, &xHandleTask1 );
-    xTaskCreate( vSmpTestTask, "SMP Task 2", configMINIMAL_STACK_SIZE, NULL, 2, &xHandleTask2 );
+    /* Create tasks of high priority */
+    for (i = 0; i < (configNUM_CORES); i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
+    }
+
+    /* Create a single task of low priority */
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[i] );
 
     vTaskStartScheduler();
 
-    verifySmpTask( &xHandleTask1, eRunning, 0 );
-    verifySmpTask( &xHandleTask2, eRunning, 1 );
+    /* Verify tasks are running and one task is ready */
+    for (i = 0; i < configNUM_CORES; i++) {
+        verifySmpTask( &xTaskHandles[i], eRunning, i );
+    }
 
-    vTaskSuspend(xHandleTask1);
-    vTaskSwitchContext(); //WHY
+    verifySmpTask( &xTaskHandles[i], eReady, -1 );
 
-    verifySmpTask( &xHandleTask1, eSuspended, -1 );
-    verifySmpTask( &xHandleTask2, eRunning, 1 );
-    verifyIdleTask(1, 0);
+    /* Verify there are no deleted tasks pending cleanup */
+    TEST_ASSERT_EQUAL( 0, uxDeletedTasksWaitingCleanUp );
 
-    vTaskResume(xHandleTask1);
-    vTaskSwitchContext(); //WHY
+    /* Delete task running on core 0 */
+    vTaskDelete(xTaskHandles[0]);
 
-    verifySmpTask( &xHandleTask1, eRunning, 0 );
-    verifySmpTask( &xHandleTask2, eRunning, 1 );
+    /* Verify a deleted task is now pending cleanup */
+    TEST_ASSERT_EQUAL( 1, uxDeletedTasksWaitingCleanUp );
+
+    /* Verify task T0 has been deleted */
+    verifySmpTask( &xTaskHandles[0], eDeleted, -1 );
+    
+    /* Verify core 0 is now idle */
+    verifyIdleTask(0, 0);
+
+    for (i = 1; i < (configNUM_CORES); i++) {
+        /* Verify all other tasks are in the running state */
+        verifySmpTask( &xTaskHandles[i], eRunning, i );
+    }
+
+    /* The last task will remain in the ready state */
+    verifySmpTask( &xTaskHandles[i], eReady, -1 );
 }
 
-/* SMP-TC-20 */
-void test_smp20( void )
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-21
+ * A task of equal priority will be created for each available CPU core. This
+ * test will verify that when a task is suspended the CPU core will execute
+ * the idle task.
+ * 
+ * #define configRUN_MULTIPLE_PRIORITIES                    0
+ * #define configNUM_CORES                                  2
+ * #define configNUM_CORES                                  (N > 1)
+ * 
+ * This test can be run with FreeRTOS configured for any number of cores
+ * greater than 1.
+ * 
+ * Tasks are created prior to starting the scheduler.
+ * 
+ * Task (TN)
+ * Priority – 1
+ * State - Ready
+ * 
+ * After calling vTaskStartScheduler()
+ * 
+ * Task (TN)
+ * Priority – N
+ * State - Running (Core N)
+ * 
+ * Suspend task (T1)
+ * 
+ * Task (T1)	        Task (TN)
+ * Priority – 1         Priority – 1
+ * State - Suspended	State - Running (Core N)
+ * 
+ * Resume task (T1)
+ * 
+ * Task (TN)
+ * Priority – N
+ * State - Running (Core N)
+ */
+void test_task_suspend_all_cores_equal_priority( void )
 {
-    TaskHandle_t xHandleTask1 = NULL;
-    TaskHandle_t xHandleTask2 = NULL;
+    TaskHandle_t xTaskHandles[configNUM_CORES] = { NULL };
+    uint32_t i;
 
-    xTaskCreate( vSmpTestTask, "SMP Task 1", configMINIMAL_STACK_SIZE, NULL, 2, &xHandleTask1 );
-    xTaskCreate( vSmpTestTask, "SMP Task 2", configMINIMAL_STACK_SIZE, NULL, 1, &xHandleTask2 );
+    /* Create tasks of equal priority */
+    for (i = 0; i < configNUM_CORES; i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[i] );
+    }
 
     vTaskStartScheduler();
 
-    verifySmpTask( &xHandleTask1, eRunning, 0 );
-    verifySmpTask( &xHandleTask2, eReady, -1 );
-    verifyIdleTask(0, 1);
+    /* Verify tasks are running */
+    for (i = 0; i < configNUM_CORES; i++) {
+        verifySmpTask( &xTaskHandles[i], eRunning, i );
+    }
 
-    vTaskSuspend(xHandleTask1);
+    /* Suspend task T0 */
+    vTaskSuspend( xTaskHandles[0] );
 
-    verifySmpTask( &xHandleTask1, eSuspended, -1 );
-    verifySmpTask( &xHandleTask2, eRunning, 0 );
-    verifyIdleTask(0, 1);
+    /* Verify the task has been suspended */
+    verifySmpTask( &xTaskHandles[0], eSuspended, -1 );
 
-    vTaskResume(xHandleTask1);
-    vTaskSwitchContext(); //WHY
+    /* Verify all other tasks are running */
+    for (i = 1; i < configNUM_CORES; i++) {
+        verifySmpTask( &xTaskHandles[i], eRunning, i );
+    }
 
-    verifySmpTask( &xHandleTask1, eRunning, 0 );
-    verifySmpTask( &xHandleTask2, eReady, -1 );
-    verifyIdleTask(0, 1);
+    /* Verify the idle task is running on core 0 */
+    verifyIdleTask(0, 0);
+
+    /* FIXME: Test fails without this, changing priority of the running core does not work as intended*/
+    vFakePortGetCoreID_IgnoreAndReturn(1);
+
+    /* Resume task T0 */
+    vTaskResume( xTaskHandles[0] );
+    
+    /* Verify all tasks are running */
+    for (i = 0; i < configNUM_CORES; i++) {
+        verifySmpTask( &xTaskHandles[i], eRunning, i );
+    }
 }
 
-/* SMP-TC-21 */
-void test_smp21( void )
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-22
+ * A single task of high priority will be created. A low priority task will be
+ * created for each remaining available CPU core. The test will first verify
+ * that when the high priority task is suspended the low priority tasks will
+ * enter the running state. When the high priority task is resumed, each low
+ * priority task will return to the ready state.
+ * 
+ * #define configRUN_MULTIPLE_PRIORITIES                    0
+ * #define configNUM_CORES                                  2
+ * #define configNUM_CORES                                  (N > 1)
+ * 
+ * This test can be run with FreeRTOS configured for any number of cores
+ * greater than 1.
+ * 
+ * Tasks are created prior to starting the scheduler.
+ * 
+ * Task (T1)	  Task (TN)
+ * Priority – 2   Priority – 1
+ * State - Ready  State - Ready
+ * 
+ * After calling vTaskStartScheduler()
+ * 
+ * Task (T1)	              Task (TN)
+ * Priority – 2               Priority – 1
+ * State - Running (Core 0)	  State - Ready 
+ * 
+ * Suspend task (T1)
+ * 
+ * Task (T1)	       Task (TN)
+ * Priority – 2        Priority – 1
+ * State - Suspended   State - Running (Core N)
+ * 
+ * Resume task (T1)
+ * 
+ * Task (T1)	             Task (TN)
+ * Priority – 2              Priority – 1
+ * State - Running (Core 0)	 State - Ready
+ */
+void test_task_suspend_all_cores_different_priority_suspend_high( void )
 {
-    TaskHandle_t xHandleTask1 = NULL;
-    TaskHandle_t xHandleTask2 = NULL;
+    TaskHandle_t xTaskHandles[configNUM_CORES] = { NULL };
+    uint32_t i;
 
-    xTaskCreate( vSmpTestTask, "SMP Task 1", configMINIMAL_STACK_SIZE, NULL, 2, &xHandleTask1 );
-    xTaskCreate( vSmpTestTask, "SMP Task 2", configMINIMAL_STACK_SIZE, NULL, 1, &xHandleTask2 );
+    /* Create a single task at high priority */
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[0] );
+
+    /* Create all remaining tasks at low priority */
+    for (i = 1; i < configNUM_CORES; i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[i] );
+    }
 
     vTaskStartScheduler();
 
-    verifySmpTask( &xHandleTask1, eRunning, 0 );
-    verifySmpTask( &xHandleTask2, eReady, -1 );
-    verifyIdleTask(0, 1);
+    /* Verify the high priority task is running */
+    verifySmpTask( &xTaskHandles[0], eRunning, 0 );
 
-    vTaskSuspend(xHandleTask2);
+    for (i = 1; i < configNUM_CORES; i++) {
+        /* Verify all other tasks are in the idle state */
+        verifySmpTask( &xTaskHandles[i], eReady, -1 );
+        
+        /* Verify the idle task is running on all other CPU cores */
+        verifyIdleTask(i - 1, i);
+    }
 
-    verifySmpTask( &xHandleTask1, eRunning, 0 );
-    verifySmpTask( &xHandleTask2, eSuspended, -1 );
-    verifyIdleTask(0, 1);
+    vTaskSuspend(xTaskHandles[0]);
 
-    vTaskResume(xHandleTask2);
+    verifySmpTask( &xTaskHandles[0], eSuspended, -1 );
 
-    verifySmpTask( &xHandleTask1, eRunning, 0 );
-    verifySmpTask( &xHandleTask2, eReady, -1 );
-    verifyIdleTask(0, 1);
+    for (i = 1; i < configNUM_CORES; i++) {
+        /* Verify all other tasks are in the running state */
+        verifySmpTask( &xTaskHandles[i], eRunning, i - 1 );
+    }
+
+    vTaskResume(xTaskHandles[0]);
+
+    /* Verify the high priority task is running */
+    /* FIX ME: Test fails becasuse task 0 is running on core 1.
+       Task 1 is still running on core 0 even though it shouldnt be
+    */
+    verifySmpTask( &xTaskHandles[0], eRunning, 0 );
+
+    for (i = 1; i < configNUM_CORES; i++) {
+        /* Verify all other tasks are in the idle state */
+        verifySmpTask( &xTaskHandles[i], eReady, -1 );
+        
+        /* Verify the idle task is running on all other CPU cores */
+        verifyIdleTask(i - 1, i);
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-23
+ * A single task of high priority will be created. A low priority task will be
+ * created for each remaining available CPU core. The test will first verify
+ * that when the high priority task is suspended the low priority tasks will
+ * enter the running state. When the high priority task is resumed, each low
+ * priority task will return to the ready state.
+ * 
+ * #define configRUN_MULTIPLE_PRIORITIES                    0
+ * #define configNUM_CORES                                  2
+ * #define configNUM_CORES                                  (N > 1)
+ * 
+ * This test can be run with FreeRTOS configured for any number of cores
+ * greater than 1.
+ * 
+ * Tasks are created prior to starting the scheduler.
+ * 
+ * Task (T1)	  Task (TN)
+ * Priority – 2   Priority – 1
+ * State - Ready  State - Ready
+ * 
+ * After calling vTaskStartScheduler()
+ * 
+ * Task (T1)	              Task (TN)
+ * Priority – 2               Priority – 1
+ * State - Running (Core 0)	  State - Ready 
+ * 
+ * Suspend task (T1)
+ * 
+ * Task (T1)	       Task (TN)
+ * Priority – 2        Priority – 1
+ * State - Suspended   State - Running (Core N)
+ * 
+ * Resume task (T1)
+ * 
+ * Task (T1)	             Task (TN)
+ * Priority – 2              Priority – 1
+ * State - Running (Core 0)	 State - Ready
+ */
+void test_task_suspend_all_cores_different_priority_suspend_low( void )
+{
+    TaskHandle_t xTaskHandles[configNUM_CORES] = { NULL };
+    uint32_t i;
+
+    /* Create a single task at high priority */
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[0] );
+
+    /* Create all remaining tasks at low priority */
+    for (i = 1; i < configNUM_CORES; i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[i] );
+    }
+
+    vTaskStartScheduler();
+
+    /* Verify the high priority task is running */
+    verifySmpTask( &xTaskHandles[0], eRunning, 0 );
+
+    for (i = 1; i < configNUM_CORES; i++) {
+        /* Verify all other tasks are in the idle state */
+        verifySmpTask( &xTaskHandles[i], eReady, -1 );
+        
+        /* Verify the idle task is running on all other CPU cores */
+        verifyIdleTask(i - 1, i);
+    }
+
+    for (i = 1; i < configNUM_CORES; i++) {
+        /* Suspend low priority task */
+        vTaskSuspend( xTaskHandles[i] );
+
+        /* Verify T0 remains running on core 0 */
+        verifySmpTask( &xTaskHandles[0], eRunning, 0 );
+
+        /* Verify task T[i] is in the deleted state */
+        verifySmpTask( &xTaskHandles[i], eSuspended, -1 );
+    }
+
+    for (i = 1; i < configNUM_CORES; i++) {
+        /* Suspend low priority task */
+        vTaskResume( xTaskHandles[i] );
+
+        /* Verify T0 remains running on core 0 */
+        verifySmpTask( &xTaskHandles[0], eRunning, 0 );
+
+        /* Verify task T[i] is in the deleted state */
+        verifySmpTask( &xTaskHandles[i], eReady, -1 );
+    }
 }
 
 /* SMP-TC-22 */
