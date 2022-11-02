@@ -178,6 +178,7 @@ void verifySmpTask( TaskHandle_t * xTaskHandle, eTaskState eCurrentState, TaskRu
     TEST_ASSERT_EQUAL_INT_MESSAGE( xTaskRunState, xTaskDetails.xHandle->xTaskRunState, "Task Verification Failed: Incorrect xTaskRunState" );
     TEST_ASSERT_EQUAL_INT_MESSAGE( eCurrentState, xTaskDetails.eCurrentState, "Task Verification Failed: Incorrect eCurrentState" );
 }
+
 void verifyIdleTask( BaseType_t index, TaskRunning_t xTaskRunState)
 {
     TaskStatus_t xTaskDetails;
