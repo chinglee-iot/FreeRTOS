@@ -211,9 +211,6 @@ void test_priority_change_tasks_equal_priority_lower( void )
     uint32_t i;
     TaskStatus_t xTaskDetails;
 
-    /* FIXME: Test fails without this, changing priority of the running core does not work as intended*/
-    vFakePortGetCoreID_IgnoreAndReturn(1);
-
     /* Create tasks of equal priority for all available CPU cores */
     for (i = 0; i < configNUM_CORES; i++) {
         xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
@@ -381,7 +378,6 @@ void test_priority_change_tasks_different_priority_raise( void )
         TEST_ASSERT_EQUAL( 2, xTaskDetails.xHandle->uxPriority );
 
         /* Verify the task is now in the running state */
-        /* FIXME: Shouldnt task[N] be running on core N? */
         verifySmpTask( &xTaskHandles[i], eRunning, configNUM_CORES - i );
     }
 }
@@ -426,8 +422,6 @@ void test_priority_change_tasks_different_priority_lower( void )
     uint32_t i;
     TaskStatus_t xTaskDetails;
 
-    vFakePortGetCoreID_IgnoreAndReturn(1); //FIXME: Test fails without this, changing priority of the running core does not work as intended
-
     /* Create a single task at high priority */
     xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[0] );
 
@@ -456,12 +450,20 @@ void test_priority_change_tasks_different_priority_lower( void )
     vTaskGetInfo( xTaskHandles[0], &xTaskDetails, pdTRUE, eInvalid );
     TEST_ASSERT_EQUAL( 1, xTaskDetails.xHandle->uxPriority );
 
-    /* Verify the task remains running */
-    verifySmpTask( &xTaskHandles[0], eRunning, 0 );
+    /* Verify the task remains running. When priority dropped in prvSelectHighestPriorityTask.
+     * All the idle core will yield for context switch. The ready queue is a FIFO. Task 0 will be choosed
+     * by the last core which calls context switch.
+     * Core 0 choose xTaskHandles[1]
+     * Core 1 choose xTaskHandles[2]
+     * ....
+     * Core N-2 choose xTaskHandles[N-1]
+     * Core N-1 choose xTaskHandles[0]
+     */
+    verifySmpTask( &xTaskHandles[0], eRunning, ( BaseType_t )( configNUM_CORES - 1 ) );
 
-    for (i = 0; i < configNUM_CORES; i++) {
+    for (i = 1; i < configNUM_CORES; i++) {
         /* Verify all other tasks are in the running state */
-        verifySmpTask( &xTaskHandles[i], eRunning, i );
+        verifySmpTask( &xTaskHandles[i], eRunning, ( BaseType_t)( i - 1 ) );
     }
 }
 
@@ -638,16 +640,50 @@ void test_task_create_tasks_higher_priority( void )
     /* Verify remaining CPU core is running the idle task */
     verifyIdleTask(0, i);
 
-    /* Create a new task of higher priority */
+    /* Create a new task of higher priority. prvYieldForTask will be called to yield
+     * for this task. Since all the core has lower priority that this task. These cores
+     * will be requested to yield. The task is choosed by the core yield order.
+     * This task is created on core 0.
+     * vTaskExitCritical does the following:
+     * 1. release the spinlock -> All the other cores yield
+     * 2. Check xYieldPendings for this core -> This core yields.
+     * core N-1 won't yield since it is already running the idle task.
+     * The core yields in the following order.
+     * core 1 choose The new task xTaskHandles[n]
+     * core 2 choose xIdleTaskHandles[1]
+     * .....
+     * core 0 choose xIdleTaskHandles[N-2]
+     */
     xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 3, &xTaskHandles[i] );
 
-    /* FIXME: Tasks not in the correct states */
-    /* Verify the new task is in the running state */
-    verifySmpTask( &xTaskHandles[i], eRunning, i );
+    /* Verify the new task is in the running state. The created task will increase the priority */
+    verifySmpTask( &xTaskHandles[i], eRunning, 1 );
 
-    /* Verify all tasks are in the running state */
-    for (i = 0; i < configNUM_CORES - 1; i++) {
+    /* Verify all tasks are in the ready state */
+    for (i = 0; i < ( configNUM_CORES - 1 ); i++) {
         verifySmpTask( &xTaskHandles[i], eReady, -1 );
+    }
+
+    /* Verify all the idle task running. */
+    for (i = 0; i < configNUM_CORES; i++)
+    {
+        if( i == 0 )
+        {
+            /* Core 0 choos the last. It choosed the configNUM_CORES - 1 idle task. */
+            verifyIdleTask( ( BaseType_t )( configNUM_CORES - 2 ), i );
+        }
+        else if( i == 1 )
+        {
+            /* This core is running the task. */
+        }
+        else if( i == ( configNUM_CORES - 1 ) )
+        {
+            verifyIdleTask( 0, i );
+        }
+        else
+        {
+            verifyIdleTask( ( BaseType_t )( i - 1 ), i );
+        }
     }
 }
 
@@ -812,6 +848,11 @@ void test_task_create_all_cores_equal_priority_higher( void )
         xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[i] );
     }
 
+    /* After start scheduler, core choose task status:
+     * Core 0 xTaskHandles[0]
+     * ...
+     * Core N-1 * Core 0 xTaskHandles[N-1]
+     */
     vTaskStartScheduler();
 
     /* Verify all tasks are in the running state */
@@ -820,15 +861,41 @@ void test_task_create_all_cores_equal_priority_higher( void )
     }
 
     /* Create a new task of higher priority */
+    /* The created task has higher priority than other tasks. This will casue all 
+     * the other cores yield. The task is choosed by core yield order which is accending
+     * in vYieldCores. Since core 0 create the task, it will yield last due to the mock
+     * implementation.
+     * core 1 choose xTaskHandles[N]
+     * core 2 choose xIdleTaskHandles[0]
+     * ...
+     * core N-1 choose xIdleTaskHandles[N-3]
+     * core 0 choose xIdleTaskHandles[N-2]
+     */
     xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
 
     /* Verify the new task is in the ready state */
-    /* FIXME: This should be core 0 */
     verifySmpTask( &xTaskHandles[i], eRunning, 1 );
 
     /* Verify all tasks remain in the running state */
     for (i = 1; i < configNUM_CORES; i++) {
         verifySmpTask( &xTaskHandles[i], eReady, -1 );
+    }
+
+    /* Verify all the idle task. */
+    for( i = 0; i < configNUM_CORES; i++ )
+    {
+        if( i == 0 )
+        {
+            verifyIdleTask(configNUM_CORES - 2, i);
+        }
+        else if( i == 1 )
+        {
+            /* This core is running task. */
+        }
+        else
+        {
+            verifyIdleTask(i - 2, i);
+        }
     }
 }
 
@@ -895,7 +962,6 @@ void test_task_create_all_cores_equal_priority_high( void )
     xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
 
     /* Verify the new task is in the running state */
-    /* FIX ME: Should this be core 1? */
     verifySmpTask( &xTaskHandles[i], eRunning, (configNUM_CORES - 1) );
 
     /* Verify all tasks remain in the ready state */
@@ -1406,9 +1472,6 @@ void test_task_suspend_all_cores_equal_priority( void )
     /* Verify the idle task is running on core 0 */
     verifyIdleTask(0, 0);
 
-    /* FIXME: Test fails without this, changing priority of the running core does not work as intended*/
-    vFakePortGetCoreID_IgnoreAndReturn(1);
-
     /* Resume task T0 */
     vTaskResume( xTaskHandles[0] );
     
@@ -1495,17 +1558,11 @@ void test_task_suspend_all_cores_different_priority_suspend_high( void )
     vTaskResume(xTaskHandles[0]);
 
     /* Verify the high priority task is running */
-    /* FIX ME: Test fails becasuse task 0 is running on core 1.
-       Task 1 is still running on core 0 even though it shouldnt be
-    */
-    verifySmpTask( &xTaskHandles[0], eRunning, 0 );
+    verifySmpTask( &xTaskHandles[0], eRunning, 1 );
 
     for (i = 1; i < configNUM_CORES; i++) {
         /* Verify all other tasks are in the idle state */
         verifySmpTask( &xTaskHandles[i], eReady, -1 );
-        
-        /* Verify the idle task is running on all other CPU cores */
-        verifyIdleTask(i - 1, i);
     }
 }
 
@@ -1638,9 +1695,6 @@ void test_task_suspend_all_cores_high_priority_suspend( void )
 {
     TaskHandle_t xTaskHandles[configNUM_CORES + 1] = { NULL };
     uint32_t i;
-
-    /* FIXME: Test fails without this, resuming the task does not work as intended */
-    vFakePortGetCoreID_IgnoreAndReturn(1);
 
     /* Create a task for each CPU core at high priority */
     for (i = 0; i < configNUM_CORES; i++) {
