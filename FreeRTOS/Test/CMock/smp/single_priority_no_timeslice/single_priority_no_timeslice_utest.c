@@ -623,13 +623,21 @@ void test_task_create_tasks_lower_priority( void )
 void test_task_create_tasks_higher_priority( void )
 {
     TaskHandle_t xTaskHandles[configNUM_CORES] = { NULL };
-    uint32_t i;
+    uint32_t i, xCoreToRunTask;
 
     /* Create all tasks at equal priority */
     for (i = 0; i < configNUM_CORES - 1; i++) {
         xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
     }
 
+    /* The task running status on each core after scheduler started:
+     * core 0 xTaskHandles[0]
+     * core 1 xTaskHandles[1]
+     * core 2 xTaskHandles[2]
+     * .....
+     * core N - 2 xTaskHandles[N - 2]
+     * core N - 1 xIdleTaskHandles[0]
+     */
     vTaskStartScheduler();
 
     /* Verify all tasks are in the running state */
@@ -641,7 +649,7 @@ void test_task_create_tasks_higher_priority( void )
     verifyIdleTask(0, i);
 
     /* Create a new task of higher priority. prvYieldForTask will be called to yield
-     * for this task. Since all the core has lower priority that this task. These cores
+     * for this task. Since all the core has lower priority than this task. These cores
      * will be requested to yield. The task is choosed by the core yield order.
      * This task is created on core 0.
      * vTaskExitCritical does the following:
@@ -652,12 +660,20 @@ void test_task_create_tasks_higher_priority( void )
      * core 1 choose The new task xTaskHandles[n]
      * core 2 choose xIdleTaskHandles[1]
      * .....
+     * core N - 2 choose xIdleTaskHandles[N-3]
      * core 0 choose xIdleTaskHandles[N-2]
      */
     xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 3, &xTaskHandles[i] );
 
     /* Verify the new task is in the running state. The created task will increase the priority */
-    verifySmpTask( &xTaskHandles[i], eRunning, 1 );
+    xCoreToRunTask = 1;
+    if( xCoreToRunTask == ( configNUM_CORES - 1 ) )
+    {
+        /* Core 1 is the last core ( configNUM_CORES - 1 ), then it is already running
+         * idle task. The last core to choose task is core 0. */
+        xCoreToRunTask = 0;
+    }
+    verifySmpTask( &xTaskHandles[i], eRunning, xCoreToRunTask );
 
     /* Verify all tasks are in the ready state */
     for (i = 0; i < ( configNUM_CORES - 1 ); i++) {
@@ -667,17 +683,18 @@ void test_task_create_tasks_higher_priority( void )
     /* Verify all the idle task running. */
     for (i = 0; i < configNUM_CORES; i++)
     {
-        if( i == 0 )
-        {
-            /* Core 0 choos the last. It choosed the configNUM_CORES - 1 idle task. */
-            verifyIdleTask( ( BaseType_t )( configNUM_CORES - 2 ), i );
-        }
-        else if( i == 1 )
+        if( i == xCoreToRunTask )
         {
             /* This core is running the task. */
         }
+        else if( i == 0 )
+        {
+            /* Core 0 choose the last. It chooses the configNUM_CORES - 2 idle task. */
+            verifyIdleTask( ( BaseType_t )( configNUM_CORES - 2 ), i );
+        }
         else if( i == ( configNUM_CORES - 1 ) )
         {
+            /* The last core won't yield, since it is running an idle task already. */
             verifyIdleTask( 0, i );
         }
         else
@@ -1523,7 +1540,7 @@ void test_task_suspend_all_cores_equal_priority( void )
 void test_task_suspend_all_cores_different_priority_suspend_high( void )
 {
     TaskHandle_t xTaskHandles[configNUM_CORES] = { NULL };
-    uint32_t i;
+    uint32_t i, xCoreToRunTask;
 
     /* Create a single task at high priority */
     xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[0] );
@@ -1533,6 +1550,13 @@ void test_task_suspend_all_cores_different_priority_suspend_high( void )
         xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[i] );
     }
 
+    /* SMP cores start with idle task. Idle task will yield itself when first time it runs
+     * The task running status when the scheduler starts.
+     * Core 0 : xTaskHandles[0] with priority 2
+     * Core 1 : xIdleTaskHandles[0]
+     * ...
+     * Core N-1 : xIdleTaskHandles[N-2]
+     */
     vTaskStartScheduler();
 
     /* Verify the high priority task is running */
@@ -1546,23 +1570,79 @@ void test_task_suspend_all_cores_different_priority_suspend_high( void )
         verifyIdleTask(i - 1, i);
     }
 
+    /* The task running status when xTaskHandles[0] suspend ifself on Core 0.
+     * 1. Core 0 will yield itself and select highest priority task
+     * 2. In select highest priority task, the highest priority is dropped. All the other cores
+     * running the idle are requested to yield. The implementation assume the yield in accesending order.
+     * Core 0 will choose xTaskHandles[1]
+     * Core 1 will choose xTaskHandles[2]
+     * ...
+     * Core N-1 will choose xIdleTaskHandles[N-1] since it is the first idle task in ready queue.
+     */
     vTaskSuspend(xTaskHandles[0]);
 
+    /* Verify the suspened task is not running. */
     verifySmpTask( &xTaskHandles[0], eSuspended, -1 );
 
-    for (i = 1; i < configNUM_CORES; i++) {
-        /* Verify all other tasks are in the running state */
+    /* Verify all other tasks are in the running state */
+    for (i = 1; i < configNUM_CORES; i++)
+    {
         verifySmpTask( &xTaskHandles[i], eRunning, i - 1 );
     }
 
-    vTaskResume(xTaskHandles[0]);
+    /* Verify the last core will run the last idle task. */
+    verifyIdleTask( ( configNUM_CORES - 1 ), ( configNUM_CORES - 1 ) );
+
+    /* xTaskHandles[0] is resumed from Core 0.
+     * 1. prvYieldForTask is called xTaskHandles[0] to find core to run.
+     * 2. The cores which is not running idle task and has lower priority than xTaskHandles[0] is request to yield.
+     * 3. The core 0 will yield last since it is the core to call the FreeRTOS APIs
+     * Core N-1 will not yield since it is already running xIdleTaskHandles[N-1]
+     * Other cores will yield in the following order:
+     * Tasks will be choosed then idle task in FIFO order
+     * Core 1 will choose xTaskHandles[0]
+     * Core 2 will choose xIdleTaskHandles[0]
+     * ...
+     * Core N-2 will choose xIdleTaskHandles[N-4]
+     * Core 0 will choose xIdleTaskHandles[N-3]
+     */
+    vTaskResume( xTaskHandles[0] );
 
     /* Verify the high priority task is running */
-    verifySmpTask( &xTaskHandles[0], eRunning, 1 );
+    xCoreToRunTask = 1;
+    if( xCoreToRunTask == ( configNUM_CORES - 1 ) )
+    {
+        /* Core 1 is the last core. Since it is already running the idle task. It
+         * won't be request to yield. Core 0 will choose the task to run. */
+        xCoreToRunTask = 0;
+    }
+    verifySmpTask( &xTaskHandles[0], eRunning, xCoreToRunTask );
 
-    for (i = 1; i < configNUM_CORES; i++) {
+    for (i = 1; i < configNUM_CORES; i++)
+    {
         /* Verify all other tasks are in the idle state */
         verifySmpTask( &xTaskHandles[i], eReady, -1 );
+    }
+
+    /* Verify the idle task running status. */
+    for( i = 0; i < configNUM_CORES; i++ )
+    {
+        if( i == xCoreToRunTask )
+        {
+            /* The core is running task. */
+        }
+        else if( i == 0 )
+        {
+            verifyIdleTask( ( configNUM_CORES - 3 ), i );
+        }
+        else if( i == ( configNUM_CORES - 1 ) )
+        {
+            verifyIdleTask( ( configNUM_CORES - 1 ), ( configNUM_CORES - 1 ) );
+        }
+        else
+        {
+            verifyIdleTask( ( ( configNUM_CORES + i - 2 ) % configNUM_CORES ), i );
+        }
     }
 }
 
