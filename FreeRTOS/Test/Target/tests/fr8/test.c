@@ -62,28 +62,20 @@ static void softwareInterruptHandlerSimple(void) {
   int i;
   char strbuf_a[] = "ISR enter";
   size_t strbuf_a_len = sizeof(strbuf_a) / sizeof(char);
+  UBaseType_t uxSavedInterruptStatus;
 
   char strbuf_b[] = "ISR exit";
   size_t strbuf_b_len = sizeof(strbuf_b) / sizeof(char);
 
   sendReport(strbuf_a, strbuf_a_len);
-  taskENTER_CRITICAL();
+  uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
 
   //TEST_ASSERT_EQUAL_INT(taskBState, 6);
 
   clearPin(LED_PIN);
 
-  taskEXIT_CRITICAL();
+  taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
   sendReport(strbuf_b, strbuf_b_len);
-
-  for (i = 0;; i++) {
-    vTaskDelay(mainSOFTWARE_TIMER_PERIOD_MS * 100);
-    if ((i % 2) == 0) {
-      clearPin(LED_PIN);
-    } else {
-      setPin(LED_PIN);
-    }
-  }
 }
 
 static void prvTaskA(void *pvParameters) {

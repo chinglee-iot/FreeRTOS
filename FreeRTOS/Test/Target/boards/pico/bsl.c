@@ -4,6 +4,7 @@
 #include "pico/mutex.h"
 #include "pico/sem.h"
 #include "pico/stdlib.h"
+#include "hardware/irq.h"
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -121,6 +122,7 @@ int AMPLaunchOnCore(int coreNum, void (*function)(void)) {
 
 int registerSoftwareInterruptHandler(softwareInterruptHandler handler) {
   irq_add_shared_handler(26, (irq_handler_t)handler, 0);
+  irq_set_enabled( 26, true );
   return 26;
 }
 
