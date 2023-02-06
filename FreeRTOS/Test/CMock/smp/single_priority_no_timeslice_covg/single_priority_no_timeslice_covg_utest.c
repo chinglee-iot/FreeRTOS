@@ -413,3 +413,123 @@ void test_task_step_tick_xNextTaskUnblockTime_not_equal( void )
     xTickCount = 0U;
     vTaskStepTick((TickType_t)10U);
 }
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-<TBD>
+ * Two tasks with different priortiy are created in this test.
+ * This test will verify that current core will be requested to yield when resuming
+ * a higher priority task from ISR.
+ *
+ * #define configRUN_MULTIPLE_PRIORITIES                    0
+ * #define configUSE_TIME_SLICING                           0
+ * #define configNUMBER_OF_CORES                            (N > 1)
+ *
+ * This test can be run with FreeRTOS configured for any number of cores
+ * greater than 1 .
+ *
+ * Tasks are created prior to starting the scheduler.
+ *
+ * Task (T1)	    Task (T2)
+ * Priority - 1     Priority - 2
+ * State - Ready    State - Ready
+ *
+ * Suspend the task (T2) before the scheduler started.
+ *
+ * After calling vTaskStartScheduler()
+ *
+ * Task (T1)	    Task (T2)
+ * Priority - 1     Priority - 2
+ * State - Running  State - Suspending
+ *
+ * After calling xTaskResumeFromISR() and resume the task from ISR.
+ *
+ * Task (T1)	    Task (T2)
+ * Priority - 1     Priority - 2
+ * State - Ready    State - Running
+ *
+ * The return value of xTaskResumeFromISR indicates yield required for the core calling
+ * this API.
+ */
+void test_xTaskResumeFromISR_resume_higher_priority_suspended_task( void )
+{
+    TaskHandle_t xTaskHandles[ 2 ] = { NULL };
+    BaseType_t xReturn;
+
+    /* Create two tasks of different priority. */
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ 0 ] );
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[ 1 ] );
+
+    /* Suspend higher priority task. */
+    vTaskSuspend( xTaskHandles[ 1 ] );
+
+    /* start the scheduler. */
+    vTaskStartScheduler();
+
+    /* Resume the higher priority task from ISR. */
+    vFakePortAssertIfInterruptPriorityInvalid_Ignore();
+    xReturn = xTaskResumeFromISR( xTaskHandles[ 1 ] );
+
+    /* In single priority test, the calling core is requested to yield since a higher
+     * priority task is resumed. */
+    TEST_ASSERT( xReturn == pdTRUE );
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-<TBD>
+ * Two tasks with different priortiy are created in this test.
+ * This test will verify that current core will not be requested to yield when resuming
+ * a lower priority task from ISR.
+ *
+ * #define configRUN_MULTIPLE_PRIORITIES                    0
+ * #define configUSE_TIME_SLICING                           0
+ * #define configNUMBER_OF_CORES                            (N > 1)
+ *
+ * This test can be run with FreeRTOS configured for any number of cores
+ * greater than 1 .
+ *
+ * Tasks are created prior to starting the scheduler.
+ *
+ * Task (T1)	    Task (T2)
+ * Priority - 2     Priority - 1
+ * State - Ready    State - Ready
+ *
+ * Suspend the task (T2) before the scheduler started.
+ *
+ * After calling vTaskStartScheduler()
+ *
+ * Task (T1)	    Task (T2)
+ * Priority - 2     Priority - 1
+ * State - Running  State - Suspending
+ *
+ * After calling xTaskResumeFromISR() and resume the task from ISR.
+ *
+ * Task (T1)	    Task (T2)
+ * Priority - 2     Priority - 1
+ * State - Running  State - Ready
+ *
+ * The return value of xTaskResumeFromISR indicates yield not required for the core
+ * calling this API.
+ */
+void test_xTaskResumeFromISR_resume_lower_priority_suspended_task( void )
+{
+    TaskHandle_t xTaskHandles[ 2 ] = { NULL };
+    BaseType_t xReturn;
+
+    /* Create two tasks of different priority. */
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[ 0 ] );
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ 1 ] );
+
+    /* Suspend lower priority task. */
+    vTaskSuspend( xTaskHandles[ 1 ] );
+
+    /* start the scheduler. */
+    vTaskStartScheduler();
+
+    /* Resume the lower priority task from ISR. */
+    vFakePortAssertIfInterruptPriorityInvalid_Ignore();
+    xReturn = xTaskResumeFromISR( xTaskHandles[ 1 ] );
+
+    /* In single priority test, the calling core is not requested to yield since a lower
+     * priority task is resumed. */
+    TEST_ASSERT( xReturn == pdFALSE );
+}
