@@ -415,42 +415,25 @@ void test_task_step_tick_xNextTaskUnblockTime_not_equal( void )
 }
 
 /**
- * @brief AWS_IoT-FreeRTOS_SMP_TC-<TBD>
- * Two tasks with different priortiy are created in this test.
- * This test will verify that current core will be requested to yield when resuming
- * a higher priority task from ISR.
+ * @brief xTaskResumeFromISR - resume higher priority suspended task
  *
- * #define configRUN_MULTIPLE_PRIORITIES                    0
- * #define configUSE_TIME_SLICING                           0
- * #define configNUMBER_OF_CORES                            (N > 1)
+ * Two tasks with different priority are created in this test. This test verifies
+ * that current core will be requested to yield when resuming a higher priority task
+ * from ISR. The return value of xTaskResumeFromISR indicates yield required for the
+ * core calling this API.
  *
- * This test can be run with FreeRTOS configured for any number of cores
- * greater than 1 .
+ * <b>Coverage</b>
+ * @code{c}
+ * prvYieldForTask( pxTCB );
  *
- * Tasks are created prior to starting the scheduler.
- *
- * Task (T1)	    Task (T2)
- * Priority - 1     Priority - 2
- * State - Ready    State - Ready
- *
- * Suspend the task (T2) before the scheduler started.
- *
- * After calling vTaskStartScheduler()
- *
- * Task (T1)	    Task (T2)
- * Priority - 1     Priority - 2
- * State - Running  State - Suspending
- *
- * After calling xTaskResumeFromISR() and resume the task from ISR.
- *
- * Task (T1)	    Task (T2)
- * Priority - 1     Priority - 2
- * State - Ready    State - Running
- *
- * The return value of xTaskResumeFromISR indicates yield required for the core calling
- * this API.
+ * if( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE )
+ * {
+ *     xYieldRequired = pdTRUE;
+ * }
+ * @endcode
+ * ( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE ) is true.
  */
-void test_xTaskResumeFromISR_resume_higher_priority_suspended_task( void )
+void test_coverage_xTaskResumeFromISR_resume_higher_priority_suspended_task( void )
 {
     TaskHandle_t xTaskHandles[ 2 ] = { NULL };
     BaseType_t xReturn;
@@ -475,42 +458,25 @@ void test_xTaskResumeFromISR_resume_higher_priority_suspended_task( void )
 }
 
 /**
- * @brief AWS_IoT-FreeRTOS_SMP_TC-<TBD>
- * Two tasks with different priortiy are created in this test.
- * This test will verify that current core will not be requested to yield when resuming
- * a lower priority task from ISR.
+ * @brief xTaskResumeFromISR - resume lower priority suspended task
+ * 
+ * Two tasks with different priority are created in this test. This test verifies
+ * that current core will not be requested to yield when resuming a lower priority task
+ * from ISR. The return value of xTaskResumeFromISR indicates yield not required for
+ * the core calling this API.
  *
- * #define configRUN_MULTIPLE_PRIORITIES                    0
- * #define configUSE_TIME_SLICING                           0
- * #define configNUMBER_OF_CORES                            (N > 1)
+ * <b>Coverage</b>
+ * @code{c}
+ * prvYieldForTask( pxTCB );
  *
- * This test can be run with FreeRTOS configured for any number of cores
- * greater than 1 .
- *
- * Tasks are created prior to starting the scheduler.
- *
- * Task (T1)	    Task (T2)
- * Priority - 2     Priority - 1
- * State - Ready    State - Ready
- *
- * Suspend the task (T2) before the scheduler started.
- *
- * After calling vTaskStartScheduler()
- *
- * Task (T1)	    Task (T2)
- * Priority - 2     Priority - 1
- * State - Running  State - Suspending
- *
- * After calling xTaskResumeFromISR() and resume the task from ISR.
- *
- * Task (T1)	    Task (T2)
- * Priority - 2     Priority - 1
- * State - Running  State - Ready
- *
- * The return value of xTaskResumeFromISR indicates yield not required for the core
- * calling this API.
+ * if( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE )
+ * {
+ *     xYieldRequired = pdTRUE;
+ * }
+ * @endcode
+ * ( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE ) is false.
  */
-void test_xTaskResumeFromISR_resume_lower_priority_suspended_task( void )
+void test_coverage_xTaskResumeFromISR_resume_lower_priority_suspended_task( void )
 {
     TaskHandle_t xTaskHandles[ 2 ] = { NULL };
     BaseType_t xReturn;
