@@ -55,11 +55,13 @@
 extern volatile UBaseType_t uxDeletedTasksWaitingCleanUp;
 extern volatile UBaseType_t uxSchedulerSuspended;
 extern volatile TCB_t *  pxCurrentTCBs[ configNUMBER_OF_CORES ];
+extern List_t xSuspendedTaskList;
+extern List_t xPendingReadyList;
+extern volatile UBaseType_t uxTopReadyPriority;
+extern volatile BaseType_t xYieldPendings[ configNUMBER_OF_CORES ];
 
 /* ==============================  Global VARIABLES ============================== */
 TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
-
-
 
 /* ============================  Unity Fixtures  ============================ */
 /*! called before each testcase */
@@ -417,10 +419,9 @@ void test_task_step_tick_xNextTaskUnblockTime_not_equal( void )
 /**
  * @brief xTaskResumeFromISR - resume higher priority suspended task
  *
- * Two tasks with different priority are created in this test. This test verifies
- * that current core will be requested to yield when resuming a higher priority task
- * from ISR. The return value of xTaskResumeFromISR indicates yield required for the
- * core calling this API.
+ * This test resume a higher priority task from ISR when scheduler suspended. The
+ * return value of xTaskResumeFromISR indicates yield required for the core calling
+ * this API.
  *
  * <b>Coverage</b>
  * @code{c}
@@ -435,35 +436,45 @@ void test_task_step_tick_xNextTaskUnblockTime_not_equal( void )
  */
 void test_coverage_xTaskResumeFromISR_resume_higher_priority_suspended_task( void )
 {
-    TaskHandle_t xTaskHandles[ 2 ] = { NULL };
+    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    uint32_t i;
     BaseType_t xReturn;
+    
+    /* Setup the variables and structure. */
+    vListInitialise( &xSuspendedTaskList );
+    vListInitialise( &xPendingReadyList );
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskTCBs[ i ].uxPriority = 1;
+        xTaskTCBs[ i ].xTaskRunState = i;
+        xYieldPendings[ i ] = pdFALSE;
+        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
+    }
+    /* A suspended task is created to be resumed from ISR. The task has higher priority
+     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
+     * to xPendingReadyList after resumed from ISR. */
+    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
+    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    uxTopReadyPriority = 1;
+    uxSchedulerSuspended = pdTRUE;
 
-    /* Create two tasks of different priority. */
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ 0 ] );
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[ 1 ] );
-
-    /* Suspend higher priority task. */
-    vTaskSuspend( xTaskHandles[ 1 ] );
-
-    /* start the scheduler. */
-    vTaskStartScheduler();
-
-    /* Resume the higher priority task from ISR. */
+    /* Expections. */
     vFakePortAssertIfInterruptPriorityInvalid_Ignore();
-    xReturn = xTaskResumeFromISR( xTaskHandles[ 1 ] );
 
-    /* In single priority test, the calling core is requested to yield since a higher
-     * priority task is resumed. */
+    /* API calls. */
+    xReturn = xTaskResumeFromISR( &xTaskTCBs[ i ] );
+
+    /* Validateions. In single priority test, the calling core is requested to yield
+     * since a higher priority task is resumed. */
     TEST_ASSERT( xReturn == pdTRUE );
 }
 
 /**
  * @brief xTaskResumeFromISR - resume lower priority suspended task
- * 
- * Two tasks with different priority are created in this test. This test verifies
- * that current core will not be requested to yield when resuming a lower priority task
- * from ISR. The return value of xTaskResumeFromISR indicates yield not required for
- * the core calling this API.
+ *
+ * This test resume a lower priority task from ISR when scheduler suspended. The
+ * return value of xTaskResumeFromISR indicates yield not required for the core
+ * calling this API.
  *
  * <b>Coverage</b>
  * @code{c}
@@ -478,24 +489,35 @@ void test_coverage_xTaskResumeFromISR_resume_higher_priority_suspended_task( voi
  */
 void test_coverage_xTaskResumeFromISR_resume_lower_priority_suspended_task( void )
 {
-    TaskHandle_t xTaskHandles[ 2 ] = { NULL };
+    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    uint32_t i;
     BaseType_t xReturn;
+    
+    /* Setup the variables and structure. */
+    vListInitialise( &xSuspendedTaskList );
+    vListInitialise( &xPendingReadyList );
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskTCBs[ i ].uxPriority = 2;
+        xTaskTCBs[ i ].xTaskRunState = i;
+        xYieldPendings[ i ] = pdFALSE;
+        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
+    }
+    /* A suspended task is created to be resumed from ISR. The task has lower priority
+     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
+     * to xPendingReadyList after resumed from ISR. */
+    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 1;
+    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    uxTopReadyPriority = 2;
+    uxSchedulerSuspended = pdTRUE;
 
-    /* Create two tasks of different priority. */
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[ 0 ] );
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ 1 ] );
-
-    /* Suspend lower priority task. */
-    vTaskSuspend( xTaskHandles[ 1 ] );
-
-    /* start the scheduler. */
-    vTaskStartScheduler();
-
-    /* Resume the lower priority task from ISR. */
+    /* Expections. */
     vFakePortAssertIfInterruptPriorityInvalid_Ignore();
-    xReturn = xTaskResumeFromISR( xTaskHandles[ 1 ] );
 
-    /* In single priority test, the calling core is not requested to yield since a lower
-     * priority task is resumed. */
+    /* API calls. */
+    xReturn = xTaskResumeFromISR( &xTaskTCBs[ i ] );
+
+    /* Validateions. In single priority test, the calling core is not requested to yield
+     * since a lower priority task is resumed. */
     TEST_ASSERT( xReturn == pdFALSE );
 }
