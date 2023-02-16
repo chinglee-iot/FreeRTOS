@@ -51,6 +51,7 @@
 /* ===========================  EXTERN VARIABLES  =========================== */
 
 extern volatile UBaseType_t uxDeletedTasksWaitingCleanUp;
+int xIdleTaskLoopCount = 0;
 
 /* ============================  Unity Fixtures  ============================ */
 /*! called before each testcase */
