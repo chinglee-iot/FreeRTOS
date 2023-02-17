@@ -140,7 +140,7 @@ void vConfigureTimerForRunTimeStats( void );    /* Prototype of function that in
 #define configUSE_LIST_DATA_INTEGRITY_CHECK_BYTES    0
 
 #define configMINIMAL_SECURE_STACK_SIZE              ( 1024 )
-#define portIDLE_TASK_TEST_MOCK() { extern int xIdleTaskLoopCount; if( xIdleTaskLoopCount > 0 ) { xIdleTaskLoopCount = xIdleTaskLoopCount - 1; } else { break; } }
+#define portIDLE_TASK_HOOK() { extern int xIdleTaskLoopCount; if( xIdleTaskLoopCount > 0 ) { xIdleTaskLoopCount = xIdleTaskLoopCount - 1; } else { break; } }
 #define portALLOCATE_SECURE_CONTEXT         vFakePortAllocateSecureContext
 
 #endif /* FREERTOS_CONFIG_H */

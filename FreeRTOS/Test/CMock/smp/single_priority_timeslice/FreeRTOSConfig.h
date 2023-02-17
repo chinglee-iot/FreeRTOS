@@ -152,7 +152,7 @@ void vConfigureTimerForRunTimeStats( void );    /* Prototype of function that in
 #endif /* configINCLUDE_MESSAGE_BUFFER_AMP_DEMO */
 
 extern int xIdleTaskLoopCount;
-#define portIDLE_TASK_TEST_MOCK()                       \
+#define portIDLE_TASK_HOOK()                       \
     if( xIdleTaskLoopCount > 0 )                        \
     {                                                   \
         xIdleTaskLoopCount = xIdleTaskLoopCount - 1;    \
