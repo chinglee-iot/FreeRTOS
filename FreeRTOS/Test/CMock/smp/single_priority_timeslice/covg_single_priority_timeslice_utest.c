@@ -132,7 +132,7 @@ void test_coverage_prvIdleTask_no_other_idle_priority_task( void )
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
-    /* Make use of the portIDLE_TASK_HOOK macro to control the loop count. */
+    /* Make use of the configIDLE_TASK_HOOK macro to control the loop count. */
     xIdleTaskLoopCount = 1;
 
     /* API calls. Runs the idle task function on core 0. */
@@ -190,7 +190,7 @@ void test_coverage_prvIdleTask_yield_for_idle_priority_task( void )
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
-    /* Make use of the portIDLE_TASK_HOOK macro to control the loop count. */
+    /* Make use of the configIDLE_TASK_HOOK macro to control the loop count. */
     xIdleTaskLoopCount = 1;
 
     /* API calls. Runs the idle task function on core 0. */
@@ -240,7 +240,7 @@ void test_coverage_prvMinimalIdleTask_no_other_idle_priority_task( void )
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
-    /* Make use of the portIDLE_TASK_HOOK macro to control the loop count. */
+    /* Make use of the configIDLE_TASK_HOOK macro to control the loop count. */
     xIdleTaskLoopCount = 1;
 
     /* API calls. Runs the idle task function on core 0. */
@@ -298,7 +298,7 @@ void test_coverage_prvMinimalIdleTask_yield_for_idle_priority_task( void )
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
-    /* Make use of the portIDLE_TASK_HOOK macro to control the loop count. */
+    /* Make use of the configIDLE_TASK_HOOK macro to control the loop count. */
     xIdleTaskLoopCount = 1;
 
     /* API calls. Runs the idle task function on core 0. */

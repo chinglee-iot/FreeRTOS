@@ -3521,7 +3521,7 @@ void test_prvIdleTask_yield( void )
     uxDeletedTasksWaitingCleanUp = 0;
     portTASK_FUNCTION( prvIdleTask, args );
     ( void ) fool_static2;
-    xIdleTaskLoopCount = 0;     /* Reference portIDLE_TASK_HOOK in FreeRTOSConfig_1.h. */
+    xIdleTaskLoopCount = 0;     /* Reference configIDLE_TASK_HOOK in FreeRTOSConfig_1.h. */
 
     /* Expectations */
     listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ 0 ], 2 );
@@ -3571,7 +3571,7 @@ void test_prvIdleTask_tickless_expected_idle_time( void )
     uxDeletedTasksWaitingCleanUp = 0;
     portTASK_FUNCTION( prvIdleTask, args );
     ( void ) fool_static2;
-    xIdleTaskLoopCount = 0;     /* Reference portIDLE_TASK_HOOK in FreeRTOSConfig_1.h. */
+    xIdleTaskLoopCount = 0;     /* Reference configIDLE_TASK_HOOK in FreeRTOSConfig_1.h. */
 
     /* Expectations */
     listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ 0 ], 1 );
