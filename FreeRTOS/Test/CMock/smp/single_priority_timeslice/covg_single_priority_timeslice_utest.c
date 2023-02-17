@@ -50,7 +50,7 @@
 
 /* ===========================  EXTERN VARIABLES  =========================== */
 extern volatile UBaseType_t uxDeletedTasksWaitingCleanUp;
-extern volatile TCB_t *  pxCurrentTCBs[ configNUMBER_OF_CORES ];
+extern volatile TCB_t * pxCurrentTCBs[ configNUMBER_OF_CORES ];
 extern UBaseType_t uxTopReadyPriority;
 extern List_t pxReadyTasksLists[ configMAX_PRIORITIES ];
 
@@ -59,7 +59,7 @@ extern void prvIdleTask( void );
 extern void prvMinimalIdleTask( void );
 
 /* ===========================  GLOBAL VARIABLES  =========================== */
-int xIdleTaskLoopCount = 0;
+int xIdleTaskLoopCount = 0;     /* Loop counter for idle task. */
 
 /* ============================  Unity Fixtures  ============================ */
 /*! called before each testcase */

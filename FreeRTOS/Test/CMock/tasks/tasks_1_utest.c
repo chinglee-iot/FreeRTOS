@@ -3517,19 +3517,20 @@ void test_prvIdleTask_yield( void )
     create_task_priority = 3;
     create_task();
 
-    /* Setup */
+    /* Setup. */
     uxDeletedTasksWaitingCleanUp = 0;
     portTASK_FUNCTION( prvIdleTask, args );
     ( void ) fool_static2;
     xIdleTaskLoopCount = 0;     /* Reference configIDLE_TASK_HOOK in FreeRTOSConfig_1.h. */
 
-    /* Expectations */
+    /* Expectations. */
+    /* List function in prvIdleTask. */
     listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ 0 ], 2 );
 
-    /* API Call */
+    /* API Call. */
     prvIdleTask( args );
 
-    /* Validations */
+    /* Validations. */
     ASSERT_PORT_ALLOCATE_SECURE_CONTEXT_CALLED();
     ASSERT_PORT_YIELD_CALLED();
     ASSERT_APPLICATION_IDLE_HOOK_CALLED();
@@ -3564,7 +3565,7 @@ void test_prvIdleTask_tickless_expected_idle_time( void )
     create_task_priority = 0;
     create_task();
 
-    /* Setup */
+    /* Setup. */
     uxTopReadyPriority = 0;
     xTickCount = 0;
     xNextTaskUnblockTime = configEXPECTED_IDLE_TIME_BEFORE_SLEEP + 1;
@@ -3573,20 +3574,21 @@ void test_prvIdleTask_tickless_expected_idle_time( void )
     ( void ) fool_static2;
     xIdleTaskLoopCount = 0;     /* Reference configIDLE_TASK_HOOK in FreeRTOSConfig_1.h. */
 
-    /* Expectations */
+    /* Expectations. */
+    /* List function in prvIdleTask. */
     listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ 0 ], 1 );
 
-    /* prvGetExpectedIdleTime */
+    /* List functions in prvGetExpectedIdleTime. */
     listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ 0 ], 1 );
     listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ 0 ], 1 );
 
-    /* xTaskResumeAll */
+    /* List functions in xTaskResumeAll */
     listLIST_IS_EMPTY_ExpectAndReturn( &xPendingReadyList, pdTRUE );
 
-    /* API Call */
+    /* API Call. */
     prvIdleTask( args );
 
-    /* Validations */
+    /* Validations. */
     ASSERT_PORT_ALLOCATE_SECURE_CONTEXT_CALLED();
     ASSERT_APPLICATION_IDLE_HOOK_CALLED();
 }
