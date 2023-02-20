@@ -631,16 +631,18 @@ void test_task_delay_until_with_config_assert( void )
 }
 
 /*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eNoAction.
+* @brief xTaskGenericNotify - function to notify a task.
+*
+* <b>Coverage</b>
+* @code{c}
+*              case eNoAction:
+*              ...
+*                    break;
+*
+* @endcode
+*
+*  Cover the eNoAction action type with an explicit task specified.
 */
-
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction( void )
 {
    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -660,16 +662,19 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction( void )
 }
 
 /*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eNoAction and a prevValue from index 0.
+* @brief xTaskGenericNotify - function to notify a task.
+*
+* <b>Coverage</b>
+* @code{c}
+*              case eNoAction:
+*              ...
+*                    break;
+*
+* @endcode
+*
+*  Cover the eNoAction action type, while requesting the previous value
+*  and with an explicit task specified.
 */
-
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_prevValue( void )
 {
    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -689,16 +694,18 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_prevValue( 
 }
 
 /*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eSetBits and a prevValue from index 0.
+* @brief xTaskGenericNotify - function to notify a task.
+*
+* <b>Coverage</b>
+* @code{c}
+*         case eSetBits:
+*                    pxTCB->ulNotifiedValue[ uxIndexToNotify ] |= ulValue;
+*                    break;
+* @endcode
+*
+*  Cover the eSetBits action type, while requesting the previous value
+*  and with an explicit task specified.
 */
-
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetBits_prevValue( void )
 {
    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -718,16 +725,18 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetBits_prevValue( v
 }
 
 /*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eIncrement and a prevValue from index 0.
+* @brief xTaskGenericNotify - function to notify a task.
+*
+* <b>Coverage</b>
+* @code{c}
+*         case eIncrement:
+*                    ( pxTCB->ulNotifiedValue[ uxIndexToNotify ] )++;
+*                    break;
+* @endcode
+*
+*  Cover the eIncrement action type, while requesting the previous value
+*  and with an explicit task specified.
 */
-
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eIncrement_prevValue( void )
 {
    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -747,16 +756,18 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eIncrement_prevValue(
 }
 
 /*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eSetValueWithOverwrite and a prevValue from index 0.
+* @brief xTaskGenericNotify - function to notify a task.
+*
+* <b>Coverage</b>
+* @code{c}
+*     case eSetValueWithOverwrite:
+*                    pxTCB->ulNotifiedValue[ uxIndexToNotify ] = ulValue;
+*                    break;
+* @endcode
+*
+*  Cover the eSetValueWithOverwrite action type, while requesting the previous value
+*  and with an explicit task specified.
 */
-
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithOverwrite_prevValue( void )
 {
    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -776,16 +787,20 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithOverwrit
 }
 
 /*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eSetValueWithoutOverwrite and a prevValue from index 0.
+* @brief xTaskGenericNotify - function to notify a task.
+*
+* <b>Coverage</b>
+* @code{c}
+*          case eSetValueWithoutOverwrite:
+*
+*                    if( ucOriginalNotifyState != taskNOTIFICATION_RECEIVED )
+*                    {
+*          ...
+* @endcode
+*
+*  Cover the eSetValueWithoutOverwrite action type, while requesting the previous value
+*  and with an explicit task specified. Branch 1 of 2.
 */
-
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverwrite_prevValue( void )
 {
    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -805,16 +820,20 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverw
 }
 
 /*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eSetValueWithoutOverwrite and a prevValue from index 0.
+* @brief xTaskGenericNotify - function to notify a task.
+*
+* <b>Coverage</b>
+* @code{c}
+*          case eSetValueWithoutOverwrite:
+*
+*                    if( ucOriginalNotifyState != taskNOTIFICATION_RECEIVED )
+*                    {
+*          ...
+* @endcode
+*
+*  Cover the eSetValueWithoutOverwrite action type with an explicit task specified.
+*  Branch 2 of 2.
 */
-
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverwrite_branch2_prevValue( void )
 {
    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -835,16 +854,20 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverw
 }
 
 /*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eNoAction and an internal taskWAITING_NOTIFICATION.
+* @brief xTaskGenericNotify - function to notify a task.
+*
+* <b>Coverage</b>
+* @code{c}
+*          case eSetValueWithoutOverwrite:
+*
+*                    if( ucOriginalNotifyState != taskNOTIFICATION_RECEIVED )
+*                    {
+*          ...
+* @endcode
+*
+* Cover the eNoAction action typevwith an explicit task specified. Under
+* the condition that the task is waiting for a notification.
 */
-
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING_NOTIFICATION( void )
 {
    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -865,15 +888,17 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
 }
 
 /*
-Coverage for
-    void vTaskGetInfo( TaskHandle_t xTask,
-                       TaskStatus_t * pxTaskStatus,
-                       BaseType_t xGetFreeStackSpace,
-                       eTaskState eState )
-
-    Call vTaskGetInfo with xTask as NULL, so that implicitly uses the current task.
+* @brief vTaskGetInfo - populate TaskStatus_t and eTaskState
+*
+* <b>Coverage</b>
+* @code{c}
+*        pxTCB = prvGetTCBFromHandle( xTask );
+*          ...
+* @endcode
+*
+* Cover the case where xTask is NULL, and the current task is implicitly
+* referenced and returned by prvGetTCBFromHandle(...);
 */
-
 void test_coverage_vTaskGetInfo_implicit_task( void )
 {
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -894,15 +919,16 @@ void test_coverage_vTaskGetInfo_implicit_task( void )
 }
 
 /*
-Coverage for
-    void vTaskGetInfo( TaskHandle_t xTask,
-                       TaskStatus_t * pxTaskStatus,
-                       BaseType_t xGetFreeStackSpace,
-                       eTaskState eState )
-
-    Call vTaskGetInfo with an explicit task.
+* @brief vTaskGetInfo - populate TaskStatus_t and eTaskState
+*
+* <b>Coverage</b>
+* @code{c}
+*        pxTCB = prvGetTCBFromHandle( xTask );
+*          ...
+* @endcode
+*
+* Cover the case where xTask is specified rather than NULL.
 */
-
 void test_coverage_vTaskGetInfo_explicit_task( void )
 {
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -923,16 +949,19 @@ void test_coverage_vTaskGetInfo_explicit_task( void )
 }
 
 /*
-Coverage for
-    void vTaskGetInfo( TaskHandle_t xTask,
-                       TaskStatus_t * pxTaskStatus,
-                       BaseType_t xGetFreeStackSpace,
-                       eTaskState eState )
-
-    Call vTaskGetInfo on a suspended task with a non-NULL xEventListItem such that it reports
-    that it is blocked.
+* @brief vTaskGetInfo - populate TaskStatus_t and eTaskState
+*
+* <b>Coverage</b>
+* @code{c}
+*                if( listLIST_ITEM_CONTAINER( &( pxTCB->xEventListItem ) ) != NULL )
+*                {
+*                   pxTaskStatus->eCurrentState = eBlocked;
+*                }
+*                ...
+* @endcode
+*
+* Cover the case where the task is blocked.
 */
-
 void test_coverage_vTaskGetInfo_blocked_task( void )
 {
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -951,21 +980,23 @@ void test_coverage_vTaskGetInfo_blocked_task( void )
 
     xTaskHandles[0]->xEventListItem.pxContainer = (struct xLIST *) 1;
     vTaskGetInfo( xTaskHandles[0], &pxTaskStatus, xFreeStackSpace, taskState);
-
-    printf("DEBUG: taskState: %d\n", (int)taskState);
 }
 
-
 /*
-Coverage for
-    void vTaskGetInfo( TaskHandle_t xTask,
-                       TaskStatus_t * pxTaskStatus,
-                       BaseType_t xGetFreeStackSpace,
-                       eTaskState eState )
-
-    Call vTaskGetInfo with xTaskRunState >= configNUMBER_OF_CORES.
+* @brief vTaskGetInfo - populate TaskStatus_t and eTaskState
+*
+* <b>Coverage</b>
+* @code{c}
+*       if( taskTASK_IS_RUNNING( pxTCB ) == pdTRUE )
+*            {
+*                pxTaskStatus->eCurrentState = eRunning;
+*            }
+*            ...
+* @endcode
+*
+* Cover the case in the taskTASK_IS_RUNNING() macro where the xTaskRunState
+* is out of bounds.
 */
-
 void test_coverage_vTaskGetInfo_oob_xTaskRunState( void )
 {
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -987,15 +1018,20 @@ void test_coverage_vTaskGetInfo_oob_xTaskRunState( void )
 }
 
 /*
-Coverage for
-    void vTaskGetInfo( TaskHandle_t xTask,
-                       TaskStatus_t * pxTaskStatus,
-                       BaseType_t xGetFreeStackSpace,
-                       eTaskState eState )
-
-    Call vTaskGetInfo xGetFreeStackSpace set to pdFALSE.
+* @brief vTaskGetInfo - populate TaskStatus_t and eTaskState
+*
+* <b>Coverage</b>
+* @code{c}
+*       if( taskTASK_IS_RUNNING( pxTCB ) == pdTRUE )
+*            {
+*                pxTaskStatus->eCurrentState = eRunning;
+*            }
+*            ...
+* @endcode
+*
+* Cover the case where xFreeStackSpace is pdFALSE, avoiding the free
+* stack space query.
 */
-
 void test_coverage_vTaskGetInfo_skip_get_free_stack_space( void )
 {
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -1016,23 +1052,18 @@ void test_coverage_vTaskGetInfo_skip_get_free_stack_space( void )
 }
 
 /*
-Coverage for
-    void vTaskResume( TaskHandle_t xTaskToResume )
-
-    Call with a NULL task
+* @brief vTaskResume - resume a suspended task.
+*
+* <b>Coverage</b>
+* @code{c}
+*                if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
+*                {
+*            ...
+* @endcode
+*
+* Cover the case where the task requested to resume has not
+* been suspended.
 */
-void test_coverage_vTaskResume_null_task( void )
-{
-    vTaskResume( NULL );
-}
-
-/*
-Coverage for
-    void vTaskResume( TaskHandle_t xTaskToResume )
-
-    Call with a task that has not been suspended
-*/
-
 void test_coverage_vTaskResume_task_not_suspended( void )
 {
     UBaseType_t xidx;
@@ -1050,9 +1081,17 @@ void test_coverage_vTaskResume_task_not_suspended( void )
 }
 
 /*
-Coverage for
-    BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume )
-
+* @brief xTaskResumeFromISR - resume a suspended task in the ISR context
+*
+* <b>Coverage</b>
+* @code{c}
+* ...
+*        uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+* ...
+* @endcode
+*
+* Cover the primary path where an ISR context task is being resumed
+* that has not been suspended.
 */
 void test_coverage_xTaskResumeFromISR ( void )
 {
@@ -1072,9 +1111,16 @@ void test_coverage_xTaskResumeFromISR ( void )
 }
 
 /*
-Coverage for
-    BaseType_t xTaskResumeFromISR( TaskHandle_t xTaskToResume )
-
+* @brief xTaskResumeFromISR - resume a suspended task in the ISR context
+*
+* <b>Coverage</b>
+* @code{c}
+* ...
+*        uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+* ...
+* @endcode
+*
+* Cover the primary path where an ISR context task is being resumed.
 */
 void test_coverage_xTaskResumeFromISR_suspended_suspendall ( void )
 {
