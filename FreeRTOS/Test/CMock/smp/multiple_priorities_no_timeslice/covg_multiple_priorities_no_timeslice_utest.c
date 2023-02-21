@@ -58,6 +58,11 @@ extern volatile UBaseType_t uxSchedulerSuspended;
 extern volatile TCB_t *  pxCurrentTCBs[ configNUMBER_OF_CORES ];
 extern volatile BaseType_t xSchedulerRunning;
 extern volatile TickType_t xTickCount;
+extern List_t pxReadyTasksLists[ configMAX_PRIORITIES ];
+extern volatile UBaseType_t uxTopReadyPriority;
+
+/* ===========================  EXTERN FUNCTIONS  =========================== */
+extern void prvAddNewTaskToReadyList( TCB_t * pxNewTCB );
 
 /* ==============================  Global VARIABLES ============================== */
 TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -655,7 +660,6 @@ void test_coverage_prvAddNewTaskToReadyList_create_two_tasks_with_the_first_susp
     vTaskStartScheduler();
 }
 
-#if 0
 /**
  * @brief prvAddNewTaskToReadyList - add a new idle task to the list of ready tasks
  *
@@ -668,7 +672,7 @@ void test_coverage_prvAddNewTaskToReadyList_create_two_tasks_with_the_first_susp
  * @endcode
  * for loop condition ( xCoreID < configNUMBER_OF_CORES ) is false.
  */
-void coverage_prvAddNewTaskToReadyList_create_more_idle_tasks_than_cores( void )
+void test_coverage_prvAddNewTaskToReadyList_create_more_idle_tasks_than_cores( void )
 {
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1 ] = { 0 };
     uint32_t i;
@@ -710,7 +714,6 @@ void coverage_prvAddNewTaskToReadyList_create_more_idle_tasks_than_cores( void )
     /* Validateions. The run state of this task is still taskNOT_RUNNING ( -1 ). */
     configASSERT( xTaskTCBs[ configNUMBER_OF_CORES + 1U ].xTaskRunState == -1 );
 }
-#endif
 
 /**
  * @brief vTaskCoreAffinitySet - limit a task to a set of cores via a bitmask.
