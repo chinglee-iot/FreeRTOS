@@ -44,6 +44,7 @@
 #include "../smp_utest_common.h"
 
 /* Mock includes. */
+#include "list.h"
 #include "mock_timers.h"
 #include "mock_fake_assert.h"
 #include "mock_fake_port.h"
@@ -58,6 +59,12 @@ extern volatile UBaseType_t uxSchedulerSuspended;
 extern volatile TCB_t *  pxCurrentTCBs[ configNUMBER_OF_CORES ];
 extern volatile BaseType_t xSchedulerRunning;
 extern volatile TickType_t xTickCount;
+extern List_t xSuspendedTaskList;
+extern List_t xPendingReadyList;
+extern volatile UBaseType_t uxTopReadyPriority;
+extern volatile BaseType_t xYieldPendings[ configNUMBER_OF_CORES ];
+extern List_t pxReadyTasksLists[ configMAX_PRIORITIES ];
+
 
 /* ==============================  Global VARIABLES ============================== */
 TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -94,32 +101,53 @@ extern void vTaskEnterCritical(void);
 
 /* ==============================  Test Cases  ============================== */
 
-/*
-Coverage for
-    BaseType_t xTaskGenericNotify( TaskHandle_t xTaskToNotify,
-        UBaseType_t uxIndexToNotify,
-        uint32_t ulValue,
-        eNotifyAction eAction,
-        uint32_t * pulPreviousNotificationValue )
-
-    Call w/ eAction = eNoAction and an internal taskWAITING_NOTIFICATION.
-*/
-
-void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING_NOTIFICATION( void )
+/**
+ * @brief xTaskGenericNotify - function to notify a task.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ *          case eSetValueWithoutOverwrite:
+ *
+ *                    if( ucOriginalNotifyState != taskNOTIFICATION_RECEIVED )
+ *                    {
+ *          ...
+ * @endcode
+ *
+ *  Cover the eSetValueWithoutOverwrite action type with an explicit task specified.
+ *  Branch 2 of 2.
+ */
+void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverwrite_branch_taskWAITING_NOTIFICATION( void )
 {
-   TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
+    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
     UBaseType_t xidx = 0;
-    uint32_t *prevValue = NULL;
-    uint32_t ulValue = 0;
+    uint32_t prevValue;
+    uint32_t i;
+    BaseType_t xReturn;
 
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[0] );
-
-    vTaskStartScheduler();
-
-    for (xidx = 0; xidx < configNUMBER_OF_CORES ; xidx++) {
-        xTaskIncrementTick_helper();
+    /* Setup the variables and structure. */
+    vListInitialise( &xSuspendedTaskList );
+    vListInitialise( &xPendingReadyList );
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskTCBs[ i ].uxPriority = 1;
+        xTaskTCBs[ i ].xTaskRunState = i;
+        vListInitialiseItem( &( xTaskTCBs[i].xStateListItem ) );
+        xYieldPendings[ i ] = pdFALSE;
+        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
     }
+    /* A suspended task is created to be resumed from ISR. The task has higher priority
+     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
+     * to xPendingReadyList after resumed from ISR. */
+    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
+    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    uxTopReadyPriority = 1;
+    uxSchedulerSuspended = pdTRUE;
 
-    xTaskHandles[0]->ucNotifyState[ xidx ] = /*taskWAITING_NOTIFICATION*/ ( ( uint8_t ) 1 );
-    xTaskGenericNotify( xTaskHandles[0], xidx, ulValue, eNoAction, prevValue);
+    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ 0 ].xStateListItem );
+    //xTaskTCBs[0].ucNotifyState[ xidx ] = /*taskWAITING_NOTIFICATION*/ ( ( uint8_t ) 1 );
+    xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
+
+    /* Validations. In single priority test, the calling core is requested to yield
+     * since a higher priority task is resumed. */
+    TEST_ASSERT( xReturn == pdPASS );
 }
