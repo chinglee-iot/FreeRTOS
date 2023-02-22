@@ -138,7 +138,7 @@ void test_coverage_prvIdleTask_no_other_idle_priority_task( void )
     /* API calls. Runs the idle task function on core 0. */
     prvIdleTask();
 
-    /* Validateions. xTaskTCBs[ 0 ] still runs on core 0. */
+    /* Validations. xTaskTCBs[ 0 ] still runs on core 0. */
     configASSERT( pxCurrentTCBs[ 0 ] == &xTaskTCBs[ 0 ] );
 }
 
@@ -196,7 +196,7 @@ void test_coverage_prvIdleTask_yield_for_idle_priority_task( void )
     /* API calls. Runs the idle task function on core 0. */
     prvIdleTask();
 
-    /* Validateions. xTaskTCBs[ i ] runs on core 0. */
+    /* Validations. xTaskTCBs[ i ] runs on core 0. */
     configASSERT( pxCurrentTCBs[ 0 ] == &xTaskTCBs[ i ] );
 }
 
@@ -246,7 +246,7 @@ void test_coverage_prvMinimalIdleTask_no_other_idle_priority_task( void )
     /* API calls. Runs the idle task function on core 0. */
     prvMinimalIdleTask();
 
-    /* Validateions. xTaskTCBs[ 0 ] still runs on core 0. */
+    /* Validations. xTaskTCBs[ 0 ] still runs on core 0. */
     configASSERT( pxCurrentTCBs[ 0 ] == &xTaskTCBs[ 0 ] );
 }
 
@@ -304,6 +304,6 @@ void test_coverage_prvMinimalIdleTask_yield_for_idle_priority_task( void )
     /* API calls. Runs the idle task function on core 0. */
     prvMinimalIdleTask();
 
-    /* Validateions. xTaskTCBs[ i ] runs on core 0. */
+    /* Validations. xTaskTCBs[ i ] runs on core 0. */
     configASSERT( pxCurrentTCBs[ 0 ] == &xTaskTCBs[ i ] );
 }
