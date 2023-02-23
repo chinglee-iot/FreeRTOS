@@ -1124,7 +1124,7 @@ void test_coverage_vTaskGetInfo_blocked_task( void )
  */
 void test_coverage_vTaskGetInfo_oob_xTaskRunState( void )
 {
-   TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
     uint32_t i;
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
@@ -1168,23 +1168,90 @@ void test_coverage_vTaskGetInfo_oob_xTaskRunState( void )
  * Cover the case where xFreeStackSpace is pdFALSE, avoiding the free
  * stack space query.
  */
-void test_coverage_vTaskGetInfo_get_free_stack_space( void )
+
+static void test_prvInitialiseStack( TCB_t *pxTCB, const uint32_t ulStackDepth )
 {
-    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
-    TaskStatus_t pxTaskStatus;
-    UBaseType_t xidx;
-    BaseType_t xFreeStackSpace = pdFALSE;
-    eTaskState taskState = eReady;
+    StackType_t * pxTopOfStack;
 
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[0] );
+    pxTopOfStack = NULL;
 
-    vTaskStartScheduler();
+    /* Allocate space for the stack used by the task being created.
+     * The base of the stack memory stored in the TCB so the task can
+     * be deleted later if required. */
+    pxTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) ulStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
 
-    for (xidx = 0; xidx < configNUMBER_OF_CORES ; xidx++) {
-        xTaskIncrementTick_helper();
+    if( pxTCB->pxStack == NULL )
+    {
+        /* Could not allocate the stack.  Delete the allocated TCB. */
+        vPortFree( pxTCB );
+        pxTCB = NULL;
     }
 
-    vTaskGetInfo( xTaskHandles[0], &pxTaskStatus, xFreeStackSpace, taskState);
+    /* Calculate the top of stack address.  This depends on whether the stack
+     * grows from high memory to low (as per the 80x86) or vice versa.
+     * portSTACK_GROWTH is used to make the result positive or negative as required
+     * by the port. */
+    #if ( portSTACK_GROWTH < 0 )
+    {
+        pxTopOfStack = &( pxTCB->pxStack[ ulStackDepth - ( uint32_t ) 1 ] );
+        pxTopOfStack = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) ); /*lint !e923 !e9033 !e9078 MISRA exception.  Avoiding casts between pointers and integers is not practical.  Size differences accounted for using portPOINTER_SIZE_TYPE type.  Checked by assert(). */
+
+        /* Check the alignment of the calculated top of stack is correct. */
+        configASSERT( ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack & ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) == 0UL ) );
+
+        #if ( configRECORD_STACK_HIGH_ADDRESS == 1 )
+        {
+            /* Also record the stack's high address, which may assist
+             * debugging. */
+            pxTCB->pxEndOfStack = pxTopOfStack;
+        }
+        #endif /* configRECORD_STACK_HIGH_ADDRESS */
+    }
+    #else /* portSTACK_GROWTH */
+    {
+        pxTopOfStack = pxTCB->pxStack;
+
+        /* Check the alignment of the stack buffer is correct. */
+        configASSERT( ( ( ( portPOINTER_SIZE_TYPE ) pxTCB->pxStack & ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) == 0UL ) );
+
+        /* The other extreme of the stack space is required if stack checking is
+         * performed. */
+        pxTCB->pxEndOfStack = pxTCB->pxStack + ( ulStackDepth - ( uint32_t ) 1 );
+    }
+    #endif /* portSTACK_GROWTH */
+
+    (void)pxTopOfStack;
+}
+
+void test_coverage_vTaskGetInfo_get_free_stack_space( void )
+{
+    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    uint32_t i;
+    TaskStatus_t pxTaskStatus;
+    BaseType_t xFreeStackSpace = pdTRUE;
+    eTaskState taskState = eSuspended;
+
+    /* Setup the variables and structure. */
+    vListInitialise( &xSuspendedTaskList );
+    vListInitialise( &xPendingReadyList );
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskTCBs[ i ].uxPriority = 1;
+        xTaskTCBs[ i ].xTaskRunState = i;
+        xYieldPendings[ i ] = pdFALSE;
+        test_prvInitialiseStack( &xTaskTCBs[i], configMINIMAL_STACK_SIZE );
+        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
+    }
+    /* A suspended task is created to be resumed from ISR. The task has higher priority
+     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
+     * to xPendingReadyList after resumed from ISR. */
+    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
+    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    uxTopReadyPriority = 1;
+    uxSchedulerSuspended = pdTRUE;
+
+    vTaskGetInfo( &xTaskTCBs[0], &pxTaskStatus, xFreeStackSpace, taskState);
+    TEST_ASSERT_EQUAL((BaseType_t)1, pxTaskStatus.uxCurrentPriority);
 }
 
 /**
@@ -1216,19 +1283,19 @@ void test_coverage_vTaskResume_task_not_suspended( void )
     vTaskResume( xTaskHandles[0] );
 }
 
-/*
-* @brief xTaskResumeFromISR - resume a suspended task in the ISR context
-*
-* <b>Coverage</b>
-* @code{c}
-* ...
-*        uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
-* ...
-* @endcode
-*
-* Cover the primary path where an ISR context task is being resumed
-* that has not been suspended.
-*/
+/**
+ * @brief xTaskResumeFromISR - resume a suspended task in the ISR context
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * ...
+ *        uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+ * ...
+ * @endcode
+ *
+ * Cover the primary path where an ISR context task is being resumed
+ * that has not been suspended.
+ */
 void test_coverage_xTaskResumeFromISR ( void )
 {
     UBaseType_t xidx;
@@ -1246,18 +1313,18 @@ void test_coverage_xTaskResumeFromISR ( void )
     xTaskResumeFromISR( xTaskHandles[0] );
 }
 
-/*
-* @brief xTaskResumeFromISR - resume a suspended task in the ISR context
-*
-* <b>Coverage</b>
-* @code{c}
-* ...
-*        uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
-* ...
-* @endcode
-*
-* Cover the primary path where an ISR context task is being resumed.
-*/
+/**
+ * @brief xTaskResumeFromISR - resume a suspended task in the ISR context
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * ...
+ *        uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+ * ...
+ * @endcode
+ *
+ * Cover the primary path where an ISR context task is being resumed.
+ */
 void test_coverage_xTaskResumeFromISR_suspended_suspendall ( void )
 {
     UBaseType_t xidx;
