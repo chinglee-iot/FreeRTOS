@@ -47,6 +47,7 @@
 #include "mock_timers.h"
 #include "mock_fake_assert.h"
 #include "mock_fake_port.h"
+#include "mock_fake_infiniteloop.h"
 
 /* ===========================  EXTERN VARIABLES  =========================== */
 extern volatile UBaseType_t uxDeletedTasksWaitingCleanUp;
@@ -57,9 +58,6 @@ extern List_t pxReadyTasksLists[ configMAX_PRIORITIES ];
 /* ===========================  EXTERN FUNCTIONS  =========================== */
 extern void prvIdleTask( void );
 extern void prvMinimalIdleTask( void );
-
-/* ===========================  GLOBAL VARIABLES  =========================== */
-int xIdleTaskLoopCount = 0;     /* Loop counter for idle task. */
 
 /* ============================  Unity Fixtures  ============================ */
 /*! called before each testcase */
@@ -132,8 +130,9 @@ void test_coverage_prvIdleTask_no_other_idle_priority_task( void )
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
-    /* Make use of the configIDLE_TASK_HOOK macro to control the loop count. */
-    xIdleTaskLoopCount = 1;
+    /* Expectations. */
+    vFakeInfiniteLoop_ExpectAndReturn( 1 );
+    vFakeInfiniteLoop_ExpectAndReturn( 0 );
 
     /* API calls. Runs the idle task function on core 0. */
     prvIdleTask();
@@ -190,8 +189,9 @@ void test_coverage_prvIdleTask_yield_for_idle_priority_task( void )
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
-    /* Make use of the configIDLE_TASK_HOOK macro to control the loop count. */
-    xIdleTaskLoopCount = 1;
+    /* Expectations. */
+    vFakeInfiniteLoop_ExpectAndReturn( 1 );
+    vFakeInfiniteLoop_ExpectAndReturn( 0 );
 
     /* API calls. Runs the idle task function on core 0. */
     prvIdleTask();
@@ -240,8 +240,9 @@ void test_coverage_prvMinimalIdleTask_no_other_idle_priority_task( void )
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
-    /* Make use of the configIDLE_TASK_HOOK macro to control the loop count. */
-    xIdleTaskLoopCount = 1;
+    /* Expectations. */
+    vFakeInfiniteLoop_ExpectAndReturn( 1 );
+    vFakeInfiniteLoop_ExpectAndReturn( 0 );
 
     /* API calls. Runs the idle task function on core 0. */
     prvMinimalIdleTask();
@@ -298,8 +299,9 @@ void test_coverage_prvMinimalIdleTask_yield_for_idle_priority_task( void )
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
-    /* Make use of the configIDLE_TASK_HOOK macro to control the loop count. */
-    xIdleTaskLoopCount = 1;
+    /* Expectations. */
+    vFakeInfiniteLoop_ExpectAndReturn( 1 );
+    vFakeInfiniteLoop_ExpectAndReturn( 0 );
 
     /* API calls. Runs the idle task function on core 0. */
     prvMinimalIdleTask();

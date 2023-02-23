@@ -38,6 +38,7 @@
 #include "mock_timers.h"
 #include "mock_portable.h"
 #include "mock_fake_assert.h"
+#include "mock_fake_infiniteloop.h"
 
 /* Test includes. */
 #include "unity.h"
@@ -166,8 +167,6 @@ static int assertionFailed = 0;
  * @brief Flag which denotes if test need to abort on assertion.
  */
 static BaseType_t shouldAbortOnAssertion = pdFALSE;
-
-int xIdleTaskLoopCount = 0;
 
 /* ============================  HOOK FUNCTIONS  ============================ */
 static void dummy_operation()
@@ -3527,11 +3526,16 @@ void test_prvIdleTask_yield( void )
     uxDeletedTasksWaitingCleanUp = 0;
     portTASK_FUNCTION( prvIdleTask, args );
     ( void ) fool_static2;
-    xIdleTaskLoopCount = 0;     /* Reference configIDLE_TASK_HOOK in FreeRTOSConfig_1.h. */
 
     /* Expectations. */
+    /* INFINITE_LOOP in prvIdleTask. */
+    vFakeInfiniteLoop_ExpectAndReturn( 1 );
+
     /* List function in prvIdleTask. */
     listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ 0 ], 2 );
+
+    /* INFINITE_LOOP in prvIdleTask. */
+    vFakeInfiniteLoop_ExpectAndReturn( 0 );
 
     /* API Call. */
     prvIdleTask( args );
@@ -3578,9 +3582,11 @@ void test_prvIdleTask_tickless_expected_idle_time( void )
     uxDeletedTasksWaitingCleanUp = 0;
     portTASK_FUNCTION( prvIdleTask, args );
     ( void ) fool_static2;
-    xIdleTaskLoopCount = 0;     /* Reference configIDLE_TASK_HOOK in FreeRTOSConfig_1.h. */
 
     /* Expectations. */
+    /* INFINITE_LOOP in prvIdleTask. */
+    vFakeInfiniteLoop_ExpectAndReturn( 1 );
+
     /* List function in prvIdleTask. */
     listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ 0 ], 1 );
 
@@ -3590,6 +3596,9 @@ void test_prvIdleTask_tickless_expected_idle_time( void )
 
     /* List functions in xTaskResumeAll */
     listLIST_IS_EMPTY_ExpectAndReturn( &xPendingReadyList, pdTRUE );
+
+    /* INFINITE_LOOP in prvIdleTask. */
+    vFakeInfiniteLoop_ExpectAndReturn( 0 );
 
     /* API Call. */
     prvIdleTask( args );
