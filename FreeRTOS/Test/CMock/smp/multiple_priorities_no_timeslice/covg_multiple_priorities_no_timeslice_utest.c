@@ -95,7 +95,7 @@ extern void vTaskEnterCritical(void);
 /* ==============================  Test Cases  ============================== */
 
 /**
- * @brief vTaskPreemptionEnable - Enable preemption of a task when scheduler is not running
+ * @brief vTaskPreemptionEnable - Enable preemption of a task when scheduler is not running.
  *
  * The xPreemptionDisable of the task will be set to pdFALSE.
  *
@@ -135,7 +135,7 @@ void test_coverage_vTaskPreemptionEnable_scheduler_not_running( void )
 }
 
 /**
- * @brief vTaskPreemptionEnable - Enable preemption of a task when scheduler is running
+ * @brief vTaskPreemptionEnable - Enable preemption of a task when scheduler is running.
  *
  * The xPreemptionDisable of the task will be set to pdFALSE.
  *
@@ -179,7 +179,7 @@ void test_coverage_vTaskPreemptionEnable_scheduler_running( void )
 }
 
 /**
- * @brief vTaskPreemptionEnable - Enable preemption of a task with NULL handle
+ * @brief vTaskPreemptionEnable - Enable preemption of a task with NULL handle.
  *
  * The xPreemptionDisable of the task on core 0 will be set to pdFALSE.
  *
@@ -220,7 +220,7 @@ void test_coverage_vTaskPreemptionEnable_null_handle( void )
 }
 
 /**
- * @brief vTaskPreemptionEnable - Enable preemption of a task when scheduler is running
+ * @brief vTaskPreemptionEnable - Enable preemption of a task which is not running.
  *
  * The xPreemptionDisable of the task will be set to pdFALSE. The xTaskRunState is
  * set to greater than ( configNUMBER_OF_CORES - 1 ).
@@ -265,7 +265,7 @@ void test_coverage_vTaskPreemptionEnable_task_not_running_gt_cores( void )
 }
 
 /**
- * @brief vTaskPreemptionEnable - Enable preemption of a task when the task is running
+ * @brief vTaskPreemptionEnable - Enable preemption of a task which is running.
  *
  * The xPreemptionDisable of the task will be set to pdFALSE.
  *
