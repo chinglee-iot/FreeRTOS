@@ -123,7 +123,7 @@ void test_coverage_vTaskPreemptionEnable_scheduler_not_running( void )
     vFakePortEnterCriticalSection_StubWithCallback( NULL );
     vFakePortExitCriticalSection_StubWithCallback( NULL );
 
-    /* Expections. */
+    /* Expectations. */
     vFakePortEnterCriticalSection_Expect();
     vFakePortExitCriticalSection_Expect();
 
@@ -167,7 +167,7 @@ void test_coverage_vTaskPreemptionEnable_scheduler_running( void )
     vFakePortEnterCriticalSection_StubWithCallback( NULL );
     vFakePortExitCriticalSection_StubWithCallback( NULL );
 
-    /* Expections. */
+    /* Expectations. */
     vFakePortEnterCriticalSection_Expect();
     vFakePortExitCriticalSection_Expect();
 
@@ -205,7 +205,7 @@ void test_coverage_vTaskPreemptionEnable_null_handle( void )
     vFakePortClearInterruptMask_StubWithCallback( NULL );
     vFakePortGetCoreID_StubWithCallback( NULL );
 
-    /* Expections. */
+    /* Expectations. */
     vFakePortEnterCriticalSection_Expect();
     ulFakePortSetInterruptMask_ExpectAndReturn( uxInterruptMask );
     vFakePortGetCoreID_ExpectAndReturn( 0 );
@@ -253,7 +253,7 @@ void test_coverage_vTaskPreemptionEnable_task_not_running_gt_cores( void )
     vFakePortEnterCriticalSection_StubWithCallback( NULL );
     vFakePortExitCriticalSection_StubWithCallback( NULL );
 
-    /* Expections. */
+    /* Expectations. */
     vFakePortEnterCriticalSection_Expect();
     vFakePortExitCriticalSection_Expect();
 
@@ -299,7 +299,7 @@ void test_coverage_vTaskPreemptionEnable_task_running( void )
     vFakePortExitCriticalSection_StubWithCallback( NULL );
     vFakePortGetCoreID_StubWithCallback( NULL );
 
-    /* Expections. */
+    /* Expectations. */
     vFakePortEnterCriticalSection_Expect();
     vFakePortCheckIfInISR_ExpectAndReturn( 1 ); /* Expection in prvYieldCore. */
     vFakePortGetCoreID_ExpectAndReturn( 0 );    /* Expection in prvYieldCore. */
