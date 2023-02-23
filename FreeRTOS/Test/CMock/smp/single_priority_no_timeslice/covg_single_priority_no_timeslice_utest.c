@@ -48,7 +48,6 @@
 #include "mock_fake_assert.h"
 #include "mock_fake_port.h"
 
-#define taskTASK_YIELDING       ( TaskRunning_t ) ( -2 )
 #define MAX_TASKS                                    3
 
 /* ===========================  EXTERN VARIABLES  =========================== */
@@ -425,12 +424,16 @@ void test_task_step_tick_xNextTaskUnblockTime_not_equal( void )
  *
  * <b>Coverage</b>
  * @code{c}
- * prvYieldForTask( pxTCB );
- *
- * if( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE )
+ * #if ( ( configNUMBER_OF_CORES > 1 ) && ( configUSE_PREEMPTION == 1 ) )
  * {
- *     xYieldRequired = pdTRUE;
+ *     prvYieldForTask( pxTCB );
+ * 
+ *     if( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE )
+ *     {
+ *         xYieldRequired = pdTRUE;
+ *     }
  * }
+ * #endif
  * @endcode
  * ( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE ) is true.
  */
@@ -464,7 +467,7 @@ void test_coverage_xTaskResumeFromISR_resume_higher_priority_suspended_task( voi
     /* API calls. */
     xReturn = xTaskResumeFromISR( &xTaskTCBs[ i ] );
 
-    /* Validateions. In single priority test, the calling core is requested to yield
+    /* Validations. In single priority test, the calling core is requested to yield
      * since a higher priority task is resumed. */
     TEST_ASSERT( xReturn == pdTRUE );
 }
@@ -478,12 +481,16 @@ void test_coverage_xTaskResumeFromISR_resume_higher_priority_suspended_task( voi
  *
  * <b>Coverage</b>
  * @code{c}
- * prvYieldForTask( pxTCB );
- *
- * if( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE )
+ * #if ( ( configNUMBER_OF_CORES > 1 ) && ( configUSE_PREEMPTION == 1 ) )
  * {
- *     xYieldRequired = pdTRUE;
+ *     prvYieldForTask( pxTCB );
+ * 
+ *     if( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE )
+ *     {
+ *         xYieldRequired = pdTRUE;
+ *     }
  * }
+ * #endif
  * @endcode
  * ( xYieldPendings[ portGET_CORE_ID() ] != pdFALSE ) is false.
  */
@@ -517,7 +524,7 @@ void test_coverage_xTaskResumeFromISR_resume_lower_priority_suspended_task( void
     /* API calls. */
     xReturn = xTaskResumeFromISR( &xTaskTCBs[ i ] );
 
-    /* Validateions. In single priority test, the calling core is not requested to yield
+    /* Validations. In single priority test, the calling core is not requested to yield
      * since a lower priority task is resumed. */
     TEST_ASSERT( xReturn == pdFALSE );
 }
