@@ -655,31 +655,18 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction( void )
     UBaseType_t xidx = 0;
     uint32_t *prevValue = NULL;
     uint32_t ulValue = 0;
-    uint32_t i;
     BaseType_t xReturn;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, ulValue, eNoAction, prevValue);
 
-    /* Validations. In single priority test, the calling core is requested to yield
-     * since a higher priority task is resumed. */
     TEST_ASSERT( xReturn == pdPASS );
 }
 
@@ -703,31 +690,18 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_prevValue( 
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     uint32_t ulValue = 0;
-    uint32_t i;
     BaseType_t xReturn;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, ulValue, eNoAction, &prevValue);
 
-    /* Validations. In single priority test, the calling core is requested to yield
-     * since a higher priority task is resumed. */
     TEST_ASSERT( xReturn == pdPASS );
 }
 
@@ -749,24 +723,13 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetBits_prevValue( v
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
-    uint32_t i;
     BaseType_t xReturn;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
@@ -774,8 +737,6 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetBits_prevValue( v
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x3, eSetBits, &prevValue);
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
 
-    /* Validations. In single priority test, the calling core is requested to yield
-     * since a higher priority task is resumed. */
     TEST_ASSERT_EQUAL_UINT32(0x3, prevValue);
     TEST_ASSERT( xReturn == pdPASS );
 }
@@ -798,24 +759,13 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eIncrement_prevValue(
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
-    uint32_t i;
     BaseType_t xReturn;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
@@ -823,8 +773,6 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eIncrement_prevValue(
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eIncrement, &prevValue);
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
 
-    /* Validations. In single priority test, the calling core is requested to yield
-     * since a higher priority task is resumed. */
     TEST_ASSERT_EQUAL_UINT32(0x3, prevValue);
     TEST_ASSERT( xReturn == pdPASS );
 }
@@ -847,32 +795,19 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithOverwrit
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
-    uint32_t i;
     BaseType_t xReturn;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x2, eSetValueWithOverwrite, &prevValue);
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
 
-    /* Validations. In single priority test, the calling core is requested to yield
-     * since a higher priority task is resumed. */
     TEST_ASSERT_EQUAL_UINT32(0x2, prevValue);
     TEST_ASSERT( xReturn == pdPASS );
 }
@@ -897,32 +832,19 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverw
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
-    uint32_t i;
     BaseType_t xReturn;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x2, eSetValueWithoutOverwrite, &prevValue);
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
 
-    /* Validations. In single priority test, the calling core is requested to yield
-     * since a higher priority task is resumed. */
     TEST_ASSERT_EQUAL_UINT32(0x2, prevValue);
     TEST_ASSERT( xReturn == pdPASS );
 }
@@ -947,24 +869,13 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverw
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
-    uint32_t i;
     BaseType_t xReturn;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
@@ -973,8 +884,6 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverw
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x3, eSetValueWithoutOverwrite, &prevValue);
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
 
-    /* Validations. In single priority test, the calling core is requested to yield
-     * since a higher priority task is resumed. */
     TEST_ASSERT_EQUAL_UINT32(0x2, prevValue);
     TEST_ASSERT( xReturn == pdPASS );
 }
@@ -994,26 +903,15 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverw
 void test_coverage_vTaskGetInfo_implicit_task( void )
 {
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
-    uint32_t i;
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
     eTaskState taskState = eReady;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
@@ -1035,26 +933,15 @@ void test_coverage_vTaskGetInfo_implicit_task( void )
 void test_coverage_vTaskGetInfo_explicit_task( void )
 {
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
-    uint32_t i;
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
     eTaskState taskState = eReady;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
@@ -1079,7 +966,6 @@ void test_coverage_vTaskGetInfo_explicit_task( void )
 void test_coverage_vTaskGetInfo_blocked_task( void )
 {
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
-    uint32_t i;
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
     eTaskState taskState = eSuspended;
@@ -1087,25 +973,19 @@ void test_coverage_vTaskGetInfo_blocked_task( void )
     /* Setup the variables and structure. */
     vListInitialise( &xSuspendedTaskList );
     vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
-    uxTopReadyPriority = 1;
+
+    xTaskTCBs[ 0 ].uxPriority = 2;
+    xTaskTCBs[ 0 ].xTaskRunState = -1;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ 0 ].xStateListItem );
+
+    uxTopReadyPriority = 2;
     uxSchedulerSuspended = pdTRUE;
 
-    xTaskTCBs[0].xTaskRunState = -1;
     xTaskTCBs[0].xEventListItem.pxContainer = (struct xLIST *) 1;
     vTaskGetInfo( &xTaskTCBs[0], &pxTaskStatus, xFreeStackSpace, taskState);
-    TEST_ASSERT_EQUAL((BaseType_t)1, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((BaseType_t)2, pxTaskStatus.uxCurrentPriority);
 }
 
 /**
@@ -1126,30 +1006,18 @@ void test_coverage_vTaskGetInfo_blocked_task( void )
 void test_coverage_vTaskGetInfo_oob_xTaskRunState( void )
 {
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
-    uint32_t i;
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
     eTaskState taskState = eSuspended;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = configNUMBER_OF_CORES;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
-    xTaskTCBs[0].xTaskRunState = configNUMBER_OF_CORES;
     vTaskGetInfo( &xTaskTCBs[0], &pxTaskStatus, xFreeStackSpace, taskState);
     TEST_ASSERT_EQUAL((BaseType_t)1, pxTaskStatus.uxCurrentPriority);
 }
@@ -1227,27 +1095,16 @@ static void test_prvInitialiseStack( TCB_t *pxTCB, const uint32_t ulStackDepth )
 void test_coverage_vTaskGetInfo_get_free_stack_space( void )
 {
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
-    uint32_t i;
     TaskStatus_t pxTaskStatus;
-    BaseType_t xFreeStackSpace = pdTRUE;
-    eTaskState taskState = eSuspended;
+    BaseType_t xFreeStackSpace = pdFALSE;
+    eTaskState taskState = eReady;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        test_prvInitialiseStack( &xTaskTCBs[i], configMINIMAL_STACK_SIZE );
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    test_prvInitialiseStack( &xTaskTCBs[0], configMINIMAL_STACK_SIZE );
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
@@ -1269,27 +1126,16 @@ void test_coverage_vTaskGetInfo_get_free_stack_space( void )
  * been suspended.
  */
 void test_coverage_vTaskResume_task_not_suspended( void )
-{
+{  
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
-    uint32_t i;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
-    uxSchedulerSuspended = pdTRUE;
+    uxSchedulerSuspended = pdFALSE;
 
     vTaskResume( &xTaskTCBs[0] );
     // in this case no state is changed and so no assertion can be made to validate the operation.
@@ -1311,24 +1157,13 @@ void test_coverage_vTaskResume_task_not_suspended( void )
 void test_coverage_xTaskResumeFromISR ( void )
 {
     TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
-    uint32_t i;
     BaseType_t xYieldRequired;
 
-    /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
-    {
-        xTaskTCBs[ i ].uxPriority = 1;
-        xTaskTCBs[ i ].xTaskRunState = i;
-        xYieldPendings[ i ] = pdFALSE;
-        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
-    }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
-    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
+    xTaskTCBs[ 0 ].uxPriority = 1;
+    xTaskTCBs[ 0 ].xTaskRunState = 0;
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
+
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdFALSE;
 
@@ -1357,14 +1192,16 @@ void test_coverage_xTaskResumeFromISR_suspended_suspendall ( void )
     BaseType_t xYieldRequired;
     UBaseType_t uxPriority;
 
-    for( uxPriority = ( UBaseType_t ) 0U; uxPriority < ( UBaseType_t ) configMAX_PRIORITIES; uxPriority++ )
+    for(
+        uxPriority = ( UBaseType_t ) 0U;
+        uxPriority < ( UBaseType_t ) configMAX_PRIORITIES;
+        uxPriority++)
     {
         vListInitialise( &( pxReadyTasksLists[ uxPriority ] ) );
     }
-
-    /* Setup the variables and structure. */
     vListInitialise( &xSuspendedTaskList );
     vListInitialise( &xPendingReadyList );
+
     for( i = 0; i < configNUMBER_OF_CORES; i++ )
     {
         xTaskTCBs[ i ].uxPriority = 1;
@@ -1374,14 +1211,13 @@ void test_coverage_xTaskResumeFromISR_suspended_suspendall ( void )
         xYieldPendings[ i ] = pdTRUE;
         pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
     }
-    /* A suspended task is created to be resumed from ISR. The task has higher priority
-     * than uxTopReadyPriority and the scheduler is suspended. The task will be added
-     * to xPendingReadyList after resumed from ISR. */
+
     xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2;
     vListInitialiseItem( &( xTaskTCBs[configNUMBER_OF_CORES].xStateListItem ) );
     listSET_LIST_ITEM_OWNER( &( xTaskTCBs[configNUMBER_OF_CORES].xStateListItem ), &xTaskTCBs[i] );
     listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[ i ].xStateListItem );
     uxTopReadyPriority = 1;
+
     uxSchedulerSuspended = pdFALSE;
 
     vFakePortAssertIfInterruptPriorityInvalid_Ignore();
