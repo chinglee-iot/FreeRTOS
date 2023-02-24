@@ -52,9 +52,6 @@
 
 extern volatile UBaseType_t uxDeletedTasksWaitingCleanUp;
 
-/* ===========================  GLOBAL VARIABLES  =========================== */
-int xIdleTaskLoopCount = 0;     /* Loop counter for idle task. */
-
 /* ============================  Unity Fixtures  ============================ */
 /*! called before each testcase */
 void setUp( void )
