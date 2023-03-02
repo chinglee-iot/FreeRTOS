@@ -651,9 +651,8 @@ void test_task_delay_until_with_config_assert( void )
  */
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     UBaseType_t xidx = 0;
-    uint32_t *prevValue = NULL;
     uint32_t ulValue = 0;
     BaseType_t xReturn;
 
@@ -665,7 +664,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction( void )
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
-    xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, ulValue, eNoAction, prevValue);
+    xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, ulValue, eNoAction, NULL);
 
     TEST_ASSERT( xReturn == pdPASS );
 }
@@ -686,7 +685,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction( void )
  */
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_prevValue( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     uint32_t ulValue = 0;
@@ -703,6 +702,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_prevValue( 
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, ulValue, eNoAction, &prevValue);
 
     TEST_ASSERT( xReturn == pdPASS );
+    TEST_ASSERT_EQUAL(0, prevValue);
 }
 
 /**
@@ -720,7 +720,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_prevValue( 
  */
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetBits_prevValue( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     BaseType_t xReturn;
@@ -756,7 +756,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetBits_prevValue( v
  */
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eIncrement_prevValue( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     BaseType_t xReturn;
@@ -792,7 +792,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eIncrement_prevValue(
  */
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithOverwrite_prevValue( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     BaseType_t xReturn;
@@ -829,7 +829,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithOverwrit
  */
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverwrite_prevValue( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     BaseType_t xReturn;
@@ -866,7 +866,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverw
  */
 void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverwrite_branch_taskNOTIFICATION_RECEIVED( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     BaseType_t xReturn;
@@ -902,7 +902,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eSetValueWithoutOverw
  */
 void test_coverage_vTaskGetInfo_implicit_task( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
     eTaskState taskState = eReady;
@@ -932,7 +932,7 @@ void test_coverage_vTaskGetInfo_implicit_task( void )
  */
 void test_coverage_vTaskGetInfo_explicit_task( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
     eTaskState taskState = eReady;
@@ -946,7 +946,11 @@ void test_coverage_vTaskGetInfo_explicit_task( void )
     uxSchedulerSuspended = pdTRUE;
 
     vTaskGetInfo( &xTaskTCBs[0], &pxTaskStatus, xFreeStackSpace, taskState);
-    TEST_ASSERT_EQUAL((BaseType_t)1, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.xTaskNumber);
+    TEST_ASSERT_EQUAL(eRunning, pxTaskStatus.eCurrentState);
+    TEST_ASSERT_EQUAL((UBaseType_t)1, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.uxBasePriority);
+    TEST_ASSERT_EQUAL(0, pxTaskStatus.usStackHighWaterMark);
 }
 
 /**
@@ -965,7 +969,7 @@ void test_coverage_vTaskGetInfo_explicit_task( void )
  */
 void test_coverage_vTaskGetInfo_blocked_task( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
     eTaskState taskState = eSuspended;
@@ -985,7 +989,11 @@ void test_coverage_vTaskGetInfo_blocked_task( void )
 
     xTaskTCBs[0].xEventListItem.pxContainer = (struct xLIST *) 1;
     vTaskGetInfo( &xTaskTCBs[0], &pxTaskStatus, xFreeStackSpace, taskState);
-    TEST_ASSERT_EQUAL((BaseType_t)2, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.xTaskNumber);
+    TEST_ASSERT_EQUAL(eBlocked, pxTaskStatus.eCurrentState);
+    TEST_ASSERT_EQUAL((UBaseType_t)2, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.uxBasePriority);
+    TEST_ASSERT_EQUAL(0, pxTaskStatus.usStackHighWaterMark);
 }
 
 /**
@@ -1005,7 +1013,7 @@ void test_coverage_vTaskGetInfo_blocked_task( void )
  */
 void test_coverage_vTaskGetInfo_oob_xTaskRunState( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     TaskStatus_t pxTaskStatus;
     BaseType_t xFreeStackSpace = pdFALSE;
     eTaskState taskState = eSuspended;
@@ -1019,7 +1027,61 @@ void test_coverage_vTaskGetInfo_oob_xTaskRunState( void )
     uxSchedulerSuspended = pdTRUE;
 
     vTaskGetInfo( &xTaskTCBs[0], &pxTaskStatus, xFreeStackSpace, taskState);
-    TEST_ASSERT_EQUAL((BaseType_t)1, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.xTaskNumber);
+    TEST_ASSERT_EQUAL(eSuspended, pxTaskStatus.eCurrentState);
+    TEST_ASSERT_EQUAL((UBaseType_t)1, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.uxBasePriority);
+    TEST_ASSERT_EQUAL(0, pxTaskStatus.usStackHighWaterMark);
+}
+
+static void test_prvInitialiseStack( TCB_t *pxTCB, const uint32_t ulStackDepth )
+{
+    StackType_t * pxTopOfStack;
+
+    pxTopOfStack = NULL;
+
+    /* Allocate space for the stack used by the task being created.
+     * The base of the stack memory stored in the TCB so the task can
+     * be deleted later if required. */
+    pxTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) ulStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+
+    if( pxTCB->pxStack != NULL )
+    {
+        /* Calculate the top of stack address.  This depends on whether the stack
+         * grows from high memory to low (as per the 80x86) or vice versa.
+         * portSTACK_GROWTH is used to make the result positive or negative as required
+         * by the port. */
+        #if ( portSTACK_GROWTH < 0 )
+        {
+            pxTopOfStack = &( pxTCB->pxStack[ ulStackDepth - ( uint32_t ) 1 ] );
+            pxTopOfStack = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) ); /*lint !e923 !e9033 !e9078 MISRA exception.  Avoiding casts between pointers and integers is not practical.  Size differences accounted for using portPOINTER_SIZE_TYPE type.  Checked by assert(). */
+
+            /* Check the alignment of the calculated top of stack is correct. */
+            configASSERT( ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack & ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) == 0UL ) );
+
+            #if ( configRECORD_STACK_HIGH_ADDRESS == 1 )
+            {
+                /* Also record the stack's high address, which may assist
+                 * debugging. */
+                pxTCB->pxEndOfStack = pxTopOfStack;
+            }
+            #endif /* configRECORD_STACK_HIGH_ADDRESS */
+        }
+        #else /* portSTACK_GROWTH */
+        {
+            pxTopOfStack = pxTCB->pxStack;
+
+            /* Check the alignment of the stack buffer is correct. */
+            configASSERT( ( ( ( portPOINTER_SIZE_TYPE ) pxTCB->pxStack & ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) == 0UL ) );
+
+            /* The other extreme of the stack space is required if stack checking is
+             * performed. */
+            pxTCB->pxEndOfStack = pxTCB->pxStack + ( ulStackDepth - ( uint32_t ) 1 );
+        }
+        #endif /* portSTACK_GROWTH */
+    }
+
+    (void)pxTopOfStack;
 }
 
 /**
@@ -1034,69 +1096,14 @@ void test_coverage_vTaskGetInfo_oob_xTaskRunState( void )
  *            ...
  * @endcode
  *
- * Cover the case where xFreeStackSpace is pdFALSE, avoiding the free
+ * Cover the case where xFreeStackSpace is pdTRUE, avoiding the free
  * stack space query.
  */
-
-static void test_prvInitialiseStack( TCB_t *pxTCB, const uint32_t ulStackDepth )
-{
-    StackType_t * pxTopOfStack;
-
-    pxTopOfStack = NULL;
-
-    /* Allocate space for the stack used by the task being created.
-     * The base of the stack memory stored in the TCB so the task can
-     * be deleted later if required. */
-    pxTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) ulStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
-
-    if( pxTCB->pxStack == NULL )
-    {
-        /* Could not allocate the stack.  Delete the allocated TCB. */
-        vPortFree( pxTCB );
-        pxTCB = NULL;
-    }
-
-    /* Calculate the top of stack address.  This depends on whether the stack
-     * grows from high memory to low (as per the 80x86) or vice versa.
-     * portSTACK_GROWTH is used to make the result positive or negative as required
-     * by the port. */
-    #if ( portSTACK_GROWTH < 0 )
-    {
-        pxTopOfStack = &( pxTCB->pxStack[ ulStackDepth - ( uint32_t ) 1 ] );
-        pxTopOfStack = ( StackType_t * ) ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack ) & ( ~( ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) ) ); /*lint !e923 !e9033 !e9078 MISRA exception.  Avoiding casts between pointers and integers is not practical.  Size differences accounted for using portPOINTER_SIZE_TYPE type.  Checked by assert(). */
-
-        /* Check the alignment of the calculated top of stack is correct. */
-        configASSERT( ( ( ( portPOINTER_SIZE_TYPE ) pxTopOfStack & ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) == 0UL ) );
-
-        #if ( configRECORD_STACK_HIGH_ADDRESS == 1 )
-        {
-            /* Also record the stack's high address, which may assist
-             * debugging. */
-            pxTCB->pxEndOfStack = pxTopOfStack;
-        }
-        #endif /* configRECORD_STACK_HIGH_ADDRESS */
-    }
-    #else /* portSTACK_GROWTH */
-    {
-        pxTopOfStack = pxTCB->pxStack;
-
-        /* Check the alignment of the stack buffer is correct. */
-        configASSERT( ( ( ( portPOINTER_SIZE_TYPE ) pxTCB->pxStack & ( portPOINTER_SIZE_TYPE ) portBYTE_ALIGNMENT_MASK ) == 0UL ) );
-
-        /* The other extreme of the stack space is required if stack checking is
-         * performed. */
-        pxTCB->pxEndOfStack = pxTCB->pxStack + ( ulStackDepth - ( uint32_t ) 1 );
-    }
-    #endif /* portSTACK_GROWTH */
-
-    (void)pxTopOfStack;
-}
-
 void test_coverage_vTaskGetInfo_get_free_stack_space( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     TaskStatus_t pxTaskStatus;
-    BaseType_t xFreeStackSpace = pdFALSE;
+    BaseType_t xFreeStackSpace = pdTRUE;
     eTaskState taskState = eReady;
 
     xTaskTCBs[ 0 ].uxPriority = 1;
@@ -1109,7 +1116,11 @@ void test_coverage_vTaskGetInfo_get_free_stack_space( void )
     uxSchedulerSuspended = pdTRUE;
 
     vTaskGetInfo( &xTaskTCBs[0], &pxTaskStatus, xFreeStackSpace, taskState);
-    TEST_ASSERT_EQUAL((BaseType_t)1, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.xTaskNumber);
+    TEST_ASSERT_EQUAL(eRunning, pxTaskStatus.eCurrentState);
+    TEST_ASSERT_EQUAL((UBaseType_t)1, pxTaskStatus.uxCurrentPriority);
+    TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.uxBasePriority);
+    TEST_ASSERT_EQUAL(0, pxTaskStatus.usStackHighWaterMark);
 }
 
 /**
@@ -1127,7 +1138,7 @@ void test_coverage_vTaskGetInfo_get_free_stack_space( void )
  */
 void test_coverage_vTaskResume_task_not_suspended( void )
 {  
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
 
     xTaskTCBs[ 0 ].uxPriority = 1;
     xTaskTCBs[ 0 ].xTaskRunState = 0;
@@ -1138,7 +1149,7 @@ void test_coverage_vTaskResume_task_not_suspended( void )
     uxSchedulerSuspended = pdFALSE;
 
     vTaskResume( &xTaskTCBs[0] );
-    // in this case no state is changed and so no assertion can be made to validate the operation.
+    /* in this case no state is changed and so no assertion can be made to validate the operation. */
 }
 
 /**
@@ -1156,7 +1167,7 @@ void test_coverage_vTaskResume_task_not_suspended( void )
  */
 void test_coverage_xTaskResumeFromISR ( void )
 {
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1U ] = { NULL };
+    TCB_t xTaskTCBs[ 1U ] = { NULL };
     BaseType_t xYieldRequired;
 
     xTaskTCBs[ 0 ].uxPriority = 1;
