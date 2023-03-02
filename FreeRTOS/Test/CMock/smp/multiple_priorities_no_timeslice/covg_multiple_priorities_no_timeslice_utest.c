@@ -49,6 +49,7 @@
 #include "mock_fake_port.h"
 
 #define taskTASK_YIELDING       ( TaskRunning_t ) ( -2 )
+#define tskSTACK_FILL_BYTE      ( 0xa5U )
 
 
 /* ===========================  EXTERN VARIABLES  =========================== */
@@ -1044,6 +1045,7 @@ static void test_prvInitialiseStack( TCB_t *pxTCB, const uint32_t ulStackDepth )
      * The base of the stack memory stored in the TCB so the task can
      * be deleted later if required. */
     pxTCB->pxStack = ( StackType_t * ) pvPortMallocStack( ( ( ( size_t ) ulStackDepth ) * sizeof( StackType_t ) ) ); /*lint !e961 MISRA exception as the casts are only redundant for some ports. */
+    ( void ) memset( pxTCB->pxStack, ( int ) tskSTACK_FILL_BYTE, ( size_t ) ulStackDepth * sizeof( StackType_t ) );
 
     if( pxTCB->pxStack != NULL )
     {
@@ -1120,7 +1122,7 @@ void test_coverage_vTaskGetInfo_get_free_stack_space( void )
     TEST_ASSERT_EQUAL(eRunning, pxTaskStatus.eCurrentState);
     TEST_ASSERT_EQUAL((UBaseType_t)1, pxTaskStatus.uxCurrentPriority);
     TEST_ASSERT_EQUAL((UBaseType_t)0, pxTaskStatus.uxBasePriority);
-    TEST_ASSERT_EQUAL(0, pxTaskStatus.usStackHighWaterMark);
+    TEST_ASSERT_EQUAL(69, pxTaskStatus.usStackHighWaterMark);
 }
 
 /**
