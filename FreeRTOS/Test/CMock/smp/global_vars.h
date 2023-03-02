@@ -36,6 +36,9 @@
 /* Indicates that the task is actively running but scheduled to yield. */
 #define taskTASK_YIELDING       ( TaskRunning_t ) ( -2 )
 
+/* Indicates that the task is an Idle task. */
+#define taskATTRIBUTE_IS_IDLE    ( UBaseType_t ) ( 1UL << 0UL )
+
 typedef BaseType_t TaskRunning_t;
 
 typedef struct tskTaskControlBlock       /* The old naming convention is used to prevent breaking kernel aware debuggers. */
