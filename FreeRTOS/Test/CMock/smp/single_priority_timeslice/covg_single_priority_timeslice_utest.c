@@ -92,38 +92,6 @@ void vApplicationMinimalIdleHook( void )
 {
 }
 
-static void prvCreateStaticSMPTask( TaskHandle_t xTaskHandle,
-                                    UBaseType_t uxCoreAffinityMask,
-                                    UBaseType_t uxPriority,
-                                    BaseType_t xTaskRunState,
-                                    BaseType_t xTaskIsIdle )
-{
-    TCB_t * pxTaskTCB = ( TCB_t * )xTaskHandle;
-
-    pxTaskTCB->xStateListItem.pvOwner = pxTaskTCB;
-    pxTaskTCB->uxCoreAffinityMask = uxCoreAffinityMask;
-    pxTaskTCB->uxPriority = uxPriority;
-
-    if( ( xTaskRunState >= 0 ) && ( xTaskRunState < configNUMBER_OF_CORES ) )
-    {
-         pxCurrentTCBs[ xTaskRunState ] = pxTaskTCB;
-    }
-    pxTaskTCB->xTaskRunState = xTaskRunState;
-
-    pxTaskTCB->xStateListItem.pxContainer = &pxReadyTasksLists[ uxPriority ];
-    listINSERT_END( &pxReadyTasksLists[ uxPriority ], &pxTaskTCB->xStateListItem );
-
-    if( xTaskIsIdle == pdTRUE )
-    {
-        pxTaskTCB->uxTaskAttributes = taskATTRIBUTE_IS_IDLE;
-    }
-    else
-    {
-        pxTaskTCB->uxTaskAttributes = 0;
-    }
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-}
-
 /* ==============================  Test Cases  ============================== */
 
 /* @brief prvIdleTask - no other idle priority task
@@ -377,28 +345,32 @@ void test_coverage_prvSelectHighestPriorityTask_not_schedule_none_idle_task( voi
     uxCurrentNumberOfTasks = 0;
 
     /* Create one normal task to be inserted at the beginning of ready list. */
-    prvCreateStaticSMPTask( &xTaskTCBs[ 0 ],
-                            ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                            tskIDLE_PRIORITY,
-                            taskTASK_NOT_RUNNING,
-                            pdFALSE );
+    vCreateStaticTestTask( &xTaskTCBs[ 0 ],
+                           ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                           tskIDLE_PRIORITY,
+                           taskTASK_NOT_RUNNING,
+                           pdFALSE );
+    listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ 0 ].xStateListItem );
 
     /* Create core numbers running idle task. */
     for( i = 1; i < ( configNUMBER_OF_CORES + 1 ); i++ )
     {
-        prvCreateStaticSMPTask( &xTaskTCBs[ i ],
-                                ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                                tskIDLE_PRIORITY,
-                                ( i - 1 ),
-                                pdTRUE );
+        vCreateStaticTestTask( &xTaskTCBs[ i ],
+                               ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                               tskIDLE_PRIORITY,
+                               ( i - 1 ),
+                               pdTRUE );
+        listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
     /* Create one higher priority normal task running on core one. */
-    prvCreateStaticSMPTask( &xTaskTCBs[ i ],
-                            ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                            tskIDLE_PRIORITY + 1,
-                            1,
-                            pdFALSE );
+    vCreateStaticTestTask( &xTaskTCBs[ i ],
+                           ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                           tskIDLE_PRIORITY + 1,
+                           1,
+                           pdFALSE );
+    listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY + 1 ], &xTaskTCBs[ i ].xStateListItem );
+
     /* The original core 1 idle task now is not running. */
     xTaskTCBs[ 2 ].xTaskRunState = taskTASK_NOT_RUNNING;
 
@@ -458,21 +430,23 @@ void test_coverage_prvSelectHighestPriorityTask_affinity_task_yielding( void )
     /* Create core numbers running idle task. */
     for( i = 0; i < configNUMBER_OF_CORES; i++ )
     {
-        prvCreateStaticSMPTask( &xTaskTCBs[ i ],
-                                ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                                tskIDLE_PRIORITY,
-                                i,
-                                pdTRUE );
+        vCreateStaticTestTask( &xTaskTCBs[ i ],
+                               ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                               tskIDLE_PRIORITY,
+                               i,
+                               pdTRUE );
+        listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
     /* Create two higher priority normal task. */
     for( i = configNUMBER_OF_CORES; i < ( configNUMBER_OF_CORES + 2 ); i++ )
     {
-        prvCreateStaticSMPTask( &xTaskTCBs[ i ],
-                                ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                                tskIDLE_PRIORITY + 1,
-                                taskTASK_NOT_RUNNING,
-                                pdFALSE );
+        vCreateStaticTestTask( &xTaskTCBs[ i ],
+                               ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                               tskIDLE_PRIORITY + 1,
+                               taskTASK_NOT_RUNNING,
+                               pdFALSE );
+        listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY + 1 ], &xTaskTCBs[ i ].xStateListItem );
     }
 
     /* Core 0 runs task TN. The original core 0 idle task now is not running. */
@@ -546,21 +520,23 @@ void test_coverage_prvSelectHighestPriorityTask_affinity_task_state_invalid( voi
     /* Create core numbers running idle task. */
     for( i = 0; i < configNUMBER_OF_CORES; i++ )
     {
-        prvCreateStaticSMPTask( &xTaskTCBs[ i ],
-                                ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                                tskIDLE_PRIORITY,
-                                i,
-                                pdTRUE );
+        vCreateStaticTestTask( &xTaskTCBs[ i ],
+                               ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                               tskIDLE_PRIORITY,
+                               i,
+                               pdTRUE );
+        listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
     /* Create two higher priority normal task. */
     for( i = configNUMBER_OF_CORES; i < ( configNUMBER_OF_CORES + 2 ); i++ )
     {
-        prvCreateStaticSMPTask( &xTaskTCBs[ i ],
-                                ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                                tskIDLE_PRIORITY + 1,
-                                taskTASK_NOT_RUNNING,
-                                pdFALSE );
+        vCreateStaticTestTask( &xTaskTCBs[ i ],
+                               ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                               tskIDLE_PRIORITY + 1,
+                               taskTASK_NOT_RUNNING,
+                               pdFALSE );
+        listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY + 1 ], &xTaskTCBs[ i ].xStateListItem );
     }
 
     /* Core 0 runs task TN. The original core 0 idle task now is not running. */
@@ -632,21 +608,23 @@ void test_coverage_prvSelectHighestPriorityTask_affinity_task_yield_pending( voi
     /* Create core numbers running idle task. */
     for( i = 0; i < configNUMBER_OF_CORES; i++ )
     {
-        prvCreateStaticSMPTask( &xTaskTCBs[ i ],
-                                ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                                tskIDLE_PRIORITY,
-                                i,
-                                pdTRUE );
+        vCreateStaticTestTask( &xTaskTCBs[ i ],
+                               ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                               tskIDLE_PRIORITY,
+                               i,
+                               pdTRUE );
+        listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
     /* Create two higher priority normal task. */
     for( i = configNUMBER_OF_CORES; i < ( configNUMBER_OF_CORES + 2 ); i++ )
     {
-        prvCreateStaticSMPTask( &xTaskTCBs[ i ],
-                                ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
-                                tskIDLE_PRIORITY + 1,
-                                taskTASK_NOT_RUNNING,
-                                pdFALSE );
+        vCreateStaticTestTask( &xTaskTCBs[ i ],
+                               ( ( 1U << configNUMBER_OF_CORES ) - 1U ),
+                               tskIDLE_PRIORITY + 1,
+                               taskTASK_NOT_RUNNING,
+                               pdFALSE );
+        listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY + 1 ], &xTaskTCBs[ i ].xStateListItem );
     }
 
     /* Core 0 runs task TN. The original core 0 idle task now is not running. */
