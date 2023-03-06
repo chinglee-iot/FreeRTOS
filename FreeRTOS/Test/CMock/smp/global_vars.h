@@ -30,6 +30,9 @@
 
 #include <stdbool.h>
 
+/* Indicates that the task is an Idle task. */
+#define taskATTRIBUTE_IS_IDLE    ( UBaseType_t ) ( 1UL << 0UL )
+
 /* Indicates that the task is not actively running on any core. */
 #define taskTASK_NOT_RUNNING    ( TaskRunning_t ) ( -1 )
 
