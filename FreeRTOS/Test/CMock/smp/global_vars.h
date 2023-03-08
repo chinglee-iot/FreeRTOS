@@ -30,11 +30,19 @@
 
 #include <stdbool.h>
 
+/* Indicates that the task is an Idle task. */
+#define taskATTRIBUTE_IS_IDLE    ( UBaseType_t ) ( 1UL << 0UL )
+
 /* Indicates that the task is not actively running on any core. */
 #define taskTASK_NOT_RUNNING    ( TaskRunning_t ) ( -1 )
 
 /* Indicates that the task is actively running but scheduled to yield. */
 #define taskTASK_YIELDING       ( TaskRunning_t ) ( -2 )
+
+/* Values that can be assigned to the ucNotifyState member of the TCB. */
+#define taskNOT_WAITING_NOTIFICATION              ( ( uint8_t ) 0 ) /* Must be zero as it is the initialised value. */
+#define taskWAITING_NOTIFICATION                  ( ( uint8_t ) 1 )
+#define taskNOTIFICATION_RECEIVED                 ( ( uint8_t ) 2 )
 
 typedef BaseType_t TaskRunning_t;
 
