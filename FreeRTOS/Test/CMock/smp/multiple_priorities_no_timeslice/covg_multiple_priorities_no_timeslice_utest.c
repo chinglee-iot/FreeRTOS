@@ -48,6 +48,8 @@
 #include "mock_fake_assert.h"
 #include "mock_fake_port.h"
 
+#define tskSTATICALLY_ALLOCATED_STACK_ONLY        ( ( uint8_t ) 1 )
+
 /* ===========================  EXTERN VARIABLES  =========================== */
 extern volatile UBaseType_t uxCurrentNumberOfTasks;
 extern volatile UBaseType_t uxDeletedTasksWaitingCleanUp;
@@ -66,6 +68,7 @@ extern void vTaskEnterCritical( void );
 extern UBaseType_t vTaskEnterCriticalFromISR( void );
 extern void vTaskExitCritical( void );
 extern void vTaskExitCriticalFromISR( UBaseType_t uxSavedInterruptStatus );
+extern void prvDeleteTCB( TCB_t * pxTCB );
 
 /* ==============================  Global VARIABLES ============================== */
 TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -1497,4 +1500,36 @@ void test_coverage_vTaskExitCriticalFromISR_isr_not_in_critical( void )
     /* Validation. */
     /* Critical section count won't be changed. This test shows it's result in the
      * coverage report. */
+}
+
+
+/**
+ * @brief prvDeleteTCB - clean up the memory utilised by a TCB and its stack.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ *  else if( pxTCB->ucStaticallyAllocated == tskSTATICALLY_ALLOCATED_STACK_ONLY )
+ *  {
+ *      ...
+ *      vPortFree( pxTCB )
+ * @endcode
+ *
+ * Cover the case where the stack allocation is static.
+ */
+void test_coverage_prvDeleteTCB_static_stack_only(void)
+{
+    TCB_t *pxTaskTCB;
+
+    pxTaskTCB = pvPortMalloc( sizeof(TCB_t) );
+
+    pxTaskTCB->uxPriority = 1;
+    pxTaskTCB->xTaskRunState = 0;
+    pxTaskTCB->ucStaticallyAllocated = tskSTATICALLY_ALLOCATED_STACK_ONLY;
+    xYieldPendings[ portGET_CORE_ID() ] = pdFALSE;
+    pxCurrentTCBs[ portGET_CORE_ID() ] = pxTaskTCB;
+
+    uxTopReadyPriority = 1;
+    uxSchedulerSuspended = pdTRUE;
+
+    prvDeleteTCB( pxTaskTCB );
 }
