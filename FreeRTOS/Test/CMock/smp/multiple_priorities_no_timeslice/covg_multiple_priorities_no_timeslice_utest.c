@@ -72,11 +72,13 @@ extern volatile UBaseType_t uxSchedulerSuspended;
 extern volatile TCB_t *pxCurrentTCBs[configNUMBER_OF_CORES];
 extern volatile BaseType_t xSchedulerRunning;
 extern volatile TickType_t xTickCount;
+extern volatile TickType_t xPendedTicks;
 extern List_t xSuspendedTaskList;
 extern List_t xPendingReadyList;
 extern List_t pxReadyTasksLists[configMAX_PRIORITIES];
 extern volatile UBaseType_t uxTopReadyPriority;
 extern volatile BaseType_t xYieldPendings[configNUMBER_OF_CORES];
+// extern volatile TickType_t xNextTaskUnblockTime;
 
 /* ==============================  Global VARIABLES
  * ============================== */
@@ -738,10 +740,10 @@ void test_coverage_xTaskResumeAll_common_case(void) {
  * @endcode
  *
  *
- * Cover the case where the scheduler is running and there are one or more
- * tasks in the pending ready list state.
+ * Cover the case where the scheduler is running and the xPendedTicks
+ * is greater than 0.
  */
-void test_coverage_xTaskResumeAll_pending_ready_list(void) {
+void test_coverage_xTaskResumeAll_pended_ticks_nonzero(void) {
   TCB_t xTaskTCBs[configNUMBER_OF_CORES + 1U] = {NULL};
   uint32_t i;
   BaseType_t xAlreadyYielded;
@@ -765,13 +767,14 @@ void test_coverage_xTaskResumeAll_pending_ready_list(void) {
   }
   uxTopReadyPriority = 1;
 
-  uxSchedulerSuspended = pdFALSE;
+  uxSchedulerSuspended = pdTRUE;
   vTaskStartScheduler();
 
   vFakePortGetTaskLock();
+  xPendedTicks = 3;
   xAlreadyYielded = xTaskResumeAll();
 
-  TEST_ASSERT_EQUAL(pdFALSE, xAlreadyYielded);
+  TEST_ASSERT_EQUAL(pdTRUE, xAlreadyYielded);
 }
 
 /**
@@ -835,6 +838,7 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list(void) {
   TCB_t xTaskTCBs[1U] = {NULL};
   BaseType_t xAlreadyYielded;
   UBaseType_t uxPriority;
+  List_t xList;
 
   for (uxPriority = (UBaseType_t)0U;
        uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++) {
@@ -843,21 +847,28 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list(void) {
   vListInitialise(&xSuspendedTaskList);
   vListInitialise(&xPendingReadyList);
 
+  vTaskStartScheduler();
+
   xTaskTCBs[0].uxPriority = 1;
   xTaskTCBs[0].xTaskRunState = -1;
   vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
   listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
   listINSERT_END(&xPendingReadyList, &xTaskTCBs[0].xStateListItem);
+
+  vListInitialise(&xList);
+  vListInitialiseItem(&(xTaskTCBs[0].xEventListItem));
+  listSET_LIST_ITEM_VALUE(&(xTaskTCBs[0].xEventListItem),
+                          taskEVENT_LIST_ITEM_VALUE_IN_USE);
+  listINSERT_END(&xList, &(xTaskTCBs[0].xEventListItem));
   xYieldPendings[portGET_CORE_ID()] = pdFALSE;
   pxCurrentTCBs[portGET_CORE_ID()] = &xTaskTCBs[0];
 
   uxSchedulerSuspended = pdTRUE;
 
-  vTaskStartScheduler();
   vFakePortGetTaskLock();
   xAlreadyYielded = xTaskResumeAll();
 
-  TEST_ASSERT_EQUAL(pdTRUE, xAlreadyYielded);
+  TEST_ASSERT_EQUAL(pdFALSE, xAlreadyYielded);
 }
 
 /**
