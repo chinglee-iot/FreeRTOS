@@ -1502,7 +1502,6 @@ void test_coverage_vTaskExitCriticalFromISR_isr_not_in_critical( void )
      * coverage report. */
 }
 
-
 /**
  * @brief prvDeleteTCB - clean up the memory utilised by a TCB and its stack.
  *
@@ -1520,16 +1519,21 @@ void test_coverage_prvDeleteTCB_static_stack_only(void)
 {
     TCB_t *pxTaskTCB;
 
+    UnityMalloc_StartTest();
     pxTaskTCB = pvPortMalloc( sizeof(TCB_t) );
 
     pxTaskTCB->uxPriority = 1;
     pxTaskTCB->xTaskRunState = 0;
     pxTaskTCB->ucStaticallyAllocated = tskSTATICALLY_ALLOCATED_STACK_ONLY;
-    xYieldPendings[ portGET_CORE_ID() ] = pdFALSE;
-    pxCurrentTCBs[ portGET_CORE_ID() ] = pxTaskTCB;
+    /* Default core is 0. This can be updated with vSetCurrentCore. */
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = pxTaskTCB;
 
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
 
     prvDeleteTCB( pxTaskTCB );
+
+    /* Validate the memory allocate count to ensure that allocated stack is freed. */
+    UnityMalloc_EndTest();
 }
