@@ -63,6 +63,10 @@ extern volatile BaseType_t xYieldPendings[ configNUMBER_OF_CORES ];
 extern void prvAddNewTaskToReadyList( TCB_t * pxNewTCB );
 extern void prvYieldForTask( TCB_t * pxTCB );
 extern void prvSelectHighestPriorityTask( BaseType_t xCoreID );
+extern void vTaskEnterCritical( void );
+extern UBaseType_t vTaskEnterCriticalFromISR( void );
+extern void vTaskExitCritical( void );
+extern void vTaskExitCriticalFromISR( UBaseType_t uxSavedInterruptStatus );
 
 /* ==============================  Global VARIABLES ============================== */
 TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
@@ -317,135 +321,201 @@ void test_coverage_vTaskPreemptionEnable_task_running( void )
     TEST_ASSERT( xTaskTCB.xPreemptionDisable == pdFALSE );
 }
 
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define configUSE_CORE_AFFINITY                         1
-
-Coverage for 
-    UBaseType_t vTaskCoreAffinityGet( const TaskHandle_t xTask )
-        with a created task handel for xTask
-*/
-void test_task_Core_Affinity_Get( void )
+/**
+ * @brief vTaskCoreAffinityGet - Get the affinity mask of a task.
+ *
+ * Verify the affinity mask returned with a task handle.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * taskENTER_CRITICAL();
+ * {
+ *     pxTCB = prvGetTCBFromHandle( xTask );
+ *     uxCoreAffinityMask = pxTCB->uxCoreAffinityMask;
+ * }
+ * taskEXIT_CRITICAL();
+ * @endcode
+ * prvGetTCBFromHandle( xTask ) xTask is not NULL.
+ */
+void test_coverage_vTaskCoreAffinityGet( void )
 {
-    //Reset all the globals to gain the deafult null state
-    memset(xTaskHandles, 0, sizeof(TaskHandle_t) * configNUMBER_OF_CORES );
+    TCB_t xTaskTCB = { NULL };
+    UBaseType_t uxCoreAffinityMask;
 
-    uint32_t i;
+    /* Setup variables. */
+    xTaskTCB.uxCoreAffinityMask = 0x5555;   /* The value to be verified later. */
 
-    /* Create tasks of equal priority */
-    for (i = 0; i < configNUMBER_OF_CORES; i++) {
-        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[i] );
-    }
+    /* Clear callback in commonSetUp. */
+    vFakePortEnterCriticalSection_StubWithCallback( NULL );
+    vFakePortExitCriticalSection_StubWithCallback( NULL );
 
-    vTaskStartScheduler();
+    /* Expectations. */
+    vFakePortEnterCriticalSection_Expect();
+    vFakePortExitCriticalSection_Expect();
 
-    /* Verify tasks are running */
-    for (i = 0; i < configNUMBER_OF_CORES; i++) {
-        verifySmpTask( &xTaskHandles[i], eRunning, i );
-    }
+    /* API call. */
+    uxCoreAffinityMask = vTaskCoreAffinityGet( &xTaskTCB );
 
-    /* task T0 */
-    vTaskCoreAffinityGet( xTaskHandles[0] );
-
-}
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define configUSE_CORE_AFFINITY                         1
-
-Coverage for 
-    UBaseType_t vTaskCoreAffinityGet( const TaskHandle_t xTask )
-        with a NULL for xTask
-*/
-void test_task_Core_Affinity_Get_with_null_task( void )
-{
-    //Reset all the globals to gain the deafult null state
-    memset(xTaskHandles, 0, sizeof(TaskHandle_t) * configNUMBER_OF_CORES );
-
-    uint32_t i;
-
-    /* Create tasks of equal priority */
-    for (i = 0; i < configNUMBER_OF_CORES; i++) {
-        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[i] );
-    }
-
-    vTaskStartScheduler();
-
-    /* Verify tasks are running */
-    for (i = 0; i < configNUMBER_OF_CORES; i++) {
-        verifySmpTask( &xTaskHandles[i], eRunning, i );
-    }
-    vTaskCoreAffinityGet( NULL );
+    /* Validation. */
+    TEST_ASSERT( uxCoreAffinityMask == 0x5555 );
 }
 
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define configUSE_TRACE_FACILITY                         1
-
-Coverage for 
-    UBaseType_t uxTaskGetTaskNumber( TaskHandle_t xTask )
-    and
-    void vTaskSetTaskNumber( TaskHandle_t xTask,
-                             const UBaseType_t uxHandle )
-    
-    Sets a non-null task's number as taskNumber and then fetches it
-*/
-void test_task_set_get_task_number_not_null_task( void )
+/**
+ * @brief vTaskCoreAffinityGet - Get the affinity mask of current task.
+ *
+ * Verify the affinity mask returned with NULL task handle. Current task affinity
+ * mask should be returned.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * taskENTER_CRITICAL();
+ * {
+ *     pxTCB = prvGetTCBFromHandle( xTask );
+ *     uxCoreAffinityMask = pxTCB->uxCoreAffinityMask;
+ * }
+ * taskEXIT_CRITICAL();
+ * @endcode
+ * prvGetTCBFromHandle( xTask ) xTask is NULL.
+ */
+void test_coverage_vTaskCoreAffinityGet_null_handle( void )
 {
-    TaskHandle_t xTaskHandles[3] = { NULL };
-    uint32_t i;
-    UBaseType_t taskNumber = 1;
-    UBaseType_t returntaskNumber;
+    TCB_t xTaskTCB = { NULL };
+    UBaseType_t uxCoreAffinityMask;
 
+    /* Setup variables. */
+    xTaskTCB.uxCoreAffinityMask = 0x5555;   /* The value to be verified later. */
+    pxCurrentTCBs[0] = &xTaskTCB;
 
-    /* Create  tasks of equal priority */
-    for (i = 0; i < (2); i++) {
-        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
-    }
+    /* Clear callback in commonSetUp. */
+    vFakePortEnterCriticalSection_StubWithCallback( NULL );
+    vFakePortExitCriticalSection_StubWithCallback( NULL );
 
-    /* Create a single equal priority task */   
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
+    /* Expectations. */
+    vFakePortEnterCriticalSection_Expect();
+    vFakePortExitCriticalSection_Expect();
 
-    vTaskStartScheduler();
+    /* API call. */
+    uxCoreAffinityMask = vTaskCoreAffinityGet( NULL );
 
-    vTaskSetTaskNumber(xTaskHandles[0], taskNumber);
-    
-    /* Set CPU core affinity on the last task for the last CPU core */
-    returntaskNumber = uxTaskGetTaskNumber(xTaskHandles[0]);
-    
-    TEST_ASSERT_EQUAL( returntaskNumber,  taskNumber);
-    
+    /* Validation. */
+    TEST_ASSERT( uxCoreAffinityMask == 0x5555 );
 }
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define configUSE_TRACE_FACILITY                         1
 
-Coverage for 
-    UBaseType_t uxTaskGetTaskNumber( TaskHandle_t xTask )
-    and
-    void vTaskSetTaskNumber( TaskHandle_t xTask,
-                             const UBaseType_t uxHandle )
-    
-    
-    Sets a null task's number as taskNumber and then fetches it 
-*/
-void test_task_set_get_task_number_null_task( void )
+/**
+ * @brief uxTaskGetTaskNumber - get the task number of a task handle.
+ *
+ * Verify the task number returned by uxTaskGetTaskNumber.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ *     if( xTask != NULL )
+ *     {
+ *         pxTCB = xTask;
+ *         uxReturn = pxTCB->uxTaskNumber;
+ *     }
+ *     else
+ *     {
+ *         uxReturn = 0U;
+ *     }
+ * @endcode
+ * ( xTask != NULL ) is true.
+ */
+void test_coverage_uxTaskGetTaskNumber_task_handle( void )
 {
-    TaskHandle_t xTaskHandles[3] = { NULL };
-    UBaseType_t taskNumber = 1;
-    UBaseType_t returntaskNumber;
+    TCB_t xTaskTCB = { 0 };
+    UBaseType_t uxTaskNumber = 0U;
 
-    vTaskStartScheduler();
-    
-    vTaskSetTaskNumber(xTaskHandles[0], taskNumber);
-    
-    /* Set CPU core affinity on the last task for the last CPU core */
-    returntaskNumber = uxTaskGetTaskNumber(xTaskHandles[0]);
-    
-    TEST_ASSERT_EQUAL( 0U , returntaskNumber);
+    /* Setup the variables and structure. */
+    xTaskTCB.uxTaskNumber = 0x5a5a;         /* Value to be verified later. */
+
+    /* API call. */
+    uxTaskNumber = uxTaskGetTaskNumber( &xTaskTCB );
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( uxTaskNumber, 0x5a5a );
+}
+
+/**
+ * @brief uxTaskGetTaskNumber - get the task number of a NULL task handle.
+ *
+ * Verify the task number returned by uxTaskGetTaskNumber.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ *     if( xTask != NULL )
+ *     {
+ *         pxTCB = xTask;
+ *         uxReturn = pxTCB->uxTaskNumber;
+ *     }
+ *     else
+ *     {
+ *         uxReturn = 0U;
+ *     }
+ * @endcode
+ * ( xTask != NULL ) is false.
+ */
+void test_coverage_uxTaskGetTaskNumber_null_task_handle( void )
+{
+    UBaseType_t uxTaskNumber = 0x5a5a;
+
+    /* API call. */
+    uxTaskNumber = uxTaskGetTaskNumber( NULL );
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( uxTaskNumber, 0U );
+}
+
+/**
+ * @brief vTaskSetTaskNumber - set the task number of a task handle.
+ *
+ * Verify the task number set by vTaskSetTaskNumber.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * if( xTask != NULL )
+ * {
+ *     pxTCB = xTask;
+ *     pxTCB->uxTaskNumber = uxHandle;
+ * }
+ * @endcode
+ * ( xTask != NULL ) is true.
+ */
+void test_coverage_vTaskSetTaskNumber_task_handle( void )
+{
+    TCB_t xTaskTCB = { 0 };
+
+    /* Setup the variables and structure. */
+    xTaskTCB.uxTaskNumber = 0;
+
+    /* API call. */
+    vTaskSetTaskNumber( &xTaskTCB, 0x5a5a );
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( xTaskTCB.uxTaskNumber, 0x5a5a );
+}
+
+/**
+ * @brief vTaskSetTaskNumber - set the task number of a task handle.
+ *
+ * The test show its result in the coverage report.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * if( xTask != NULL )
+ * {
+ *     pxTCB = xTask;
+ *     pxTCB->uxTaskNumber = uxHandle;
+ * }
+ * @endcode
+ * ( xTask != NULL ) is false.
+ */
+void test_coverage_vTaskSetTaskNumber_null_task_handle( void )
+{
+    /* API call. */
+    vTaskSetTaskNumber( NULL, 0x5a5a );
+
+    /* Validation. */
+    /* Nothing will be changed. This test shows its result in the coverage report. */
 }
 
 /*
@@ -493,25 +563,114 @@ void test_task_get_stack_high_water_mark_NULL_task( void )
 
 }
 
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define INCLUDE_uxTaskGetStackHighWaterMark              1
-    #define configUSE_MUTEXES                                1
-Coverage for: 
-        TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID )
-*/
-void test_task_get_current_task_handle_cpu ( void )
+/**
+ * @brief xTaskGetCurrentTaskHandleCPU - get current task handle with valid core ID.
+ *
+ * This test verifis the task handle returned with a valid core ID.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID )
+ * {
+ *     TaskHandle_t xReturn = NULL;
+ *
+ *     if( taskVALID_CORE_ID( xCoreID ) != pdFALSE )
+ *     {
+ *         xReturn = pxCurrentTCBs[ xCoreID ];
+ *     }
+ *
+ *     return xReturn;
+ * }
+ * @endcode
+ * ( taskVALID_CORE_ID( xCoreID ) != pdFALSE ) is true.
+ */
+void test_coverage_xTaskGetCurrentTaskHandleCPU_valid_core_id( void )
 {
-    TaskHandle_t xTaskHandles[1] = { NULL };
+    TCB_t xTaskTCB = { 0 };
+    TaskHandle_t xTaskHandle;
 
-    /* Create  tasks  */
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[0] );
+    /* Setup the variables and structure. */
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
 
-    vTaskStartScheduler();
+    /* API calls. */
+    xTaskHandle = xTaskGetCurrentTaskHandleCPU( 0 );
 
-    xTaskGetCurrentTaskHandleCPU( vFakePortGetCoreID() );
+    /* Validation. */
+    TEST_ASSERT( xTaskHandle == &xTaskTCB );
+}
 
+/**
+ * @brief xTaskGetCurrentTaskHandleCPU - get current task handle with invalid core ID.
+ *
+ * This test verifis the task handle returned with an invalid core ID.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID )
+ * {
+ *     TaskHandle_t xReturn = NULL;
+ *
+ *     if( taskVALID_CORE_ID( xCoreID ) != pdFALSE )
+ *     {
+ *         xReturn = pxCurrentTCBs[ xCoreID ];
+ *     }
+ *
+ *     return xReturn;
+ * }
+ * @endcode
+ * ( taskVALID_CORE_ID( xCoreID ) != pdFALSE ) is false.
+ * xCoreID is greater than or equal to configNUMBER_OF_CORES.
+ */
+void test_coverage_xTaskGetCurrentTaskHandleCPU_invalid_core_id_ge( void )
+{
+    TCB_t xTaskTCB = { 0 };
+    TaskHandle_t xTaskHandle;
+
+    /* Setup the variables and structure. */
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
+
+    /* API calls. */
+    xTaskHandle = xTaskGetCurrentTaskHandleCPU( configNUMBER_OF_CORES );
+
+    /* Validation. */
+    TEST_ASSERT( xTaskHandle == NULL );
+}
+
+/**
+ * @brief xTaskGetCurrentTaskHandleCPU - get current task handle with invalid core ID.
+ *
+ * This test verifis the task handle returned with an invalid core ID.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * TaskHandle_t xTaskGetCurrentTaskHandleCPU( BaseType_t xCoreID )
+ * {
+ *     TaskHandle_t xReturn = NULL;
+ *
+ *     if( taskVALID_CORE_ID( xCoreID ) != pdFALSE )
+ *     {
+ *         xReturn = pxCurrentTCBs[ xCoreID ];
+ *     }
+ *
+ *     return xReturn;
+ * }
+ * @endcode
+ * ( taskVALID_CORE_ID( xCoreID ) != pdFALSE ) is false.
+ * xCoreID is less than 0.
+ */
+void test_coverage_xTaskGetCurrentTaskHandleCPU_invalid_core_id_lt( void )
+{
+    TCB_t xTaskTCB = { 0 };
+    TaskHandle_t xTaskHandle;
+
+    /* Setup the variables and structure. */
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
+
+    /* API calls. */
+    xTaskHandle = xTaskGetCurrentTaskHandleCPU( -1 );
+
+    /* Validation. */
+    TEST_ASSERT( xTaskHandle == NULL );
 }
 
 /*
@@ -1163,4 +1322,270 @@ void test_coverage_prvSelectHighestPriorityTask_affinity_preemption_disabled( vo
     TEST_ASSERT( pxCurrentTCBs[ 1 ] == &xTaskTCBs[ 1 ] );
     /* TN+1 is selected to run on core 0. */
     TEST_ASSERT( xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState == 0 );
+}
+
+/**
+ * @brief vTaskEnterCritical - task is already in the critical section.
+ *
+ * Task is already in the critical section. The critical nesting count will be increased.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * if( portGET_CRITICAL_NESTING_COUNT() == 0U )
+ * {
+ *     portGET_TASK_LOCK();
+ *     portGET_ISR_LOCK();
+ * }
+ * @endcode
+ * ( portGET_CRITICAL_NESTING_COUNT() == 0U ) is false.
+ */
+void test_coverage_vTaskEnterCritical_task_in_critical_already( void )
+{
+    TCB_t xTaskTCB = { NULL };
+
+    /* Setup the variables and structure. */
+    xTaskTCB.uxCriticalNesting = 1;
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
+    xSchedulerRunning = pdTRUE;
+
+    /* Clear callback in commonSetUp. */
+    vFakePortDisableInterrupts_StopIgnore();
+    vFakePortGetCoreID_StubWithCallback( NULL );
+
+    /* Expectations. */
+    vFakePortDisableInterrupts_ExpectAndReturn( 0 );
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Get both locks. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Increment the critical nesting count. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Check first time enter critical section. */
+
+    /* API call. */
+    vTaskEnterCritical();
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( xTaskTCB.uxCriticalNesting, 2 );
+}
+
+/**
+ * @brief vTaskEnterCriticalFromISR - ISR is already in critical section.
+ *
+ * ISR is already in the critical section. The critical nesting count will be increased.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * if( portGET_CRITICAL_NESTING_COUNT() == 0U )
+ * {
+ *     portGET_ISR_LOCK();
+ * }
+ * @endcode
+ * ( portGET_CRITICAL_NESTING_COUNT() == 0U ) is false.
+ */
+void test_coverage_vTaskEnterCriticalFromISR_isr_in_critical_already( void )
+{
+    TCB_t xTaskTCB = { NULL };
+    UBaseType_t uxSavedInterruptStatus;
+
+    /* Setup the variables and structure. */
+    xTaskTCB.uxCriticalNesting = 1;
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
+    xSchedulerRunning = pdTRUE;
+
+    /* Clear callback in commonSetUp. */
+    ulFakePortSetInterruptMaskFromISR_StopIgnore();
+    vFakePortGetCoreID_StubWithCallback( NULL );
+
+    /* Expectations. */
+    ulFakePortSetInterruptMaskFromISR_ExpectAndReturn( 0x5a5a );    /* The value to be verified. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Get ISR locks. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Increment the critical nesting count. */
+
+    /* API call. */
+    uxSavedInterruptStatus = vTaskEnterCriticalFromISR();
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( xTaskTCB.uxCriticalNesting, 2 );
+    TEST_ASSERT_EQUAL( uxSavedInterruptStatus, 0x5a5a );
+}
+
+/**
+ * @brief vTaskExitCritical - Task enters the critical section for more than 1 time.
+ *
+ * Verify the critical nesting count will be decreased in this API.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * if( pxCurrentTCB->uxCriticalNesting == 0U )
+ * {
+ *     portENABLE_INTERRUPTS();
+ * }
+ * else
+ * {
+ *     mtCOVERAGE_TEST_MARKER();
+ * }
+ * @endcode
+ * ( pxCurrentTCB->uxCriticalNesting == 0U ) is false.
+ */
+void test_coverage_vTaskExitCritical_task_enter_critical_mt_1( void )
+{
+    TCB_t xTaskTCB = { NULL };
+
+    /* Setup the variables and structure. */
+    xTaskTCB.uxCriticalNesting = 2;
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
+    xSchedulerRunning = pdTRUE;
+
+    /* Clear callback in commonSetUp. */
+    vFakePortGetCoreID_StubWithCallback( NULL );
+
+    /* Expectations. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* configASSERT. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Check critical nesting count. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Decrease the critical nesting count. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Check exit critical section. */
+
+    /* API call. */
+    vTaskExitCritical();
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( xTaskTCB.uxCriticalNesting, 1 );
+}
+
+/**
+ * @brief vTaskExitCritical - Task is not in the critical section.
+ *
+ * Cover the situation that task is not in the critical section when vTaskExitCritical
+ * is called. Critical nesting count won't be updated.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * if( pxCurrentTCB->uxCriticalNesting > 0U )
+ * {
+ *     ( pxCurrentTCB->uxCriticalNesting )--;
+ *     ...
+ * }
+ * @endcode
+ * ( pxCurrentTCB->uxCriticalNesting > 0U ) is false.
+ */
+void test_coverage_vTaskExitCritical_task_not_in_critical( void )
+{
+    TCB_t xTaskTCB = { NULL };
+
+    /* Setup the variables and structure. */
+    xTaskTCB.uxCriticalNesting = 0;
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
+    xSchedulerRunning = pdTRUE;
+
+    /* Clear callback in commonSetUp. */
+    vFakePortGetCoreID_StubWithCallback( NULL );
+
+    /* Expectations. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* configASSERT. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Check critical nesting count. */
+
+    /* API call. */
+    vTaskExitCritical();
+
+    /* Validation. */
+    /* Critical section count won't be updated. This test shows it's result in the
+     * coverage report. */
+}
+
+/**
+ * @brief vTaskExitCriticalFromISR - ISR enters critical section more than 1 time.
+ *
+ * Cover the situation that ISR enters critical section more that 1 time when vTaskExitCriticalFromISR
+ * is called. Critical nesting count will be decreased.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ *     if( portGET_CRITICAL_NESTING_COUNT() > 0U )
+ *     {
+ *         portDECREMENT_CRITICAL_NESTING_COUNT();
+ *
+ *         if( portGET_CRITICAL_NESTING_COUNT() == 0U )
+ *         {
+ *             xYieldCurrentTask = xYieldPendings[ portGET_CORE_ID() ];
+ *
+ *             portRELEASE_ISR_LOCK();
+ *             portCLEAR_INTERRUPT_MASK_FROM_ISR( uxSavedInterruptStatus );
+ *
+ *             if( xYieldCurrentTask != pdFALSE )
+ *             {
+ *                 portYIELD();
+ *             }
+ *         }
+ *         else
+ *         {
+ *             mtCOVERAGE_TEST_MARKER();
+ *         }
+ *     }
+ * @endcode
+ * ( portGET_CRITICAL_NESTING_COUNT() > 0U ) is ture.
+ * ( portGET_CRITICAL_NESTING_COUNT() == 0U ) is false.
+ */
+void test_coverage_vTaskExitCriticalFromISR_isr_enter_critical_mt_1( void )
+{
+    TCB_t xTaskTCB = { NULL };
+
+    /* Setup the variables and structure. */
+    xTaskTCB.uxCriticalNesting = 2;
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
+    xSchedulerRunning = pdTRUE;
+
+    /* Clear callback in commonSetUp. */
+    vFakePortGetCoreID_StubWithCallback( NULL );
+
+    /* Expectations. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* configASSERT. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Check critical nesting count. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Decrement critical nesting count. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Check critical nesting count. */
+
+    /* API call. */
+    /* The mask value has not effect since ISR enters critical section more than 1 time. */
+    vTaskExitCriticalFromISR( 0x5a5a );
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( xTaskTCB.uxCriticalNesting, 1 );
+}
+
+/**
+ * @brief vTaskExitCriticalFromISR - ISR is not in the critical section.
+ *
+ * Cover the situation that ISR is not in the critical section when vTaskExitCriticalFromISR
+ * is called. Critical nesting count won't be updated.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ *     if( portGET_CRITICAL_NESTING_COUNT() > 0U )
+ *     {
+ *         portDECREMENT_CRITICAL_NESTING_COUNT();
+ *
+ *         ...
+ *     }
+ * @endcode
+ * ( portGET_CRITICAL_NESTING_COUNT() > 0U ) is false.
+ */
+void test_coverage_vTaskExitCriticalFromISR_isr_not_in_critical( void )
+{
+    TCB_t xTaskTCB = { NULL };
+
+    /* Setup the variables and structure. */
+    xTaskTCB.uxCriticalNesting = 0;
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
+    xSchedulerRunning = pdTRUE;
+
+    /* Clear callback in commonSetUp. */
+    vFakePortGetCoreID_StubWithCallback( NULL );
+
+    /* Expectations. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* configASSERT. */
+    vFakePortGetCoreID_ExpectAndReturn( 0 );        /* Check critical nesting count. */
+
+    /* API call. */
+    /* The mask value has not effect since ISR is not in critlcal section. */
+    vTaskExitCriticalFromISR( 0x5a5a );
+
+    /* Validation. */
+    /* Critical section count won't be changed. This test shows it's result in the
+     * coverage report. */
 }
