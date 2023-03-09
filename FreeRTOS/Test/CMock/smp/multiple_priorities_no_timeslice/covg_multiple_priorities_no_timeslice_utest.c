@@ -1570,6 +1570,7 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_not_running_task( void
     TCB_t *pxTaskTCB = NULL;
 
     /* Setup the variables and structure. */
+    UnityMalloc_StartTest();
     uxDeletedTasksWaitingCleanUp = 1;
     uxCurrentNumberOfTasks = 1;
     vListInitialise( &xTasksWaitingTermination );
@@ -1595,6 +1596,8 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_not_running_task( void
     /* Validation. */
     TEST_ASSERT_EQUAL( uxCurrentNumberOfTasks, 0 );
     TEST_ASSERT_EQUAL( uxDeletedTasksWaitingCleanUp, 0 );
+    /* Validate the memory allocate count. */
+    UnityMalloc_EndTest();
 }
 
 /**
@@ -1625,6 +1628,7 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_running_task( void )
     TCB_t *pxTaskTCB = NULL;
 
     /* Setup the variables and structure. */
+    UnityMalloc_StartTest();
     uxDeletedTasksWaitingCleanUp = 1;
     uxCurrentNumberOfTasks = 1;
     vListInitialise( &xTasksWaitingTermination );
@@ -1649,5 +1653,15 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_running_task( void )
 
     /* Validation. */
     /* If the task is not of taskTASK_NOT_RUNNING state, nothing will be updated.
-     * This test shows it's result in coverage report. */
+     * This test shows it's result in coverage report. Verify that the number of
+     * deleted task is not changed. */
+    TEST_ASSERT_EQUAL( uxDeletedTasksWaitingCleanUp, 1 );
+    TEST_ASSERT_EQUAL( uxCurrentNumberOfTasks, 1 );
+
+    /* Free the resource allocated in this test. Since running task can't be deleted,
+     * there won't have double free assertion. */
+    vPortFree( pxTaskTCB );
+    vPortFree( pxTaskTCB->pxStack );
+    /* Validate the memory allocate count. */
+    UnityMalloc_EndTest();
 }
