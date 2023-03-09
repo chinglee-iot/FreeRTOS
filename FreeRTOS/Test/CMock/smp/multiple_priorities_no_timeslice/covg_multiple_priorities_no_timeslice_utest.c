@@ -1505,16 +1505,18 @@ void test_coverage_vTaskExitCriticalFromISR_isr_not_in_critical( void )
  *
  * <b>Coverage</b>
  * @code{c}
- *                if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
- *                {
- *            ...
+ * if( pxTCB != NULL )
+ * {
+ *     ...
+ * }
  * @endcode
- *
- * Cover the case where a NULL task is specified.
+ * ( pxTCB != NULL ) is false.
  */
-void test_coverage_vTaskResume_null_task(void) {
+void test_coverage_vTaskResume_null_task( void )
+{
     vTaskResume(NULL);
-    /* in this case no state is changed and so no assertion can be made to
+
+    /* In this case no state is changed and so no assertion can be made to
      * validate the operation. */
 }
 
@@ -1523,9 +1525,9 @@ void test_coverage_vTaskResume_null_task(void) {
  *
  * <b>Coverage</b>
  * @code{c}
- *      if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
- *      {
- *          ...
+ * if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
+ * {
+ *     ...
  * @endcode
  *
  * Cover the case where the ucOriginalNotifyState is taskWAITING_NOTIFICATION.
@@ -1538,10 +1540,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
     BaseType_t xReturn;
     UBaseType_t uxPriority, uxCoreID;
 
-    for(
-        uxPriority = ( UBaseType_t ) 0U;
-        uxPriority < ( UBaseType_t ) configMAX_PRIORITIES;
-        uxPriority++)
+    for( uxPriority = ( UBaseType_t ) 0U; uxPriority < ( UBaseType_t ) configMAX_PRIORITIES; uxPriority++ )
     {
         vListInitialise( &( pxReadyTasksLists[ uxPriority ] ) );
     }
@@ -1553,17 +1552,15 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
     vListInitialiseItem( &( xTaskTCBs[0].xStateListItem ) );
     listSET_LIST_ITEM_OWNER( &( xTaskTCBs[0].xStateListItem ), &xTaskTCBs[0] );
     listINSERT_END( &xPendingReadyList, &xTaskTCBs[ 0 ].xStateListItem );
-    xYieldPendings[ portGET_CORE_ID() ] = pdFALSE;
-    pxCurrentTCBs[ portGET_CORE_ID() ] = &xTaskTCBs[ 0 ];
+
+    /* Default core ID is 0. The can be changed with vSetCurrentCore. */
+    xYieldPendings[ 0 ] = pdFALSE;
+    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
 
     xTaskTCBs[ 1 ].uxPriority = 1;
     xTaskTCBs[ 1 ].xTaskRunState = -1;
 
-    for(
-        uxCoreID = 0;
-        uxCoreID < configNUMBER_OF_CORES;
-        uxCoreID++
-    )
+    for( uxCoreID = 0; uxCoreID < configNUMBER_OF_CORES; uxCoreID++ )
     {
         if (pxCurrentTCBs[ uxCoreID ] == NULL)
         {
@@ -1573,10 +1570,11 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
 
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
+    xTaskTCBs[0].ucNotifyState[ xidx ] = taskNOT_WAITING_NOTIFICATION;
+    xTaskTCBs[0].ulNotifiedValue[ xidx ] = 0xa5a5;      /* Value to be verified later. */
 
-    xTaskTCBs[0].ucNotifyState[ xidx ] = /*taskWAITING_NOTIFICATION*/ ( ( uint8_t ) 1 );
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
 
-    TEST_ASSERT_EQUAL_UINT32(0x0, prevValue);
+    TEST_ASSERT_EQUAL_UINT32( 0xa5a5, prevValue );
     TEST_ASSERT( xReturn == pdPASS );
 }
