@@ -96,11 +96,4 @@ void xTaskIncrementTick_helper( void );
  */
 void vSetCurrentCore( BaseType_t xCoreID );
 
-/**
- * @brief Statically allocate memory for a task
- */
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
-                                    StackType_t **ppxIdleTaskStackBuffer,
-                                    uint32_t *pulIdleTaskStackSize );
-
 #endif /* SMP_UTEST_COMMON_H */
