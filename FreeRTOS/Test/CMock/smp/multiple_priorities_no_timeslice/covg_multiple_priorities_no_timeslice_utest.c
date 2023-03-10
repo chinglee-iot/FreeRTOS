@@ -85,7 +85,14 @@ TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
 /*! called before each testcase */
 void setUp( void )
 {
+    UBaseType_t uxPriority;
+
     commonSetUp();
+
+    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
+    {
+        vListInitialise(&(pxReadyTasksLists[uxPriority]));
+    }
 }
 
 /*! called after each testcase */
@@ -963,7 +970,6 @@ void test_coverage_prvAddNewTaskToReadyList_create_more_idle_tasks_than_cores( v
 
     /* Setup the variables and structure. */
     /* Initialize the idle priority ready list and set top ready priority to idle priority. */
-    vListInitialise( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) );
     uxTopReadyPriority = tskIDLE_PRIORITY;
     uxCurrentNumberOfTasks = 0;
     xSchedulerRunning = pdFALSE;
@@ -1764,13 +1770,9 @@ void test_coverage_xTaskResumeFromISR_task_suspended_uxpriority_greater(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xAlreadyYielded;
-    UBaseType_t uxPriority, uxCore;
+    UBaseType_t uxCore;
     List_t xList;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -1848,13 +1850,9 @@ void test_coverage_xTaskResumeFromISR_task_suspended_uxpriority_lesser(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xAlreadyYielded;
-    UBaseType_t uxPriority, uxCore;
+    UBaseType_t uxCore;
     List_t xList;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -1929,13 +1927,8 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xAlreadyYielded;
-    UBaseType_t uxPriority;
     List_t xList;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -2009,13 +2002,8 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list_uxpriority_lesser(v
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xAlreadyYielded;
-    UBaseType_t uxPriority;
     List_t xList;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -2109,12 +2097,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     BaseType_t xReturn;
-    UBaseType_t uxPriority, uxCoreID;
-
-    for( uxPriority = ( UBaseType_t ) 0U; uxPriority < ( UBaseType_t ) configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise( &( pxReadyTasksLists[ uxPriority ] ) );
-    }
+    UBaseType_t uxCoreID;
 
     vListInitialise( &xPendingReadyList );
 
@@ -2168,12 +2151,7 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     BaseType_t xReturn;
-    UBaseType_t uxPriority, uxCoreID;
-
-    for( uxPriority = ( UBaseType_t ) 0U; uxPriority < ( UBaseType_t ) configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise( &( pxReadyTasksLists[ uxPriority ] ) );
-    }
+    UBaseType_t uxCoreID;
 
     vListInitialise( &xPendingReadyList );
 
@@ -2403,13 +2381,9 @@ void test_coverage_xTaskPriorityInherit_task_uxpriority_lesser(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xReturn;
-    UBaseType_t uxPriority, uxCore;
+    UBaseType_t uxCore;
     List_t xList;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -2482,13 +2456,9 @@ void test_coverage_xTaskPriorityInherit_task_uxpriority_greater(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xReturn;
-    UBaseType_t uxPriority, uxCore;
+    UBaseType_t uxCore;
     List_t xList;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -2560,12 +2530,8 @@ void test_coverage_xTaskPriorityDisinherit_task_uxpriority_lesser(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xReturn;
-    UBaseType_t uxPriority, uxCore;
+    UBaseType_t uxCore;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -2638,12 +2604,8 @@ void test_coverage_xTaskPriorityDisinherit_task_uxpriority_greater(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xReturn;
-    UBaseType_t uxPriority, uxCore;
+    UBaseType_t uxCore;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -2715,12 +2677,8 @@ void test_coverage_xTaskPriorityDisinherit_task_uxpriority_greater(void)
 void test_coverage_xTaskPriorityDisinheritAfterTimeout_task_uxpriority_lesser(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
-    UBaseType_t uxPriority, uxCore;
+    UBaseType_t uxCore;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
@@ -2790,12 +2748,8 @@ void test_coverage_xTaskPriorityDisinheritAfterTimeout_task_uxpriority_lesser(vo
 void test_coverage_xTaskPriorityDisinheritAfterTimeout_task_uxpriority_greater(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
-    UBaseType_t uxPriority, uxCore;
+    UBaseType_t uxCore;
 
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
     vListInitialise(&xSuspendedTaskList);
     vListInitialise(&xPendingReadyList);
     vListInitialise(&xDelayedTaskList1);
