@@ -93,6 +93,11 @@ void setUp( void )
     {
         vListInitialise(&(pxReadyTasksLists[uxPriority]));
     }
+
+    vListInitialise(&xSuspendedTaskList);
+    vListInitialise(&xPendingReadyList);
+    vListInitialise(&xDelayedTaskList1);
+    pxDelayedTaskList = &xDelayedTaskList1;
 }
 
 /*! called after each testcase */
@@ -1773,11 +1778,6 @@ void test_coverage_xTaskResumeFromISR_task_suspended_uxpriority_greater(void)
     UBaseType_t uxCore;
     List_t xList;
 
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
-
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
     xTaskTCBs[0].xTaskRunState = 0;
@@ -1853,11 +1853,6 @@ void test_coverage_xTaskResumeFromISR_task_suspended_uxpriority_lesser(void)
     UBaseType_t uxCore;
     List_t xList;
 
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
-
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
     xTaskTCBs[0].xTaskRunState = 0;
@@ -1929,12 +1924,7 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list(void)
     BaseType_t xAlreadyYielded;
     List_t xList;
 
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
-
-    /* Create a task as current running task on core 0. */
+     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
     xTaskTCBs[0].xTaskRunState = 0;
     vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
@@ -2003,11 +1993,6 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list_uxpriority_lesser(v
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xAlreadyYielded;
     List_t xList;
-
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
 
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
@@ -2099,8 +2084,6 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
     BaseType_t xReturn;
     UBaseType_t uxCoreID;
 
-    vListInitialise( &xPendingReadyList );
-
     xTaskTCBs[ 0 ].uxPriority = 1;
     xTaskTCBs[ 0 ].xTaskRunState = 0;
     vListInitialiseItem( &( xTaskTCBs[0].xStateListItem ) );
@@ -2152,8 +2135,6 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
     uint32_t prevValue;
     BaseType_t xReturn;
     UBaseType_t uxCoreID;
-
-    vListInitialise( &xPendingReadyList );
 
     xTaskTCBs[ 0 ].uxPriority = 2;
     xTaskTCBs[ 0 ].xTaskRunState = 0;
@@ -2294,9 +2275,6 @@ void test_coverage_vTaskGetInfo_blocked_task( void )
     eTaskState taskState = eSuspended;
 
     /* Setup the variables and structure. */
-    vListInitialise( &xSuspendedTaskList );
-    vListInitialise( &xPendingReadyList );
-
     xTaskTCBs[ 0 ].uxPriority = 2;
     xTaskTCBs[ 0 ].uxBasePriority = 0;
     xTaskTCBs[ 0 ].xTaskRunState = -1;
@@ -2384,11 +2362,6 @@ void test_coverage_xTaskPriorityInherit_task_uxpriority_lesser(void)
     UBaseType_t uxCore;
     List_t xList;
 
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
-
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
     xTaskTCBs[0].xTaskRunState = 0;
@@ -2459,11 +2432,6 @@ void test_coverage_xTaskPriorityInherit_task_uxpriority_greater(void)
     UBaseType_t uxCore;
     List_t xList;
 
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
-
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 3;
     xTaskTCBs[0].xTaskRunState = 0;
@@ -2531,11 +2499,6 @@ void test_coverage_xTaskPriorityDisinherit_task_uxpriority_lesser(void)
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xReturn;
     UBaseType_t uxCore;
-
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
 
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
@@ -2606,11 +2569,6 @@ void test_coverage_xTaskPriorityDisinherit_task_uxpriority_greater(void)
     BaseType_t xReturn;
     UBaseType_t uxCore;
 
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
-
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
     xTaskTCBs[0].xTaskRunState = 0;
@@ -2679,11 +2637,6 @@ void test_coverage_xTaskPriorityDisinheritAfterTimeout_task_uxpriority_lesser(vo
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     UBaseType_t uxCore;
 
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
-
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
     xTaskTCBs[0].xTaskRunState = 0;
@@ -2749,11 +2702,6 @@ void test_coverage_xTaskPriorityDisinheritAfterTimeout_task_uxpriority_greater(v
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     UBaseType_t uxCore;
-
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
 
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
