@@ -1502,7 +1502,7 @@ void test_coverage_vTaskExitCriticalFromISR_isr_not_in_critical( void )
 /**
  * @brief  pvTaskGetThreadLocalStoragePointer - xIndex is zero.
  *
- * Cover the situation that xIndex is greater than zero when pvTaskGetThreadLocalStoragePointer
+ * Cover the situation that xIndex is zero and less than configNUM_THREAD_LOCAL_STORAGE_POINTERS when pvTaskGetThreadLocalStoragePointer
  * is called. 
  * 
  * <b>Coverage</b>
@@ -1535,9 +1535,9 @@ void test_coverage_pvTaskGetThreadLocalStoragePointer_xIndex_is_zero( void )
     TEST_ASSERT_EQUAL_PTR( pValue, ret_pValue );
 }
 /**
- * @brief  pvTaskGetThreadLocalStoragePointer - configNUM_THREAD_LOCAL_STORAGE_POINTERS is greater than zero.
+ * @brief  pvTaskGetThreadLocalStoragePointer - taskhandle is NULL.
  *
- * Cover the situation that configNUM_THREAD_LOCAL_STORAGE_POINTERS is zero and handle is NULL when pvTaskGetThreadLocalStoragePointer
+ * Cover the situation that xIndex is zero and handle is NULL when pvTaskGetThreadLocalStoragePointer
  * is called. 
  * 
  * <b>Coverage</b>
@@ -1571,7 +1571,7 @@ void test_coverage_pvTaskGetThreadLocalStoragePointer_null_handle( void )
 /**
  * @brief  pvTaskGetThreadLocalStoragePointer - xIndex is greater than configNUM_THREAD_LOCAL_STORAGE_POINTERS .
  *
- * Cover the situation that configNUM_THREAD_LOCAL_STORAGE_POINTERS is greater than zero when pvTaskGetThreadLocalStoragePointer
+ * Cover the situation that xIndex is greater than configNUM_THREAD_LOCAL_STORAGE_POINTERS when pvTaskGetThreadLocalStoragePointer
  * is called. 
  * 
  * <b>Coverage</b>
@@ -1589,7 +1589,7 @@ void test_coverage_pvTaskGetThreadLocalStoragePointer_null_handle( void )
  * @endcode
  * ( ( xIndex >= 0 ) && ( xIndex < configNUM_THREAD_LOCAL_STORAGE_POINTERS ) ) is false.
  */
-void test_pvTaskGetThreadLocalStoragePointer_fail( void )
+void test_coverage_pvTaskGetThreadLocalStoragePointer_fail( void )
 {
     void * ret_pValue;
 
