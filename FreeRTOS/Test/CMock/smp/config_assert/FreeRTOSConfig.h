@@ -42,12 +42,13 @@
 *----------------------------------------------------------*/
 
 /* SMP test specific configuration */
-#define configRUN_MULTIPLE_PRIORITIES                    1
-#define configNUMBER_OF_CORES                                  16
+#define configRUN_MULTIPLE_PRIORITIES                    0
+#define configNUMBER_OF_CORES                            16
 #define configUSE_CORE_AFFINITY                          1
 #define configUSE_TIME_SLICING                           0
-#define configUSE_TASK_PREEMPTION_DISABLE                1
+#define configUSE_TASK_PREEMPTION_DISABLE                0
 #define configTICK_CORE                                  0
+#define configUSE_TICKLESS_IDLE                          1
 
 /* OS Configuration */
 #define configUSE_PREEMPTION                             1
@@ -73,8 +74,7 @@
 #define configUSE_QUEUE_SETS                             1
 #define configUSE_TASK_NOTIFICATIONS                     1
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES            5
-#define configSUPPORT_STATIC_ALLOCATION                  1
-#define configSUPPORT_DYNAMIC_ALLOCATION                 1
+#define configSUPPORT_STATIC_ALLOCATION                  0
 #define configINITIAL_TICK_COUNT                         ( ( TickType_t ) 0 )
 #define configSTREAM_BUFFER_TRIGGER_LEVEL_TEST_MARGIN    1
 #define portREMOVE_STATIC_QUALIFIER                      1
@@ -93,8 +93,8 @@
 /* Run time stats gathering configuration options. */
 unsigned long ulGetRunTimeCounterValue( void ); /* Prototype of function that returns run time counter. */
 void vConfigureTimerForRunTimeStats( void );    /* Prototype of function that initialises the run time counter. */
-#define configGENERATE_RUN_TIME_STATS    0
-#define portGET_RUN_TIME_COUNTER_VALUE()            ulGetRunTimeCounterValue()
+#define configGENERATE_RUN_TIME_STATS             0
+#define portGET_RUN_TIME_COUNTER_VALUE()    ulGetRunTimeCounterValue()
 #define portUSING_MPU_WRAPPERS                    0
 #define portHAS_STACK_OVERFLOW_CHECKING           0
 #define configENABLE_MPU                          0
