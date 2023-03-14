@@ -275,23 +275,21 @@ void test_prvYieldCore_runstate_eq_yielding( void )
 }
 
 /**
- * @brief This test ensures that if xTask Delete is caled and the scheuler is
- *        not running, the core is not yielded, but it is removed from the
- *        stateList, the eventList and inserted in the taskwaitingtermination
- *        list, the uxdeletedtaskwaiting for cleanup is increased and the
- *        uxtasknumber is increased
+ * @brief vTaskDelete - scheduler not running.
+ *
+ * This test ensures that if xTask Delete is caled and the scheuler is
+ * not running, the core is not yielded, but it is removed from the
+ * stateList, the eventList and inserted in the taskwaitingtermination
+ * list, the uxdeletedtaskwaiting for cleanup is increased and the
+ * uxtasknumber is increased
  *
  * <b>Coverage</b>
  * @code{c}
- * vTaskDelete( xTaskToDelete);
- *
- *   if( ( xSchedulerRunning != pdFALSE ) &&
- *               ( taskTASK_IS_RUNNING( pxTCB ) == pdTRUE ) )
- *
+ * if( ( xSchedulerRunning != pdFALSE ) &&
+ *     ( taskTASK_IS_RUNNING( pxTCB ) == pdTRUE ) )
+ * ...
  * @endcode
- *
- * configNMBER_OF_CORES > 1
- * INCLUDE_vTaskDelete = 1
+ * ( xSchedulerRunning != pdFALSE ) is false.
  */
 void test_vTaskDelete_scheduler_not_running( void )
 {
