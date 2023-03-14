@@ -384,11 +384,11 @@ void test_coverage_prvSelectHighestPriorityTask_not_schedule_none_idle_task( voi
     /* Validations.*/
     /* T0 won't be selected to run after calling prvSelectHighestPriorityTask since
      * it is not an idle task and top priority is higher than idle. */
-    TEST_ASSERT( pxCurrentTCBs[ 0 ] != &xTaskTCBs[ 0 ] );
+    TEST_ASSERT_NOT_EQUAL( &xTaskTCBs[ 0 ], pxCurrentTCBs[ 0 ] );
     /* T1 is not running since other idle task will be selected first. */
-    TEST_ASSERT( xTaskTCBs[ 0 ].xTaskRunState == taskTASK_NOT_RUNNING );
+    TEST_ASSERT_EQUAL( taskTASK_NOT_RUNNING, xTaskTCBs[ 0 ].xTaskRunState );
     /* T2 is selected to run on core 0. */
-    TEST_ASSERT( xTaskTCBs[ 2 ].xTaskRunState == 0 );
+    TEST_ASSERT_EQUAL( 0, xTaskTCBs[ 2 ].xTaskRunState );
 }
 
 /* @brief prvSelectHighestPriorityTask - yield for previous task with core affinity.
@@ -474,11 +474,11 @@ void test_coverage_prvSelectHighestPriorityTask_affinity_task_yielding( void )
     /* Validations.*/
     /* T0 won't be selected to run after calling prvSelectHighestPriorityTask since
      * it can only runs on core 0 and core 1. Task on core 1 is yielding. */
-    TEST_ASSERT( pxCurrentTCBs[ 0 ] != &xTaskTCBs[ 0 ] );
+    TEST_ASSERT_NOT_EQUAL( &xTaskTCBs[ 0 ], pxCurrentTCBs[ 0 ] );
     /* T1 is still running on core 1 since it is yielding. */
-    TEST_ASSERT( pxCurrentTCBs[ 1 ] == &xTaskTCBs[ 1 ] );
+    TEST_ASSERT_EQUAL( &xTaskTCBs[ 1 ], pxCurrentTCBs[ 1 ] );
     /* TN+1 is selected to run on core 0. */
-    TEST_ASSERT( xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState == 0 );
+    TEST_ASSERT_EQUAL( 0, xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState );
 }
 
 /* @brief prvSelectHighestPriorityTask - yield for previous task with core affinity.
@@ -564,9 +564,9 @@ void test_coverage_prvSelectHighestPriorityTask_affinity_task_state_invalid( voi
     /* Validations.*/
     /* T0 won't be selected to run after calling prvSelectHighestPriorityTask since
      * it can only runs on core 0 and core 1. */
-    TEST_ASSERT( pxCurrentTCBs[ 0 ] != &xTaskTCBs[ 0 ] );
+    TEST_ASSERT_NOT_EQUAL( &xTaskTCBs[ 0 ], pxCurrentTCBs[ 0 ] );
     /* TN+1 is selected to run on core 0. */
-    TEST_ASSERT( xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState == 0 );
+    TEST_ASSERT_EQUAL( 0, xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState );
 }
 
 /* @brief prvSelectHighestPriorityTask - yield for previous task with core affinity.
@@ -652,9 +652,9 @@ void test_coverage_prvSelectHighestPriorityTask_affinity_task_yield_pending( voi
     /* Validations.*/
     /* T0 won't be selected to run after calling prvSelectHighestPriorityTask since
      * it can only runs on core 0 and core 1. Core 1 has yield pending. */
-    TEST_ASSERT( pxCurrentTCBs[ 0 ] != &xTaskTCBs[ 0 ] );
+    TEST_ASSERT_NOT_EQUAL( &xTaskTCBs[ 0 ], pxCurrentTCBs[ 0 ] );
     /* T1 is still running on core 1 since it has yield pending. */
-    TEST_ASSERT( pxCurrentTCBs[ 1 ] == &xTaskTCBs[ 1 ] );
+    TEST_ASSERT_EQUAL( &xTaskTCBs[ 1 ], pxCurrentTCBs[ 1 ] );
     /* TN+1 is selected to run on core 0. */
-    TEST_ASSERT( xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState == 0 );
+    TEST_ASSERT_EQUAL( 0, xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState );
 }

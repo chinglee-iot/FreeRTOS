@@ -1574,11 +1574,11 @@ void test_coverage_prvSelectHighestPriorityTask_affinity_preemption_disabled( vo
     /* Validations.*/
     /* T0 won't be selected to run after calling prvSelectHighestPriorityTask since
      * it can only runs on core 0 and core 1. Task on core 1 is yielding. */
-    TEST_ASSERT( pxCurrentTCBs[ 0 ] != &xTaskTCBs[ 0 ] );
+    TEST_ASSERT_NOT_EQUAL( &xTaskTCBs[ 0 ], pxCurrentTCBs[ 0 ] );
     /* T1 is still running on core 1 since it has preemption disabled. */
-    TEST_ASSERT( pxCurrentTCBs[ 1 ] == &xTaskTCBs[ 1 ] );
+    TEST_ASSERT_EQUAL( &xTaskTCBs[ 1 ], pxCurrentTCBs[ 1 ] );
     /* TN+1 is selected to run on core 0. */
-    TEST_ASSERT( xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState == 0 );
+    TEST_ASSERT_EQUAL( 0, xTaskTCBs[ configNUMBER_OF_CORES + 1 ].xTaskRunState );
 }
 
 /**
