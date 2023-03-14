@@ -432,7 +432,7 @@ void test_coverage_uxTaskGetTaskNumber_task_handle( void )
     uxTaskNumber = uxTaskGetTaskNumber( &xTaskTCB );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( uxTaskNumber, 0x5a5a );
+    TEST_ASSERT_EQUAL( 0x5a5a, uxTaskNumber );
 }
 
 /**
@@ -462,7 +462,7 @@ void test_coverage_uxTaskGetTaskNumber_null_task_handle( void )
     uxTaskNumber = uxTaskGetTaskNumber( NULL );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( uxTaskNumber, 0U );
+    TEST_ASSERT_EQUAL( 0U, uxTaskNumber );
 }
 
 /**
@@ -488,10 +488,10 @@ void test_coverage_vTaskSetTaskNumber_task_handle( void )
     xTaskTCB.uxTaskNumber = 0;
 
     /* API call. */
-    vTaskSetTaskNumber( &xTaskTCB, 0x5a5a );
+    vTaskSetTaskNumber( 0x5a5a, &xTaskTCB );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xTaskTCB.uxTaskNumber, 0x5a5a );
+    TEST_ASSERT_EQUAL( 0x5a5a, xTaskTCB.uxTaskNumber );
 }
 
 /**
@@ -1272,7 +1272,7 @@ void test_coverage_vTaskEnterCritical_task_in_critical_already( void )
     vTaskEnterCritical();
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xTaskTCB.uxCriticalNesting, 2 );
+    TEST_ASSERT_EQUAL( 2, xTaskTCB.uxCriticalNesting );
 }
 
 /**
@@ -1312,8 +1312,8 @@ void test_coverage_vTaskEnterCriticalFromISR_isr_in_critical_already( void )
     uxSavedInterruptStatus = vTaskEnterCriticalFromISR();
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xTaskTCB.uxCriticalNesting, 2 );
-    TEST_ASSERT_EQUAL( uxSavedInterruptStatus, 0x5a5a );
+    TEST_ASSERT_EQUAL( 2, xTaskTCB.uxCriticalNesting );
+    TEST_ASSERT_EQUAL( 0X5a5a, uxSavedInterruptStatus );
 }
 
 /**
@@ -1356,7 +1356,7 @@ void test_coverage_vTaskExitCritical_task_enter_critical_mt_1( void )
     vTaskExitCritical();
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xTaskTCB.uxCriticalNesting, 1 );
+    TEST_ASSERT_EQUAL( 1, xTaskTCB.uxCriticalNesting );
 }
 
 /**
@@ -1455,7 +1455,7 @@ void test_coverage_vTaskExitCriticalFromISR_isr_enter_critical_mt_1( void )
     vTaskExitCriticalFromISR( 0x5a5a );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xTaskTCB.uxCriticalNesting, 1 );
+    TEST_ASSERT_EQUAL( 1, xTaskTCB.uxCriticalNesting );
 }
 
 /**
@@ -1593,9 +1593,9 @@ void test_coverage_xTaskGenericNotifyFromISR_priority_le( void )
                                          &xHigherPriorityTaskWoken );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xReturn, pdTRUE );
-    TEST_ASSERT_EQUAL( ulPreviousNotificationValue, 0x5a5a );
-    TEST_ASSERT_NOT_EQUAL( xHigherPriorityTaskWoken, pdTRUE );
+    TEST_ASSERT_EQUAL( pdTRUE, xReturn );
+    TEST_ASSERT_EQUAL( 0x5a5a, ulPreviousNotificationValue );
+    TEST_ASSERT_NOT_EQUAL( pdTRUE, xHigherPriorityTaskWoken );
 }
 
 /**
@@ -1702,9 +1702,9 @@ void test_coverage_xTaskGenericNotifyFromISR_priority_gt( void )
                                          &xHigherPriorityTaskWoken );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xReturn, pdTRUE );
-    TEST_ASSERT_EQUAL( ulPreviousNotificationValue, 0x5a5a );
-    TEST_ASSERT_EQUAL( xHigherPriorityTaskWoken, pdTRUE );
+    TEST_ASSERT_EQUAL( pdTRUE, xReturn );
+    TEST_ASSERT_EQUAL( 0x5a5a, ulPreviousNotificationValue );
+    TEST_ASSERT_EQUAL( pdTRUE, xHigherPriorityTaskWoken );
 }
 
 /**
@@ -1811,9 +1811,9 @@ void test_coverage_xTaskGenericNotifyFromISR_priority_gt_null_param( void )
                                          NULL );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xReturn, pdTRUE );
-    TEST_ASSERT_EQUAL( ulPreviousNotificationValue, 0x5a5a );
-    TEST_ASSERT_EQUAL( xYieldPendings[ 0 ], pdTRUE );
+    TEST_ASSERT_EQUAL( pdTRUE, xReturn );
+    TEST_ASSERT_EQUAL( 0x5a5a, ulPreviousNotificationValue );
+    TEST_ASSERT_EQUAL( pdTRUE, xYieldPendings[ 0 ] );
 }
 
 /**
@@ -1904,8 +1904,8 @@ void test_coverage_vTaskGenericNotifyGiveFromISR_priority_le( void )
                                    &xHigherPriorityTaskWoken );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xTaskTCB.ulNotifiedValue[ uxIndexToNotify ], 0x5a5a + 1U );
-    TEST_ASSERT_NOT_EQUAL( xHigherPriorityTaskWoken, pdTRUE );
+    TEST_ASSERT_EQUAL( 0x5a5a + 1U, xTaskTCB.ulNotifiedValue[ uxIndexToNotify ] );
+    TEST_ASSERT_NOT_EQUAL( pdTRUE, xHigherPriorityTaskWoken );
 }
 
 /**
@@ -2007,8 +2007,8 @@ void test_coverage_vTaskGenericNotifyGiveFromISR_priority_gt( void )
                                    &xHigherPriorityTaskWoken );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xTaskTCB.ulNotifiedValue[ uxIndexToNotify ], 0x5a5a + 1U );
-    TEST_ASSERT_EQUAL( xHigherPriorityTaskWoken, pdTRUE );
+    TEST_ASSERT_EQUAL( 0x5a5a + 1U, xTaskTCB.ulNotifiedValue[ uxIndexToNotify ] );
+    TEST_ASSERT_EQUAL( pdTRUE, xHigherPriorityTaskWoken );
 }
 
 /**
@@ -2110,6 +2110,6 @@ void test_coverage_vTaskGenericNotifyGiveFromISR_priority_gt_null_param( void )
                                    NULL );
 
     /* Validation. */
-    TEST_ASSERT_EQUAL( xTaskTCB.ulNotifiedValue[ uxIndexToNotify ], 0x5a5a + 1U );
-    TEST_ASSERT_EQUAL( xYieldPendings[ 0 ], pdTRUE );
+    TEST_ASSERT_EQUAL( 0x5a5a + 1U, xTaskTCB.ulNotifiedValue[ uxIndexToNotify ] );
+    TEST_ASSERT_EQUAL( pdTRUE, xYieldPendings[ 0 ] );
 }
