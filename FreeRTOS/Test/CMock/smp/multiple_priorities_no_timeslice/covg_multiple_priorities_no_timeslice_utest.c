@@ -66,7 +66,9 @@ extern List_t xSuspendedTaskList;
 extern List_t xPendingReadyList;
 extern BaseType_t xPendedTicks;
 extern List_t xDelayedTaskList1;
+extern List_t xDelayedTaskList2;
 extern List_t * pxDelayedTaskList;
+extern List_t * pxOverflowDelayedTaskList;
 
 /* ===========================  EXTERN FUNCTIONS  =========================== */
 extern void prvAddNewTaskToReadyList( TCB_t * pxNewTCB );
@@ -86,6 +88,19 @@ TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
 void setUp( void )
 {
     commonSetUp();
+    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
+    {
+        vListInitialise( &( pxReadyTasksLists[uxPriority] ) );
+    }
+
+    vListInitialise( &xSuspendedTaskList );
+    vListInitialise( &xPendingReadyList );
+    vListInitialise( &xDelayedTaskList1 );
+    vListInitialise( &xDelayedTaskList2 );
+    vListInitialise( &xTasksWaitingTermination );
+
+    pxDelayedTaskList = &xDelayedTaskList1;
+    pxOverflowDelayedTaskList = &xDelayedTaskList2;
 }
 
 /*! called after each testcase */
@@ -736,6 +751,8 @@ void test_v_task_list_case_no_task_created( void )
  
     //Call the List
     vTaskList(buff);
+    /* Setup the variables and structure. */
+    xSchedulerRunning = pdTRUE;
 
 }
 /*
@@ -755,6 +772,9 @@ void test_v_task_list_case_eDeleted( void )
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES+1] = { NULL };
 
     uint32_t i;
+ 
+    /* Setup the variables and structure. */
+    xSchedulerRunning = pdTRUE;
 
     /* Create tasks of equal priority for all available CPU cores */
     for (i = 0; i < configNUMBER_OF_CORES; i++) {
@@ -794,6 +814,8 @@ void test_v_task_list_case_eSuspended( void )
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES+1] = { NULL };
 
     uint32_t i;
+    /* Setup the variables and structure. */
+    xSchedulerRunning = pdTRUE;
 
     /* Create tasks of equal priority for all available CPU cores */
     for (i = 0; i < configNUMBER_OF_CORES; i++) {
@@ -835,6 +857,9 @@ void test_v_task_list_case_eblocked( void )
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
 
     uint32_t i;
+ 
+    /* Setup the variables and structure. */
+    xSchedulerRunning = pdTRUE;
 
     /* Create tasks of equal priority for all available CPU cores */
     for (i = 0; i < configNUMBER_OF_CORES; i++) {
@@ -873,6 +898,8 @@ void test_v_task_list( void )
 
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
     uint32_t i;
+    /* Setup the variables and structure. */
+    xSchedulerRunning = pdTRUE;
 
     /* Create tasks of equal priority for all available CPU cores */
     for (i = 0; i < configNUMBER_OF_CORES; i++) {
@@ -1616,7 +1643,6 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_not_running_task( void
     UnityMalloc_StartTest();
     uxDeletedTasksWaitingCleanUp = 1;
     uxCurrentNumberOfTasks = 1;
-    vListInitialise( &xTasksWaitingTermination );
 
     pxTaskTCB = pvPortMalloc( sizeof( TCB_t ) );
     pxTaskTCB->pxStack = pvPortMalloc( configMINIMAL_STACK_SIZE );
@@ -1674,7 +1700,6 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_running_task( void )
     UnityMalloc_StartTest();
     uxDeletedTasksWaitingCleanUp = 1;
     uxCurrentNumberOfTasks = 1;
-    vListInitialise( &xTasksWaitingTermination );
 
     pxTaskTCB = pvPortMalloc( sizeof( TCB_t ) );
     pxTaskTCB->pxStack = pvPortMalloc( configMINIMAL_STACK_SIZE );
