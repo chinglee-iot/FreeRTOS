@@ -548,7 +548,7 @@ void test_coverage_vTaskSetTaskNumber_task_handle( void )
     xTaskTCB.uxTaskNumber = 0;
 
     /* API call. */
-    vTaskSetTaskNumber( 0x5a5a, &xTaskTCB );
+    vTaskSetTaskNumber( &xTaskTCB, 0x5a5a );
 
     /* Validation. */
     TEST_ASSERT_EQUAL( 0x5a5a, xTaskTCB.uxTaskNumber );
