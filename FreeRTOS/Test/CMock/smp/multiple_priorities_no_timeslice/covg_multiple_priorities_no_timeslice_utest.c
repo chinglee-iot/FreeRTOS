@@ -91,6 +91,7 @@ void setUp( void )
     UBaseType_t uxPriority;
 
     commonSetUp();
+
     for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
     {
         vListInitialise( &( pxReadyTasksLists[uxPriority] ) );
@@ -860,6 +861,7 @@ void test_coverage_vTaskList_task_eReady( void )
     int xStringCompareResult;
     char pcGeneratedTaskName[ configMAX_TASK_NAME_LEN ];
     uint32_t i;
+ 
     /* Setup the variables and structure. */
     xSchedulerRunning = pdTRUE;
 
@@ -990,47 +992,6 @@ void test_coverage_vTaskList_task_eSuspended( void )
     char pcWriteBuffer[ TEST_VTASKLIST_BUFFER_SIZE ] = "Test"; /* Validate the string is overwritten in the API call. */
     int xStringCompareResult;
     char pcGeneratedTaskName[ configMAX_TASK_NAME_LEN ];
-    uint32_t i;
-
-    /* Setup the variables and structure. */
-    xSchedulerRunning = pdTRUE;
-
-    /* Create tasks of equal priority for all available CPU cores */
-    for (i = 0; i < configNUMBER_OF_CORES; i++) {
-        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
-    }
-
-    vTaskStartScheduler();
-
-    /* Delay the task running on core ID 0 for 1 ticks. The task will be put into pxDelayedTaskList and added back to ready list after 1 tick. */
-    vTaskDelay( 1 );
-
-    //Call the List
-    vTaskList(buff);
-
-     /* Delete all priority task responsibly*/
-    for (i = 0; i < configNUMBER_OF_CORES; i++) {
-        vTaskDelete(xTaskHandles[i]);
-    }
-}
-
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define configUSE_TRACE_FACILITY                         1
-    #define configUSE_STATS_FORMATTING_FUNCTIONS             1
-
-Coverage for: 
-        void vTaskList( char * pcWriteBuffer )
-        and
-        static char * prvWriteNameToBuffer( char * pcBuffer,
-                                            const char * pcTaskName )
-*/
-void test_v_task_list( void )
-{
-    static char	buff[ 800 ] = { 0 };
-
-    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
     uint32_t i;
  
     /* Setup the variables and structure. */
