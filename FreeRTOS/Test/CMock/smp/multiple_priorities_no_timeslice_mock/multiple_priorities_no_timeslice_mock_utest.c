@@ -123,7 +123,7 @@ int suiteTearDown(int numFailures)
 void test_vTaskSuspend_scheduler_running_false(void)
 {
    
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES ] = { NULL };
+    TCB_t xTaskTCBs[ 1 ] = { NULL };
 
     /* Setup the variables and structure. */
     xTaskTCBs[ 0 ].uxPriority = 1;
@@ -162,7 +162,7 @@ void test_vTaskSuspend_scheduler_running_false(void)
 
 void test_vTaskSuspend_running_state_below_range(void)
 {   
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES ] = { NULL };
+    TCB_t xTaskTCBs[ 1 ] = { NULL };
  
     /* Setup the variables and structure. */
     xTaskTCBs[ 0 ].uxPriority = 1;
@@ -201,7 +201,7 @@ void test_vTaskSuspend_running_state_below_range(void)
 
 void test_vTaskSuspend_running_state_above_range(void)
 {   
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES ] = { NULL };
+    TCB_t xTaskTCBs[ 1 ] = { NULL };
  
     /* Setup the variables and structure. */
     xTaskTCBs[ 0 ].uxPriority = 1;
@@ -238,7 +238,7 @@ void test_vTaskSuspend_running_state_above_range(void)
  */
 void test_vTaskPrioritySet_non_running_state(void)
 {   
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES ] = { NULL };
+    TCB_t xTaskTCBs[ 1 ] = { NULL };
  
     /* Setup the variables and structure. */
     xTaskTCBs[ 0 ].uxPriority = 4;
@@ -277,7 +277,7 @@ void test_vTaskPrioritySet_non_running_state(void)
 
 void test_vTaskPriority_running_state(void)
 {   
-    TCB_t xTaskTCBs[ configNUMBER_OF_CORES ] = { NULL };
+    TCB_t xTaskTCBs[ 1 ] = { NULL };
     
     /* Setup the variables and structure. */
     xTaskTCBs[ 0 ].uxPriority = 4;
