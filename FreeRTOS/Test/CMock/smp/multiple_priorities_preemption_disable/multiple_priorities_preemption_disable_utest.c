@@ -181,20 +181,19 @@ int suiteTearDown( int numFailures )
 /* ==============================  Test Cases  ============================== */
 
 /**
- * @brief This test ensures that the  first condition is true while the second
- *        condition is false in the if statement, so we will be performing the
- *        action with portYIELD_CORE, and the task is put in the yielding state
+ * @brief prvYieldCore - xCoreID is not equal to current core id.
+ *
+ * This test ensures that the  first condition is true while the second
+ * condition is false in the if statement, so we will be performing the
+ * action with portYIELD_CORE, and the task is put in the yielding state
  *
  * <b>Coverage</b>
  * @code{c}
- * prvYieldCore( xCoreID );
- *
  * if( ( portCHECK_IF_IN_ISR() == pdTRUE ) && ( xCoreID == portGET_CORE_ID() ) )
- *
+ * ...
  * @endcode
- *
- * configNMBER_OF_CORES > 1
- * configUSE_TASK_PREEMPTION_DISABLE = 1
+ * ( portCHECK_IF_IN_ISR() == pdTRUE ) is true.
+ * ( xCoreID == portGET_CORE_ID() ) is false.
  */
 void test_coverage_prvYieldCore_core_id_ne_current_coreid( void )
 {
