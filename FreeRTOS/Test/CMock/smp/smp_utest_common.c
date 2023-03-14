@@ -201,9 +201,11 @@ unsigned int vFakePortGetCoreIDCallback( int cmock_num_calls )
     return ( unsigned int )xCurrentCoreId;
 }
 
-void vFakePortGetISRLock( void )
+void vFakePortGetISRLockCallback( int cmock_num_calls )
 {
     int i;
+    
+    ( void ) cmock_num_calls;
 
     /* Ensure that no other core is in the critical section. */
     for( i = 0; i < configNUMBER_OF_CORES; i++ )
@@ -218,15 +220,19 @@ void vFakePortGetISRLock( void )
     xIsrLockCount[ xCurrentCoreId ]++;
 }
 
-void vFakePortReleaseISRLock( void )
+void vFakePortReleaseISRLockCallback( int cmock_num_calls )
 {
+    ( void ) cmock_num_calls;
+
     TEST_ASSERT_MESSAGE( xIsrLockCount[ xCurrentCoreId ] > 0, "xIsrLockCount[ xCurrentCoreId ] <= 0" );
     xIsrLockCount[ xCurrentCoreId ]--;
 }
 
-void vFakePortGetTaskLock( void )
+void vFakePortGetTaskLockCallback( int cmock_num_calls )
 {
     int i;
+
+    ( void ) cmock_num_calls;
 
     /* Ensure that no other core is in the critical section. */
     for( i = 0; i < configNUMBER_OF_CORES; i++ )
@@ -241,8 +247,10 @@ void vFakePortGetTaskLock( void )
     xTaskLockCount[ xCurrentCoreId ]++;
 }
 
-void vFakePortReleaseTaskLock( void )
+void vFakePortReleaseTaskLockCallback( int cmock_num_calls )
 {
+    ( void ) cmock_num_calls;
+
     TEST_ASSERT_MESSAGE( xTaskLockCount[ xCurrentCoreId ] > 0, "xTaskLockCount[ xCurrentCoreId ] <= 0" );
     xTaskLockCount[ xCurrentCoreId ]--;
 
@@ -282,6 +290,11 @@ void commonSetUp( void )
 
     vFakePortGetCoreID_StubWithCallback( vFakePortGetCoreIDCallback );
 
+    vFakePortGetISRLock_StubWithCallback( vFakePortGetISRLockCallback );
+    vFakePortGetTaskLock_StubWithCallback( vFakePortGetTaskLockCallback );
+    vFakePortReleaseISRLock_StubWithCallback( vFakePortReleaseISRLockCallback );
+    vFakePortReleaseTaskLock_StubWithCallback( vFakePortReleaseTaskLockCallback );
+
     vFakeAssert_Ignore();
     vFakePortAssertIfISR_Ignore();
     vFakePortEnableInterrupts_Ignore();
@@ -289,8 +302,6 @@ void commonSetUp( void )
     ulFakePortSetInterruptMaskFromISR_IgnoreAndReturn( 0 );
     vFakePortClearInterruptMaskFromISR_Ignore();
 
-    vFakePortGetTaskLock_Ignore();
-    vFakePortGetISRLock_Ignore();
     vFakePortDisableInterrupts_IgnoreAndReturn(1);
     vFakePortRestoreInterrupts_Ignore();
     xTimerCreateTimerTask_IgnoreAndReturn(1);
@@ -351,7 +362,11 @@ void verifyIdleTask( BaseType_t index, TaskRunning_t xTaskRunState)
     int ret;
 
     vTaskGetInfo(xIdleTaskHandles[index], &xTaskDetails, pdTRUE, eInvalid );
-    ret = strncmp( xTaskDetails.xHandle->pcTaskName, "IDLE", 4 );
+    #ifdef configIDLE_TASK_NAME
+        ret = strncmp( xTaskDetails.xHandle->pcTaskName, configIDLE_TASK_NAME, strlen( configIDLE_TASK_NAME ) );
+    #else
+        ret = strncmp( xTaskDetails.xHandle->pcTaskName, "IDLE", 4 );
+    #endif
     TEST_ASSERT_EQUAL_INT_MESSAGE( 0, ret, "Idle Task Verification Failed: Incorrect task name" );
     TEST_ASSERT_EQUAL_INT_MESSAGE( pdTRUE, xTaskDetails.xHandle->uxTaskAttributes, "Idle Task Verification Failed: Incorrect xIsIdle" );
     TEST_ASSERT_EQUAL_INT_MESSAGE( xTaskRunState, xTaskDetails.xHandle->xTaskRunState, "Idle Task Verification Failed: Incorrect xTaskRunState" );
@@ -377,4 +392,27 @@ void xTaskIncrementTick_helper( void )
     }
 
     taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptState );
+}
+
+void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer,
+                                    StackType_t **ppxIdleTaskStackBuffer,
+                                    uint32_t *pulIdleTaskStackSize )
+{
+/* If the buffers to be provided to the Idle task are declared inside this
+function then they must be declared static -- otherwise they will be allocated on
+the stack and so not exists after this function exits. */
+static StaticTask_t xIdleTaskTCB;
+static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
+
+    /* Pass out a pointer to the StaticTask_t structure in which the Idle task's
+    state will be stored. */
+    *ppxIdleTaskTCBBuffer = &xIdleTaskTCB;
+
+    /* Pass out the array that will be used as the Idle task's stack. */
+    *ppxIdleTaskStackBuffer = uxIdleTaskStack;
+
+    /* Pass out the size of the array pointed to by *ppxIdleTaskStackBuffer.
+    Note that, as the array is necessarily of type StackType_t,
+    configMINIMAL_STACK_SIZE is specified in words, not bytes. */
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
 }
