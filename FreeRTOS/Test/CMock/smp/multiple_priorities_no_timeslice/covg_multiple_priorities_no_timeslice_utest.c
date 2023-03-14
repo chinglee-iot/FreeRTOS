@@ -48,9 +48,8 @@
 #include "mock_fake_assert.h"
 #include "mock_fake_port.h"
 
-#define tskSTATICALLY_ALLOCATED_STACK_ONLY      ( ( uint8_t ) 1 )
-#define tskSTACK_FILL_BYTE                      ( 0xa5U )
-#define TEST_VTASKLIST_BUFFER_SIZE              ( 800 )     /* Size for task list. */
+#define tskSTATICALLY_ALLOCATED_STACK_ONLY        ( ( uint8_t ) 1 )
+#define tskSTACK_FILL_BYTE (0xa5U)
 
 /* ===========================  EXTERN VARIABLES  =========================== */
 extern volatile UBaseType_t uxCurrentNumberOfTasks;
@@ -86,19 +85,7 @@ TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
 /*! called before each testcase */
 void setUp( void )
 {
-    UBaseType_t uxPriority;
-
     commonSetUp();
-
-    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
-    {
-        vListInitialise(&(pxReadyTasksLists[uxPriority]));
-    }
-
-    vListInitialise(&xSuspendedTaskList);
-    vListInitialise(&xPendingReadyList);
-    vListInitialise(&xDelayedTaskList1);
-    pxDelayedTaskList = &xDelayedTaskList1;
 }
 
 /*! called after each testcase */
@@ -733,374 +720,177 @@ void test_coverage_xTaskGetCurrentTaskHandleCPU_invalid_core_id_lt( void )
     TEST_ASSERT( xTaskHandle == NULL );
 }
 
-/**
- * @brief vTaskList - No task is created.
- *
- * This API is called before any task is created.
- *
- * <b>Coverage</b>
- * @code{c}
- * if( pxTaskStatusArray != NULL )
- * {
- *     ...
- * }
- * @endcode
- * ( pxTaskStatusArray != NULL ) is false.
- */
-void test_coverage_vTaskList_no_task_created( void )
+/*
+The kernel will be configured as follows:
+    #define configNUMBER_OF_CORES                               (N > 1)
+    #define configUSE_TRACE_FACILITY                         1
+    #define configUSE_STATS_FORMATTING_FUNCTIONS             1
+
+Coverage for: 
+        void vTaskList( char * pcWriteBuffer )
+        if( pxTaskStatusArray != NULL ) = False
+*/
+void test_v_task_list_case_no_task_created( void )
 {
-    char pcWriteBuffer[ TEST_VTASKLIST_BUFFER_SIZE ] = "Test"; /* Validate the string is overwritten in the API call. */
-
-    /* Setup the variables and structure. */
-    uxCurrentNumberOfTasks = 0;         /* No task is created. */
-    UnityMalloc_StartTest();
-
-    /* API calls. */
-    vTaskList( pcWriteBuffer );
-
-    /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
-    /* No task is created. A string with zero legnth is returned. */
-    TEST_ASSERT_EQUAL( 0x00, pcWriteBuffer[ 0 ] );
-}
-
-/**
- * @brief vTaskList - Task with state eRunning.
- *
- * <b>Coverage</b>
- * @code{c}
- * switch( pxTaskStatusArray[ x ].eCurrentState )
- * {
- *     ...
- *     case eRunning:
- *         cStatus = tskRUNNING_CHAR;
- *         break;
- *     ...
- * }
- * @endcode
- * ( pxTaskStatusArray[ x ].eCurrentState ) is eRunning.
- */
-void test_coverage_vTaskList_task_eRunning( void )
-{
-    TCB_t xTaskTCB = { NULL };
-    char pcExpectedResult[ TEST_VTASKLIST_BUFFER_SIZE ] = { 0 };
-    char pcWriteBuffer[ TEST_VTASKLIST_BUFFER_SIZE ] = "Test"; /* Validate the string is overwritten in the API call. */
-    int xStringCompareResult;
-    char pcGeneratedTaskName[ configMAX_TASK_NAME_LEN ];
-    uint32_t i;
+    static char	buff[ 800 ] = { 0 };
  
-    /* Setup the variables and structure. */
-    xSchedulerRunning = pdTRUE;
-    vListInitialise( &pxReadyTasksLists[ tskIDLE_PRIORITY ] );
+    //Call the List
+    vTaskList(buff);
 
-    /* Create one task with state eDeleted. */
-    xTaskTCB.uxPriority = tskIDLE_PRIORITY;
-    xTaskTCB.pcTaskName[ 0 ] = '\0';
-    xTaskTCB.xStateListItem.pvOwner = &xTaskTCB;
-    xTaskTCB.uxCoreAffinityMask = ( ( 1U << configNUMBER_OF_CORES ) - 1U );
-    xTaskTCB.uxTaskAttributes = -1;
-    xTaskTCB.xTaskRunState = 0;
-    xTaskTCB.uxTaskNumber = 0;
-    pxCurrentTCBs[ 0 ] = &xTaskTCB;
-    xTaskTCB.xStateListItem.pxContainer = &pxReadyTasksLists[ tskIDLE_PRIORITY ];
-    listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCB.xStateListItem );
-    prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-    
-    /* API calls. */
-    vTaskList( pcWriteBuffer );
-    
-    /* Clean up malloc for stack. */
-    vPortFreeStack( xTaskTCB.pxStack );
-
-    /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
-
-    /* Verify the returned string. */
-    for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
-    {
-        pcGeneratedTaskName[ i ] = ' ';
-    }
-    pcGeneratedTaskName[ i ] = '\0';
-
-    sprintf( pcExpectedResult, "%s\t%c\t%u\t%u\t%u\r\n", pcGeneratedTaskName, tskRUNNING_CHAR,
-        ( unsigned int ) xTaskTCB.uxPriority, ( unsigned int ) ( configMINIMAL_STACK_SIZE - 1U ),
-        ( unsigned int ) xTaskTCB.uxTaskNumber );
-    xStringCompareResult = strcmp( pcExpectedResult, pcWriteBuffer );
-    TEST_ASSERT_EQUAL( 0, xStringCompareResult );
 }
+/*
+The kernel will be configured as follows:
+    #define configNUMBER_OF_CORES                               (N > 1)
+    #define configUSE_TRACE_FACILITY                         1
+    #define configUSE_STATS_FORMATTING_FUNCTIONS             1
 
-/**
- * @brief vTaskList - Task with state eReady.
- *
- * <b>Coverage</b>
- * @code{c}
- * switch( pxTaskStatusArray[ x ].eCurrentState )
- * {
- *     ...
- *     case eReady:
- *         cStatus = tskREADY_CHAR;
- *         break;
- *     ...
- * }
- * @endcode
- * ( pxTaskStatusArray[ x ].eCurrentState ) is eReady.
- */
-void test_coverage_vTaskList_task_eReady( void )
+Coverage for: 
+        void vTaskList( char * pcWriteBuffer )
+        case eDeleted
+*/
+void test_v_task_list_case_eDeleted( void )
 {
-    TCB_t xTaskTCB = { NULL };
-    char pcExpectedResult[ TEST_VTASKLIST_BUFFER_SIZE ] = { 0 };
-    char pcWriteBuffer[ TEST_VTASKLIST_BUFFER_SIZE ] = "Test"; /* Validate the string is overwritten in the API call. */
-    int xStringCompareResult;
-    char pcGeneratedTaskName[ configMAX_TASK_NAME_LEN ];
+    static char	buff[ 800 ] = { 0 };
+
+    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES+1] = { NULL };
+
     uint32_t i;
- 
-    /* Setup the variables and structure. */
-    xSchedulerRunning = pdTRUE;
-    vListInitialise( &pxReadyTasksLists[ tskIDLE_PRIORITY ] );
 
-    /* Create one task with state eDeleted. */
-    xTaskTCB.uxPriority = tskIDLE_PRIORITY;
-    xTaskTCB.pcTaskName[ 0 ] = '\0';
-    xTaskTCB.xStateListItem.pvOwner = &xTaskTCB;
-    xTaskTCB.uxCoreAffinityMask = ( ( 1U << configNUMBER_OF_CORES ) - 1U );
-    xTaskTCB.uxTaskAttributes = -1;
-    xTaskTCB.xTaskRunState = taskTASK_NOT_RUNNING;
-    xTaskTCB.uxTaskNumber = 0;
-    pxCurrentTCBs[ 0 ] = &xTaskTCB;
-    xTaskTCB.xStateListItem.pxContainer = &pxReadyTasksLists[ tskIDLE_PRIORITY ];
-    listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCB.xStateListItem );
-    prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-    
-    /* API calls. */
-    vTaskList( pcWriteBuffer );
-    
-    /* Clean up malloc for stack. */
-    vPortFreeStack( xTaskTCB.pxStack );
-
-    /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
-
-    /* Verify the returned string. */
-    for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
-    {
-        pcGeneratedTaskName[ i ] = ' ';
+    /* Create tasks of equal priority for all available CPU cores */
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 3, &xTaskHandles[i] );
     }
-    pcGeneratedTaskName[ i ] = '\0';
 
-    sprintf( pcExpectedResult, "%s\t%c\t%u\t%u\t%u\r\n", pcGeneratedTaskName, tskREADY_CHAR,
-        ( unsigned int ) xTaskTCB.uxPriority, ( unsigned int ) ( configMINIMAL_STACK_SIZE - 1U ),
-        ( unsigned int ) xTaskTCB.uxTaskNumber );
-    xStringCompareResult = strcmp( pcExpectedResult, pcWriteBuffer );
-    TEST_ASSERT_EQUAL( 0, xStringCompareResult );
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
+
+    vTaskStartScheduler();
+ 
+    vTaskDelete(xTaskHandles[0]);
+
+    //Call the List
+    vTaskList(buff);
+
+    /* Delete all priority task responsibly*/
+    for (i = 1; i < configNUMBER_OF_CORES; i++) {
+        vTaskDelete(xTaskHandles[i]);
+    }
+
 }
 
-/**
- * @brief vTaskList - Task with state eBlocked.
- *
- * <b>Coverage</b>
- * @code{c}
- * switch( pxTaskStatusArray[ x ].eCurrentState )
- * {
- *     ...
- *     case eBlocked:
- *         cStatus = tskBLOCKED_CHAR;
- *         break;
- *     ...
- * }
- * @endcode
- * ( pxTaskStatusArray[ x ].eCurrentState ) is eBlocked.
- */
-void test_coverage_vTaskList_task_eBlocked( void )
+/*
+The kernel will be configured as follows:
+    #define configNUMBER_OF_CORES                               (N > 1)
+    #define configUSE_TRACE_FACILITY                         1
+    #define configUSE_STATS_FORMATTING_FUNCTIONS             1
+
+Coverage for: 
+        void vTaskList( char * pcWriteBuffer )
+        case eSuspended
+*/
+void test_v_task_list_case_eSuspended( void )
 {
-    TCB_t xTaskTCB = { NULL };
-    char pcExpectedResult[ TEST_VTASKLIST_BUFFER_SIZE ] = { 0 };
-    char pcWriteBuffer[ TEST_VTASKLIST_BUFFER_SIZE ] = "Test"; /* Validate the string is overwritten in the API call. */
-    int xStringCompareResult;
-    char pcGeneratedTaskName[ configMAX_TASK_NAME_LEN ];
+    static char	buff[ 800 ] = { 0 };
+
+    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES+1] = { NULL };
+
     uint32_t i;
- 
-    /* Setup the variables and structure. */
-    xSchedulerRunning = pdTRUE;
-    vListInitialise( &xDelayedTaskList1 );
-    pxDelayedTaskList = &xDelayedTaskList1;
 
-    /* Create one task with state eDeleted. */
-    xTaskTCB.uxPriority = tskIDLE_PRIORITY;
-    xTaskTCB.pcTaskName[ 0 ] = '\0';
-    xTaskTCB.xStateListItem.pvOwner = &xTaskTCB;
-    xTaskTCB.uxCoreAffinityMask = ( ( 1U << configNUMBER_OF_CORES ) - 1U );
-    xTaskTCB.uxTaskAttributes = -1;
-    xTaskTCB.xTaskRunState = taskTASK_NOT_RUNNING;
-    xTaskTCB.uxTaskNumber = 0;
-    pxCurrentTCBs[ 0 ] = &xTaskTCB;
-    xTaskTCB.xStateListItem.pxContainer = pxDelayedTaskList;
-    listINSERT_END( pxDelayedTaskList, &xTaskTCB.xStateListItem );
-    prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-    
-    /* API calls. */
-    vTaskList( pcWriteBuffer );
-    
-    /* Clean up malloc for stack. */
-    vPortFreeStack( xTaskTCB.pxStack );
-
-    /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
-
-    /* Verify the returned string. */
-    for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
-    {
-        pcGeneratedTaskName[ i ] = ' ';
+    /* Create tasks of equal priority for all available CPU cores */
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 3, &xTaskHandles[i] );
     }
-    pcGeneratedTaskName[ i ] = '\0';
 
-    sprintf( pcExpectedResult, "%s\t%c\t%u\t%u\t%u\r\n", pcGeneratedTaskName, tskBLOCKED_CHAR,
-        ( unsigned int ) xTaskTCB.uxPriority, ( unsigned int ) ( configMINIMAL_STACK_SIZE - 1U ),
-        ( unsigned int ) xTaskTCB.uxTaskNumber );
-    xStringCompareResult = strcmp( pcExpectedResult, pcWriteBuffer );
-    TEST_ASSERT_EQUAL( 0, xStringCompareResult );
+    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
+
+    vTaskStartScheduler();
+ 
+    vTaskSuspend(xTaskHandles[1]);
+
+    //Call the List
+    vTaskList(buff);
+
+
+    /* Delete all priority task responsibly*/
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        vTaskDelete(xTaskHandles[i]);
+    }
+
 }
 
-/**
- * @brief vTaskList - Task with state eSuspended.
- *
- * <b>Coverage</b>
- * @code{c}
- * switch( pxTaskStatusArray[ x ].eCurrentState )
- * {
- *     ...
- *     case eSuspended:
- *         cStatus = tskSUSPENDED_CHAR;
- *         break;
- *     ...
- * }
- * @endcode
- * ( pxTaskStatusArray[ x ].eCurrentState ) is eSuspended.
- */
-void test_coverage_vTaskList_task_eSuspended( void )
+
+/*
+The kernel will be configured as follows:
+    #define configNUMBER_OF_CORES                               (N > 1)
+    #define configUSE_TRACE_FACILITY                         1
+    #define configUSE_STATS_FORMATTING_FUNCTIONS             1
+
+Coverage for: 
+        void vTaskList( char * pcWriteBuffer )
+        case eBlocked
+*/
+void test_v_task_list_case_eblocked( void )
 {
-    TCB_t xTaskTCB = { NULL };
-    char pcExpectedResult[ TEST_VTASKLIST_BUFFER_SIZE ] = { 0 };
-    char pcWriteBuffer[ TEST_VTASKLIST_BUFFER_SIZE ] = "Test"; /* Validate the string is overwritten in the API call. */
-    int xStringCompareResult;
-    char pcGeneratedTaskName[ configMAX_TASK_NAME_LEN ];
+    static char	buff[ 800 ] = { 0 };
+
+    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
+
     uint32_t i;
- 
-    /* Setup the variables and structure. */
-    xSchedulerRunning = pdTRUE;
-    vListInitialise( &xSuspendedTaskList );
 
-    /* Create one task with state eDeleted. */
-    xTaskTCB.uxPriority = tskIDLE_PRIORITY;
-    xTaskTCB.pcTaskName[ 0 ] = '\0';
-    xTaskTCB.xStateListItem.pvOwner = &xTaskTCB;
-    xTaskTCB.uxCoreAffinityMask = ( ( 1U << configNUMBER_OF_CORES ) - 1U );
-    xTaskTCB.uxTaskAttributes = -1;
-    xTaskTCB.xTaskRunState = taskTASK_NOT_RUNNING;
-    xTaskTCB.uxTaskNumber = 0;
-    pxCurrentTCBs[ 0 ] = &xTaskTCB;
-    xTaskTCB.xStateListItem.pxContainer = &xSuspendedTaskList;
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCB.xStateListItem );
-    prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-    
-    /* API calls. */
-    vTaskList( pcWriteBuffer );
-    
-    /* Clean up malloc for stack. */
-    vPortFreeStack( xTaskTCB.pxStack );
-
-    /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
-
-    /* Verify the returned string. */
-    for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
-    {
-        pcGeneratedTaskName[ i ] = ' ';
+    /* Create tasks of equal priority for all available CPU cores */
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
     }
-    pcGeneratedTaskName[ i ] = '\0';
 
-    sprintf( pcExpectedResult, "%s\t%c\t%u\t%u\t%u\r\n", pcGeneratedTaskName, tskSUSPENDED_CHAR,
-        ( unsigned int ) xTaskTCB.uxPriority, ( unsigned int ) ( configMINIMAL_STACK_SIZE - 1U ),
-        ( unsigned int ) xTaskTCB.uxTaskNumber );
-    xStringCompareResult = strcmp( pcExpectedResult, pcWriteBuffer );
-    TEST_ASSERT_EQUAL( 0, xStringCompareResult );
+    vTaskStartScheduler();
+
+    /* Delay the task running on core ID 0 for 1 ticks. The task will be put into pxDelayedTaskList and added back to ready list after 1 tick. */
+    vTaskDelay( 1 );
+
+    //Call the List
+    vTaskList(buff);
+
+     /* Delete all priority task responsibly*/
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        vTaskDelete(xTaskHandles[i]);
+    }
 }
 
-/**
- * @brief vTaskList - Task with state eDeleted.
- *
- * <b>Coverage</b>
- * @code{c}
- * switch( pxTaskStatusArray[ x ].eCurrentState )
- * {
- *     ...
- *     case eDeleted:
- *         cStatus = tskDELETED_CHAR;
- *         break;
- *     ...
- * }
- * @endcode
- * ( pxTaskStatusArray[ x ].eCurrentState ) is eDeleted.
- */
-void test_coverage_vTaskList_task_eDeleted( void )
+/*
+The kernel will be configured as follows:
+    #define configNUMBER_OF_CORES                               (N > 1)
+    #define configUSE_TRACE_FACILITY                         1
+    #define configUSE_STATS_FORMATTING_FUNCTIONS             1
+
+Coverage for: 
+        void vTaskList( char * pcWriteBuffer )
+        and
+        static char * prvWriteNameToBuffer( char * pcBuffer,
+                                            const char * pcTaskName )
+*/
+void test_v_task_list( void )
 {
-    TCB_t xTaskTCB = { NULL };
-    char pcExpectedResult[ TEST_VTASKLIST_BUFFER_SIZE ] = { 0 };
-    char pcWriteBuffer[ TEST_VTASKLIST_BUFFER_SIZE ] = "Test"; /* Validate the string is overwritten in the API call. */
-    int xStringCompareResult;
-    char pcGeneratedTaskName[ configMAX_TASK_NAME_LEN ];
+    static char	buff[ 800 ] = { 0 };
+
+    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
     uint32_t i;
- 
-    /* Setup the variables and structure. */
-    xSchedulerRunning = pdTRUE;
-    vListInitialise( &pxReadyTasksLists[ tskIDLE_PRIORITY ] );
-    vListInitialise( &xTasksWaitingTermination );
 
-    /* Create one task with state eDeleted. */
-    xTaskTCB.uxPriority = tskIDLE_PRIORITY;
-    xTaskTCB.pcTaskName[ 0 ] = '\0';
-    xTaskTCB.xStateListItem.pvOwner = &xTaskTCB;
-    xTaskTCB.uxCoreAffinityMask = ( ( 1U << configNUMBER_OF_CORES ) - 1U );
-    xTaskTCB.uxTaskAttributes = -1;
-    xTaskTCB.xTaskRunState = taskTASK_NOT_RUNNING;
-    xTaskTCB.uxTaskNumber = 0;
-    pxCurrentTCBs[ 0 ] = &xTaskTCB;
-    xTaskTCB.xStateListItem.pxContainer = &xTasksWaitingTermination;
-    listINSERT_END( &xTasksWaitingTermination, &xTaskTCB.xStateListItem );
-    prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-    
-    /* API calls. */
-    vTaskList( pcWriteBuffer );
-    
-    /* Clean up malloc for stack. */
-    vPortFreeStack( xTaskTCB.pxStack );
-
-    /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
-
-    /* Verify the returned string. */
-    for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
-    {
-        pcGeneratedTaskName[ i ] = ' ';
+    /* Create tasks of equal priority for all available CPU cores */
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
     }
-    pcGeneratedTaskName[ i ] = '\0';
 
-    sprintf( pcExpectedResult, "%s\t%c\t%u\t%u\t%u\r\n", pcGeneratedTaskName, tskDELETED_CHAR,
-        ( unsigned int ) xTaskTCB.uxPriority, ( unsigned int ) ( configMINIMAL_STACK_SIZE - 1U ),
-        ( unsigned int ) xTaskTCB.uxTaskNumber );
-    xStringCompareResult = strcmp( pcExpectedResult, pcWriteBuffer );
-    TEST_ASSERT_EQUAL( 0, xStringCompareResult );
+    vTaskStartScheduler();
+
+    vTaskList(buff);
+
+    /* Delete all priority task responsibly*/
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        vTaskDelete(xTaskHandles[i]);
+    }
 }
+
+
+
 
 /*
 The kernel will be configured as follows:
@@ -1173,6 +963,7 @@ void test_coverage_prvAddNewTaskToReadyList_create_more_idle_tasks_than_cores( v
 
     /* Setup the variables and structure. */
     /* Initialize the idle priority ready list and set top ready priority to idle priority. */
+    vListInitialise( &( pxReadyTasksLists[ tskIDLE_PRIORITY ] ) );
     uxTopReadyPriority = tskIDLE_PRIORITY;
     uxCurrentNumberOfTasks = 0;
     xSchedulerRunning = pdFALSE;
@@ -1951,158 +1742,6 @@ void test_coverage_prvDeleteTCB_static_stack_only(void)
     UnityMalloc_EndTest();
 }
 
-/** @brief xTaskResumeFromISR - resume task from within ISR context
- *
- * <b>Coverage</b>
- * @code{c}
- *      if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
- *      {
- *          traceTASK_RESUME_FROM_ISR( pxTCB );
- *          ...
- *          if( uxSchedulerSuspended == ( UBaseType_t ) pdFALSE )
- *          {
- *              ...
- *              prvAddTaskToReadyList( pxTCB );
- * @endcode
- *
- * Cover the case where the scheduler is not suspended, and the
- * task being resumed is suspended.
- *
- */
-void test_coverage_xTaskResumeFromISR_task_suspended_uxpriority_greater(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    BaseType_t xAlreadyYielded;
-    UBaseType_t uxCore;
-    List_t xList;
-
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 1;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the suspended list. */
-    xTaskTCBs[1].uxPriority = 2;
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[1].xStateListItem );
-    vListInitialise(&xList);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    uxTopReadyPriority = 1;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    for(uxCore = 0U; uxCore < configNUMBER_OF_CORES; uxCore++ )
-    {
-        if (pxCurrentTCBs[uxCore] == NULL)
-        {
-            pxCurrentTCBs[uxCore] = &xTaskTCBs[0];
-        }
-    }
-
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdFALSE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* Expectations. */
-    vFakePortAssertIfInterruptPriorityInvalid_Ignore();
-
-    /* API call. */
-    xAlreadyYielded = xTaskResumeFromISR( &xTaskTCBs[1] );
-
-    /* Validation. */
-    /* The task priority is no higher than current running task. */
-    TEST_ASSERT_EQUAL( pdFALSE, xAlreadyYielded );
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
-}
-
-/** @brief xTaskResumeFromISR - resume task from within ISR context
- *
- * <b>Coverage</b>
- * @code{c}
- *      if( prvTaskIsTaskSuspended( pxTCB ) != pdFALSE )
- *      {
- *          traceTASK_RESUME_FROM_ISR( pxTCB );
- *          ...
- *          if( uxSchedulerSuspended == ( UBaseType_t ) pdFALSE )
- *          {
- *              ...
- *              prvAddTaskToReadyList( pxTCB );
- * @endcode
- *
- * Cover the case where the scheduler is not suspended, and the
- * task being resumed is suspended.
- *
- */
-void test_coverage_xTaskResumeFromISR_task_suspended_uxpriority_lesser(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    BaseType_t xAlreadyYielded;
-    UBaseType_t uxCore;
-    List_t xList;
-
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 1;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the suspended list. */
-    xTaskTCBs[1].uxPriority = 0;
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &xSuspendedTaskList, &xTaskTCBs[1].xStateListItem );
-    vListInitialise(&xList);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    uxTopReadyPriority = 1;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    for(uxCore = 0U; uxCore < configNUMBER_OF_CORES; uxCore++ )
-    {
-        if (pxCurrentTCBs[uxCore] == NULL)
-        {
-            pxCurrentTCBs[uxCore] = &xTaskTCBs[0];
-        }
-    }
-
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdFALSE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* Expectations. */
-    vFakePortAssertIfInterruptPriorityInvalid_Ignore();
-
-    /* API call. */
-    xAlreadyYielded = xTaskResumeFromISR( &xTaskTCBs[1] );
-
-    /* Validation. */
-    /* The task priority is no higher than current running task. */
-    TEST_ASSERT_EQUAL( pdFALSE, xAlreadyYielded );
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
-}
-
-
-
 /** @brief xTaskResumeAll - resume all suspended tasks
  *
  * <b>Coverage</b>
@@ -2120,77 +1759,17 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list(void)
 {
     TCB_t xTaskTCBs[ 2 ] = { NULL };
     BaseType_t xAlreadyYielded;
+    UBaseType_t uxPriority;
     List_t xList;
 
-     /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 1;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the pending ready list. */
-    xTaskTCBs[1].uxPriority = 2;        /* The priority is not higher than current running task. */
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &xPendingReadyList, &xTaskTCBs[1].xStateListItem );
-    vListInitialise(&xList);
-    vListInitialiseItem(&(xTaskTCBs[1].xEventListItem));
-    listSET_LIST_ITEM_VALUE(&(xTaskTCBs[1].xEventListItem),
-                          taskEVENT_LIST_ITEM_VALUE_IN_USE);
-    listINSERT_END(&xList, &(xTaskTCBs[1].xEventListItem));
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    uxTopReadyPriority = 1;
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdTRUE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* Clear setup in commonSetUp. */
-    vFakePortReleaseTaskLock_StubWithCallback( NULL );
-    vFakePortExitCriticalSection_StubWithCallback( NULL );
-
-    /* Expectations. */
-    vFakePortReleaseTaskLock_Expect();
-    vFakePortExitCriticalSection_Expect();
-
-    /* API call. */
-    xAlreadyYielded = xTaskResumeAll();
-
-    /* Validation. */
-    /* The task priority is no higher than current running task. */
-    TEST_ASSERT_EQUAL( pdFALSE, xAlreadyYielded );
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
-}
-
-/** @brief xTaskResumeAll - resume all suspended tasks
- *
- * <b>Coverage</b>
- * @code{c}
- *  while( listLIST_IS_EMPTY( &xPendingReadyList ) == pdFALSE )
- *  {
- *      ...
- * @endcode
- *
- * Cover the case where the scheduler is running and suspended,
- * there are tasks and at least one is in the pending ready list
- * with a priority less than uxTopReadyPriority.
- *
- */
-void test_coverage_xTaskResumeAll_task_in_pending_ready_list_uxpriority_lesser(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    BaseType_t xAlreadyYielded;
-    List_t xList;
+    for( uxPriority = (UBaseType_t)0U; uxPriority < (UBaseType_t)configMAX_PRIORITIES; uxPriority++ )
+    {
+        vListInitialise(&(pxReadyTasksLists[uxPriority]));
+    }
+    vListInitialise(&xSuspendedTaskList);
+    vListInitialise(&xPendingReadyList);
+    vListInitialise(&xDelayedTaskList1);
+    pxDelayedTaskList = &xDelayedTaskList1;
 
     /* Create a task as current running task on core 0. */
     xTaskTCBs[0].uxPriority = 1;
@@ -2201,7 +1780,7 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list_uxpriority_lesser(v
     uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
 
     /* Create a task in the pending ready list. */
-    xTaskTCBs[1].uxPriority = 0;        /* The priority is not higher than current running task. */
+    xTaskTCBs[1].uxPriority = 1;        /* The priority is not higher than current running task. */
     xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
     vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
     listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
@@ -2217,7 +1796,6 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list_uxpriority_lesser(v
     xYieldPendings[ 0 ] = pdFALSE;
     pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
 
-    uxTopReadyPriority = 1;
     xSchedulerRunning = pdTRUE;
     uxSchedulerSuspended = pdTRUE;
     xPendedTicks = 0;      /* No pending tick in this test. */
@@ -2239,7 +1817,7 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list_uxpriority_lesser(v
     /* The task in pending ready list should not in any event list now. */
     TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
     /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
+    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ] );
 }
 
 /**
@@ -2274,13 +1852,20 @@ void test_coverage_vTaskResume_null_task( void )
  *
  * Cover the case where the ucOriginalNotifyState is taskWAITING_NOTIFICATION.
  */
-void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING_NOTIFICATION_uxpriority_lesser( void )
+void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING_NOTIFICATION( void )
 {
     TCB_t xTaskTCBs[ 2U ] = { NULL };
     UBaseType_t xidx = 0;
     uint32_t prevValue;
     BaseType_t xReturn;
-    UBaseType_t uxCoreID;
+    UBaseType_t uxPriority, uxCoreID;
+
+    for( uxPriority = ( UBaseType_t ) 0U; uxPriority < ( UBaseType_t ) configMAX_PRIORITIES; uxPriority++ )
+    {
+        vListInitialise( &( pxReadyTasksLists[ uxPriority ] ) );
+    }
+
+    vListInitialise( &xPendingReadyList );
 
     xTaskTCBs[ 0 ].uxPriority = 1;
     xTaskTCBs[ 0 ].xTaskRunState = 0;
@@ -2303,61 +1888,9 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
         }
     }
 
-    uxTopReadyPriority = 2;
-    uxSchedulerSuspended = pdTRUE;
-    xTaskTCBs[0].ucNotifyState[ xidx ] = taskWAITING_NOTIFICATION;
-    xTaskTCBs[0].ulNotifiedValue[ xidx ] = 0xa5a5;      /* Value to be verified later. */
-
-    xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
-
-    TEST_ASSERT_EQUAL_UINT32( 0xa5a5, prevValue );
-    TEST_ASSERT( xReturn == pdPASS );
-}
-
-/**
- * @brief xTaskGenericNotify - function to notify a task.
- *
- * <b>Coverage</b>
- * @code{c}
- * if( ucOriginalNotifyState == taskWAITING_NOTIFICATION )
- * {
- *     ...
- * @endcode
- *
- * Cover the case where the ucOriginalNotifyState is taskWAITING_NOTIFICATION.
- */
-void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING_NOTIFICATION_uxpriority_greater( void )
-{
-    TCB_t xTaskTCBs[ 2U ] = { NULL };
-    UBaseType_t xidx = 0;
-    uint32_t prevValue;
-    BaseType_t xReturn;
-    UBaseType_t uxCoreID;
-
-    xTaskTCBs[ 0 ].uxPriority = 2;
-    xTaskTCBs[ 0 ].xTaskRunState = 0;
-    vListInitialiseItem( &( xTaskTCBs[0].xStateListItem ) );
-    listSET_LIST_ITEM_OWNER( &( xTaskTCBs[0].xStateListItem ), &xTaskTCBs[0] );
-    listINSERT_END( &xPendingReadyList, &xTaskTCBs[ 0 ].xStateListItem );
-
-    /* Default core ID is 0. The can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
-
-    xTaskTCBs[ 1 ].uxPriority = 1;
-    xTaskTCBs[ 1 ].xTaskRunState = -1;
-
-    for( uxCoreID = 0; uxCoreID < configNUMBER_OF_CORES; uxCoreID++ )
-    {
-        if (pxCurrentTCBs[ uxCoreID ] == NULL)
-        {
-            pxCurrentTCBs[ uxCoreID ] = &xTaskTCBs[ 1 ];
-        }
-    }
-
     uxTopReadyPriority = 1;
     uxSchedulerSuspended = pdTRUE;
-    xTaskTCBs[0].ucNotifyState[ xidx ] = taskWAITING_NOTIFICATION;
+    xTaskTCBs[0].ucNotifyState[ xidx ] = taskNOT_WAITING_NOTIFICATION;
     xTaskTCBs[0].ulNotifiedValue[ xidx ] = 0xa5a5;      /* Value to be verified later. */
 
     xReturn = xTaskGenericNotify( &xTaskTCBs[0], xidx, 0x0, eNoAction, &prevValue);
@@ -2365,7 +1898,6 @@ void test_coverage_xTaskGenericNotify_with_eAction_equalto_eNoAction_taskWAITING
     TEST_ASSERT_EQUAL_UINT32( 0xa5a5, prevValue );
     TEST_ASSERT( xReturn == pdPASS );
 }
-
 
 /**
  * @brief vTaskGetInfo - populate TaskStatus_t and eTaskState
@@ -2473,6 +2005,9 @@ void test_coverage_vTaskGetInfo_blocked_task( void )
     eTaskState taskState = eSuspended;
 
     /* Setup the variables and structure. */
+    vListInitialise( &xSuspendedTaskList );
+    vListInitialise( &xPendingReadyList );
+
     xTaskTCBs[ 0 ].uxPriority = 2;
     xTaskTCBs[ 0 ].uxBasePriority = 0;
     xTaskTCBs[ 0 ].xTaskRunState = -1;
@@ -2535,414 +2070,4 @@ void test_coverage_vTaskGetInfo_get_free_stack_space( void )
     TEST_ASSERT_EQUAL( ( UBaseType_t ) 0, pxTaskStatus.uxBasePriority );
     /* The stack is not used in this test. The high water mark is the index of the stack. */
     TEST_ASSERT_EQUAL( ( configMINIMAL_STACK_SIZE - 1 ) , pxTaskStatus.usStackHighWaterMark );
-}
-
-/** @brief xTaskPriorityInherit - inherit the priority of the mutex holder
- *
- * <b>Coverage</b>
- * @code{c}
- *  if( listIS_CONTAINED_WITHIN( &( pxReadyTasksLists[ pxMutexHolderTCB->uxPriority ] ), &( pxMutexHolderTCB->xStateListItem ) ) != pdFALSE )
- *  {
- *      ...
- *      prvAddTaskToReadyList( pxMutexHolderTCB );
- * @endcode
- *
- * Cover the case where a non-NULL task is specified, and this task has a
- * priority lesser than the current task. Furthermore than the specified
- * task is in the ready task list. Finally that the uxpriority of the
- * specified task is less than uxtopreadypriority.
- *
- */
-void test_coverage_xTaskPriorityInherit_task_uxpriority_lesser(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    BaseType_t xReturn;
-    UBaseType_t uxCore;
-    List_t xList;
-
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 1;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the suspended list. */
-    xTaskTCBs[1].uxPriority = 0;
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ], &xTaskTCBs[1].xStateListItem );
-    vListInitialise(&xList);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    uxTopReadyPriority = 1;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    for(uxCore = 0U; uxCore < configNUMBER_OF_CORES; uxCore++ )
-    {
-        if (pxCurrentTCBs[uxCore] == NULL)
-        {
-            pxCurrentTCBs[uxCore] = &xTaskTCBs[0];
-        }
-    }
-
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdFALSE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* API call. */
-    xReturn = xTaskPriorityInherit( &xTaskTCBs[1] );
-
-    /* Validation. */
-    /* The task priority is no higher than current running task. */
-    TEST_ASSERT_EQUAL( pdTRUE, xReturn );
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
-}
-
-/** @brief xTaskPriorityInherit - inherit the priority of the mutex holder
- *
- * <b>Coverage</b>
- * @code{c}
- *  if( listIS_CONTAINED_WITHIN( &( pxReadyTasksLists[ pxMutexHolderTCB->uxPriority ] ), &( pxMutexHolderTCB->xStateListItem ) ) != pdFALSE )
- *  {
- *      ...
- *      prvAddTaskToReadyList( pxMutexHolderTCB );
- * @endcode
- *
- * Cover the case where a non-NULL task is specified, and this task has a
- * priority lesser than the current task. Furthermore than the specified
- * task is in the ready task list. Finally that the uxpriority of the
- * specified task is greater than uxtopreadypriority.
- *
- */
-void test_coverage_xTaskPriorityInherit_task_uxpriority_greater(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    BaseType_t xReturn;
-    UBaseType_t uxCore;
-    List_t xList;
-
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 3;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the suspended list. */
-    xTaskTCBs[1].uxPriority = 2;
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ], &xTaskTCBs[1].xStateListItem );
-    vListInitialise(&xList);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    uxTopReadyPriority = 1;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    for(uxCore = 0U; uxCore < configNUMBER_OF_CORES; uxCore++ )
-    {
-        if (pxCurrentTCBs[uxCore] == NULL)
-        {
-            pxCurrentTCBs[uxCore] = &xTaskTCBs[0];
-        }
-    }
-
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdFALSE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* API call. */
-    xReturn = xTaskPriorityInherit( &xTaskTCBs[1] );
-
-    /* Validation. */
-    /* The task priority is no higher than current running task. */
-    TEST_ASSERT_EQUAL( pdTRUE, xReturn );
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
-}
-
-/** @brief xTaskPriorityDisinherit - restore priority after inheriting the priority of the mutex holder
- *
- * <b>Coverage</b>
- * @code{c}
- *      if( pxTCB->uxMutexesHeld == ( UBaseType_t ) 0 )
- *      {
- *          ...
- *          prvAddTaskToReadyList( pxMutexHolderTCB );
- * @endcode
- *
- * Cover the case where a non-NULL task is specified, and this task has a
- * priority different than its base priority. Finally the uxPriority
- * is lesser than the uxTopReadyPriority.
- *
- */
-void test_coverage_xTaskPriorityDisinherit_task_uxpriority_lesser(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    BaseType_t xReturn;
-    UBaseType_t uxCore;
-
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 1;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the suspended list. */
-    xTaskTCBs[1].uxPriority = 2;
-    xTaskTCBs[1].uxBasePriority = 1;
-    xTaskTCBs[1].uxMutexesHeld++;
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ], &xTaskTCBs[1].xStateListItem );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    uxTopReadyPriority = 3;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    for(uxCore = 0U; uxCore < configNUMBER_OF_CORES; uxCore++ )
-    {
-        if (pxCurrentTCBs[uxCore] == NULL)
-        {
-            pxCurrentTCBs[uxCore] = &xTaskTCBs[0];
-        }
-    }
-
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdFALSE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* API call. */
-    xReturn = xTaskPriorityDisinherit( &xTaskTCBs[1] );
-
-    /* Validation. */
-    /* The task priority is no higher than current running task. */
-    TEST_ASSERT_EQUAL( pdTRUE, xReturn );
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
-}
-
-/** @brief xTaskPriorityDisinherit - restore priority after inheriting the priority of the mutex holder
- *
- * <b>Coverage</b>
- * @code{c}
- *      if( pxTCB->uxMutexesHeld == ( UBaseType_t ) 0 )
- *      {
- *          ...
- *          prvAddTaskToReadyList( pxMutexHolderTCB );
- * @endcode
- *
- * Cover the case where a non-NULL task is specified, and this task has a
- * priority different than its base priority. Finally the uxPriority
- * is lesser than the uxTopReadyPriority.
- *
- */
-void test_coverage_xTaskPriorityDisinherit_task_uxpriority_greater(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    BaseType_t xReturn;
-    UBaseType_t uxCore;
-
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 1;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the suspended list. */
-    xTaskTCBs[1].uxPriority = 3;
-    xTaskTCBs[1].uxBasePriority = 2;
-    xTaskTCBs[1].uxMutexesHeld++;
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ], &xTaskTCBs[1].xStateListItem );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    uxTopReadyPriority = 1;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    for(uxCore = 0U; uxCore < configNUMBER_OF_CORES; uxCore++ )
-    {
-        if (pxCurrentTCBs[uxCore] == NULL)
-        {
-            pxCurrentTCBs[uxCore] = &xTaskTCBs[0];
-        }
-    }
-
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdFALSE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* API call. */
-    xReturn = xTaskPriorityDisinherit( &xTaskTCBs[1] );
-
-    /* Validation. */
-    /* The task priority is no higher than current running task. */
-    TEST_ASSERT_EQUAL( pdTRUE, xReturn );
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
-}
-
-/** @brief xTaskPriorityDisinheritAfterTimeout - restore priority after inheriting the priority of the mutex holder
- *
- * <b>Coverage</b>
- * @code{c}
- *      if( pxTCB->uxMutexesHeld == ( UBaseType_t ) 0 )
- *      {
- *          ...
- *          prvAddTaskToReadyList( pxMutexHolderTCB );
- * @endcode
- *
- * Cover the case where a non-NULL task is specified, and this task has a
- * priority different than its base priority. Finally the uxPriority
- * is lesser than the uxTopReadyPriority.
- *
- */
-void test_coverage_xTaskPriorityDisinheritAfterTimeout_task_uxpriority_lesser(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    UBaseType_t uxCore;
-
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 1;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the suspended list. */
-    xTaskTCBs[1].uxPriority = 2;
-    xTaskTCBs[1].uxBasePriority = 1;
-    xTaskTCBs[1].uxMutexesHeld++;
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ], &xTaskTCBs[1].xStateListItem );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    uxTopReadyPriority = 3;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    for(uxCore = 0U; uxCore < configNUMBER_OF_CORES; uxCore++ )
-    {
-        if (pxCurrentTCBs[uxCore] == NULL)
-        {
-            pxCurrentTCBs[uxCore] = &xTaskTCBs[0];
-        }
-    }
-
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdFALSE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* API call. */
-    vTaskPriorityDisinheritAfterTimeout( &xTaskTCBs[1], 1 );
-
-    /* Validation. */
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
-}
-
-/** @brief xTaskPriorityDisinheritAfterTimeout - restore priority after inheriting the priority of the mutex holder
- *
- * <b>Coverage</b>
- * @code{c}
- *      if( pxTCB->uxMutexesHeld == ( UBaseType_t ) 0 )
- *      {
- *          ...
- *          prvAddTaskToReadyList( pxMutexHolderTCB );
- * @endcode
- *
- * Cover the case where a non-NULL task is specified, and this task has a
- * priority different than its base priority. Finally the uxPriority
- * is lesser than the uxTopReadyPriority.
- *
- */
-void test_coverage_xTaskPriorityDisinheritAfterTimeout_task_uxpriority_greater(void)
-{
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
-    UBaseType_t uxCore;
-
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[0].uxPriority = 1;
-    xTaskTCBs[0].xTaskRunState = 0;
-    vListInitialiseItem(&(xTaskTCBs[0].xStateListItem));
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[0].uxPriority ], &xTaskTCBs[0].xStateListItem );
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[0].xStateListItem), &xTaskTCBs[0]);
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    /* Create a task in the suspended list. */
-    xTaskTCBs[1].uxPriority = 3;
-    xTaskTCBs[1].uxBasePriority = 2;
-    xTaskTCBs[1].uxMutexesHeld++;
-    xTaskTCBs[1].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem(&(xTaskTCBs[1].xStateListItem));
-    listSET_LIST_ITEM_OWNER(&(xTaskTCBs[1].xStateListItem), &xTaskTCBs[1]);
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ], &xTaskTCBs[1].xStateListItem );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
-
-    uxTopReadyPriority = 1;
-
-    /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[0];
-
-    for(uxCore = 0U; uxCore < configNUMBER_OF_CORES; uxCore++ )
-    {
-        if (pxCurrentTCBs[uxCore] == NULL)
-        {
-            pxCurrentTCBs[uxCore] = &xTaskTCBs[0];
-        }
-    }
-
-    xSchedulerRunning = pdTRUE;
-    uxSchedulerSuspended = pdFALSE;
-    xPendedTicks = 0;      /* No pending tick in this test. */
-
-    /* API call. */
-    vTaskPriorityDisinheritAfterTimeout( &xTaskTCBs[1], 2 );
-
-    /* Validation. */
-    /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xEventListItem.pvContainer, NULL );
-    /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[1].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[1].uxPriority ] );
 }
