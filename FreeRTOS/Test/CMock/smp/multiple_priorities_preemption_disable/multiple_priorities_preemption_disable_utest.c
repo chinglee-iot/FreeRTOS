@@ -240,7 +240,7 @@ void test_coverage_prvYieldCore_core_id_ne_current_coreid( void )
  * @endcode
  * ( pxCurrentTCBs[ xCoreID ]->xTaskRunState != taskTASK_YIELDING ) is false.
  */
-void test_prvYieldCore_runstate_eq_yielding( void )
+void test_coverage_prvYieldCore_runstate_eq_yielding( void )
 {
     TCB_t task;
     TCB_t task2;
