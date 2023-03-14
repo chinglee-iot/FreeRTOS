@@ -275,7 +275,7 @@ void test_vTaskPrioritySet_non_running_state(void)
  * ( pxTCB->xPreemptionDisable == pdFALSE ) is false.
  */
 
-void test_vTaskPriority_running_state(void)
+void test_vTaskPrioritySet_running_state(void)
 {   
     TCB_t xTaskTCBs[ 1 ] = { NULL };
     
