@@ -1268,11 +1268,11 @@ void test_coverage_xTaskRemoveFromEventList_remove_eq_priority_task( void )
 
     /* Validations. */
     /* Yield not required for current core due to equal priority. */
-    TEST_ASSERT_EQUAL( xReturn, pdFALSE );
+    TEST_ASSERT_EQUAL( pdFALSE, xReturn );
     /* Task is removed from event list. */
-    TEST_ASSERT_EQUAL( xTaskTCB.xEventListItem.pvContainer, NULL );
+    TEST_ASSERT_EQUAL( NULL, xTaskTCB.xEventListItem.pvContainer );
     /* Task is added to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCB.xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCB.uxPriority ] );
+    TEST_ASSERT_EQUAL( &pxReadyTasksLists[ xTaskTCB.uxPriority ], xTaskTCB.xStateListItem.pvContainer );
 }
 
 /**
@@ -1368,11 +1368,11 @@ void test_coverage_xTaskRemoveFromEventList_remove_higher_priority_task( void )
 
     /* Validations. */
     /* Yield is required for current core due to higher priority. */
-    TEST_ASSERT_EQUAL( xReturn, pdTRUE );
+    TEST_ASSERT_EQUAL( pdTRUE, xReturn );
     /* Task is removed from event list. */
-    TEST_ASSERT_EQUAL( xTaskTCB.xEventListItem.pvContainer, NULL );
+    TEST_ASSERT_EQUAL( NULL, xTaskTCB.xEventListItem.pvContainer );
     /* Task is added to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCB.xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCB.uxPriority ] );
+    TEST_ASSERT_EQUAL( &pxReadyTasksLists[ xTaskTCB.uxPriority ], xTaskTCB.xStateListItem.pvContainer );
 }
 
 
@@ -1464,11 +1464,11 @@ void test_coverage_vTaskRemoveFromUnorderedEventList_remove_higher_priority_task
 
     /* Validations. */
     /* Task is removed from event list. */
-    TEST_ASSERT_EQUAL( xTaskTCB.xEventListItem.pvContainer, NULL );
+    TEST_ASSERT_EQUAL( NULL, xTaskTCB.xEventListItem.pvContainer );
     /* Task is added to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCB.xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCB.uxPriority ] );
+    TEST_ASSERT_EQUAL( &pxReadyTasksLists[ xTaskTCB.uxPriority ], xTaskTCB.xStateListItem.pvContainer );
     /* The event list item value is set. */
-    TEST_ASSERT_EQUAL( xTaskTCB.xEventListItem.xItemValue, 500 | 0x80000000UL );
+    TEST_ASSERT_EQUAL( 500 | 0x80000000UL, xTaskTCB.xEventListItem.xItemValue );
     /* The xYieldPendings is set. */
-    TEST_ASSERT_EQUAL( xYieldPendings[ 0 ] , pdTRUE );
+    TEST_ASSERT_EQUAL( pdTRUE, xYieldPendings[ 0 ] );
 }
