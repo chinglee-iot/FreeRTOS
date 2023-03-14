@@ -73,15 +73,13 @@
 #define configUSE_QUEUE_SETS                             1
 #define configUSE_TASK_NOTIFICATIONS                     1
 #define configTASK_NOTIFICATION_ARRAY_ENTRIES            5
-#define configSUPPORT_STATIC_ALLOCATION                  1
-#define configSUPPORT_DYNAMIC_ALLOCATION                 1
+#define configSUPPORT_STATIC_ALLOCATION                  0
 #define configINITIAL_TICK_COUNT                         ( ( TickType_t ) 0 )
 #define configSTREAM_BUFFER_TRIGGER_LEVEL_TEST_MARGIN    1
 #define portREMOVE_STATIC_QUALIFIER                      1
 #define portCRITICAL_NESTING_IN_TCB                      1
 #define portSTACK_GROWTH                                 ( 1 )
 #define configUSE_MINIMAL_IDLE_HOOK                      0
-#define configNUM_THREAD_LOCAL_STORAGE_POINTERS          4
 
 /* Software timer related configuration options. */
 #define configUSE_TIMERS                                 1

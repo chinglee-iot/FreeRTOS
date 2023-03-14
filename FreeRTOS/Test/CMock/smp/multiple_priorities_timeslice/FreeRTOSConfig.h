@@ -43,9 +43,9 @@
 
 /* SMP test specific configuration */
 #define configRUN_MULTIPLE_PRIORITIES                    1
-#define configNUMBER_OF_CORES                                  16
+#define configNUMBER_OF_CORES                            16
 #define configUSE_CORE_AFFINITY                          1
-#define configUSE_TIME_SLICING                           0
+#define configUSE_TIME_SLICING                           1
 #define configUSE_TASK_PREEMPTION_DISABLE                1
 #define configTICK_CORE                                  0
 
@@ -81,7 +81,6 @@
 #define portCRITICAL_NESTING_IN_TCB                      1
 #define portSTACK_GROWTH                                 ( 1 )
 #define configUSE_MINIMAL_IDLE_HOOK                      0
-#define configNUM_THREAD_LOCAL_STORAGE_POINTERS          4
 
 /* Software timer related configuration options. */
 #define configUSE_TIMERS                                 1
