@@ -196,7 +196,7 @@ int suiteTearDown( int numFailures )
  * configNMBER_OF_CORES > 1
  * configUSE_TASK_PREEMPTION_DISABLE = 1
  */
-void test_prvYieldCore_core_id_ne_current_coreid( void )
+void test_coverage_prvYieldCore_core_id_ne_current_coreid( void )
 {
     TCB_t task;
     TCB_t task2;
