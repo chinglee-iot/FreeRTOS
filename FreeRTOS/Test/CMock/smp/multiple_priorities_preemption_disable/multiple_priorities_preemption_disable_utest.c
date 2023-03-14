@@ -288,7 +288,7 @@ void test_prvYieldCore_runstate_eq_yielding( void )
  * @endcode
  * ( xSchedulerRunning != pdFALSE ) is false.
  */
-void test_vTaskDelete_scheduler_not_running( void )
+void test_coverage_vTaskDelete_scheduler_not_running( void )
 {
     TCB_t task;
     TaskHandle_t xTaskToDelete;
