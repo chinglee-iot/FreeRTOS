@@ -762,7 +762,7 @@ void test_coverage_vTaskList_no_task_created( void )
     /* Verify the malloc allocate count. */
     UnityMalloc_EndTest();
     /* No task is created. A string with zero legnth is returned. */
-    TEST_ASSERT_EQUAL( pcWriteBuffer[ 0 ], 0x00 );
+    TEST_ASSERT_EQUAL( 0x00, pcWriteBuffer[ 0 ] );
 }
 
 /**
@@ -1099,7 +1099,7 @@ void test_coverage_vTaskList_task_eDeleted( void )
         ( unsigned int ) xTaskTCB.uxPriority, ( unsigned int ) ( configMINIMAL_STACK_SIZE - 1U ),
         ( unsigned int ) xTaskTCB.uxTaskNumber );
     xStringCompareResult = strcmp( pcExpectedResult, pcWriteBuffer );
-    TEST_ASSERT_EQUAL( xStringCompareResult, 0 );
+    TEST_ASSERT_EQUAL( 0, xStringCompareResult );
 }
 
 /*
