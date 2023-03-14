@@ -584,49 +584,77 @@ void test_coverage_vTaskSetTaskNumber_null_task_handle( void )
     /* Nothing will be changed. This test shows its result in the coverage report. */
 }
 
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define INCLUDE_uxTaskGetStackHighWaterMark             1
-
-Coverage for 
-    UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask )
-        By passing a valid created Task
-*/
-void test_task_get_stack_high_water_mark( void )
+/**
+ * @brief uxTaskGetStackHighWaterMark - return high water mark of a task.
+ *
+ * Verify the high water mark returned.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask )
+ * {
+ *     ...
+ * }
+ * @endcode
+ * xTask is not NULL.
+ */
+void test_coverage_uxTaskGetStackHighWaterMark( void )
 {
-    TaskHandle_t xTaskHandles[1] = { NULL };
+    TCB_t xTaskTCB = { NULL };
+    UBaseType_t uxReturn;
 
-    /* Create  tasks  */
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[0] );
+    /* Setup the variables and structure. */
+    UnityMalloc_StartTest();
+    prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
 
-    vTaskStartScheduler();
+    /* API call. */
+    uxReturn = uxTaskGetStackHighWaterMark( &xTaskTCB );
 
-    uxTaskGetStackHighWaterMark(xTaskHandles[0]);
+    /* Validations. */
+    /* The stack is not used in this test. Verify the high water mark index. */
+    TEST_ASSERT_EQUAL( configMINIMAL_STACK_SIZE - 1, uxReturn );
 
+    /* Clean the allocated memory in the test. */
+    vPortFreeStack( xTaskTCB.pxStack );
+
+    UnityMalloc_EndTest();
 }
 
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define INCLUDE_uxTaskGetStackHighWaterMark             1
-
-Coverage for 
-        UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask )
-        By passing a NULL as a  Task
-*/
-void test_task_get_stack_high_water_mark_NULL_task( void )
+/**
+ * @brief uxTaskGetStackHighWaterMark - return high water mark of NULL task handle.
+ *
+ * Verify the high water mark returned.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * UBaseType_t uxTaskGetStackHighWaterMark( TaskHandle_t xTask )
+ * {
+ *     ...
+ * }
+ * @endcode
+ * xTask is NULL.
+ */
+void test_coverage_uxTaskGetStackHighWaterMark_null_task_handle( void )
 {
-    TaskHandle_t xTaskHandles[1] = { NULL };
+    TCB_t xTaskTCB = { NULL };
+    UBaseType_t uxReturn;
 
-    /* Create  tasks  */
-    xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[0] );
+    /* Setup the variables and structure. */
+    UnityMalloc_StartTest();
+    prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
+    pxCurrentTCBs[ 0 ] = &xTaskTCB;
 
-    vTaskStartScheduler();
+    /* API call. */
+    uxReturn = uxTaskGetStackHighWaterMark( NULL );
 
-    //NULL task for code coverage
-    uxTaskGetStackHighWaterMark( NULL );
+    /* Validations. */
+    /* The stack is not used in this test. Verify the high water mark index. */
+    TEST_ASSERT_EQUAL( configMINIMAL_STACK_SIZE - 1, uxReturn );
 
+    /* Clean the allocated memory in the test. */
+    vPortFreeStack( xTaskTCB.pxStack );
+
+    UnityMalloc_EndTest();
 }
 
 /**
@@ -1101,30 +1129,61 @@ void test_coverage_vTaskList_task_eDeleted( void )
     TEST_ASSERT_EQUAL( 0, xStringCompareResult );
 }
 
-/*
-The kernel will be configured as follows:
-    #define configNUMBER_OF_CORES                               (N > 1)
-    #define INCLUDE_xTaskDelayUntil                          1
-
-Coverage for: 
-        BaseType_t xTaskDelayUntil( TickType_t * const pxPreviousWakeTime,
-                                    const TickType_t xTimeIncrement )
-*/
-void test_task_delay_until_with_config_assert( void )
+/**
+ * @brief xTaskDelayUntil - current task should delay.
+ *
+ * The task delay itself until 5 ticks later. Verify that the return value should
+ * indicate the task is actually delayed. Cover the path taht vTaskYieldWithinAPI
+ * is called for a task calls xTaskDelayUntil if xTaskResumeAll returns pdFALSE.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * if( xAlreadyYielded == pdFALSE )
+ * {
+ *     #if ( configNUMBER_OF_CORES == 1 )
+ *         portYIELD_WITHIN_API();
+ *     #else
+ *         vTaskYieldWithinAPI();
+ *     #endif
+ * }
+ * @endcode
+ * ( xAlreadyYielded == pdFALSE ) is true.
+ */
+void test_coverage_xTaskDelayUntil_current_task_should_delay( void )
 {
-    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
+    TCB_t xTaskTCBs[ configNUMBER_OF_CORES ] = { NULL };
     uint32_t i;
-    TickType_t previousWakeTime = xTickCount - 3;
+    TickType_t xPreviousWakeTime = 10;
+    BaseType_t xShouldDelay;
 
-    /* Create tasks of equal priority for all available CPU cores */
-    for (i = 0; i < configNUMBER_OF_CORES; i++) {
-        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
+    /* Setup the variables and structure. */
+    /* ( PrevousWakeTime + 10 ) is greater than xTickCount. The return value should
+     * indicate that the task is actual delayed. */
+    xTickCount = 15;
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskTCBs[ i ].uxPriority = tskIDLE_PRIORITY;
+        xTaskTCBs[ i ].xStateListItem.pvOwner = &xTaskTCBs[ i ];
+        xTaskTCBs[ i ].uxCoreAffinityMask = ( ( 1U << configNUMBER_OF_CORES ) - 1U );
+        xTaskTCBs[ i ].uxTaskAttributes = -1;
+
+        /* Create idle tasks with equal number of cores. */
+        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
+        xTaskTCBs[ i ].xTaskRunState = i;
+        xTaskTCBs[ i ].xStateListItem.pxContainer = &pxReadyTasksLists[ tskIDLE_PRIORITY ];
+        listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
+        uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
     }
-
-    vTaskStartScheduler();
-
-    xTaskDelayUntil( &previousWakeTime , 4 );
     
+    /* Expectations. */
+    vFakePortYield_StubWithCallback( NULL );
+    vFakePortYield_Expect();
+
+    /* API call. */
+    xShouldDelay = xTaskDelayUntil( &xPreviousWakeTime, 10 );
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( 1, xShouldDelay );
 }
 
 /**
