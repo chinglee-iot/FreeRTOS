@@ -749,10 +749,10 @@ void test_v_task_list_case_no_task_created( void )
 {
     static char	buff[ 800 ] = { 0 };
  
-    //Call the List
-    vTaskList(buff);
     /* Setup the variables and structure. */
     xSchedulerRunning = pdTRUE;
+    //Call the List
+    vTaskList(buff);
 
 }
 /*
@@ -898,6 +898,48 @@ void test_v_task_list( void )
 
     TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
     uint32_t i;
+
+    /* Setup the variables and structure. */
+    xSchedulerRunning = pdTRUE;
+
+    /* Create tasks of equal priority for all available CPU cores */
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 2, &xTaskHandles[i] );
+    }
+
+    vTaskStartScheduler();
+
+    /* Delay the task running on core ID 0 for 1 ticks. The task will be put into pxDelayedTaskList and added back to ready list after 1 tick. */
+    vTaskDelay( 1 );
+
+    //Call the List
+    vTaskList(buff);
+
+     /* Delete all priority task responsibly*/
+    for (i = 0; i < configNUMBER_OF_CORES; i++) {
+        vTaskDelete(xTaskHandles[i]);
+    }
+}
+
+/*
+The kernel will be configured as follows:
+    #define configNUMBER_OF_CORES                               (N > 1)
+    #define configUSE_TRACE_FACILITY                         1
+    #define configUSE_STATS_FORMATTING_FUNCTIONS             1
+
+Coverage for: 
+        void vTaskList( char * pcWriteBuffer )
+        and
+        static char * prvWriteNameToBuffer( char * pcBuffer,
+                                            const char * pcTaskName )
+*/
+void test_v_task_list( void )
+{
+    static char	buff[ 800 ] = { 0 };
+
+    TaskHandle_t xTaskHandles[configNUMBER_OF_CORES] = { NULL };
+    uint32_t i;
+ 
     /* Setup the variables and structure. */
     xSchedulerRunning = pdTRUE;
 
@@ -915,9 +957,6 @@ void test_v_task_list( void )
         vTaskDelete(xTaskHandles[i]);
     }
 }
-
-
-
 
 /*
 The kernel will be configured as follows:
