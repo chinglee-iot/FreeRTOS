@@ -168,6 +168,9 @@ static int assertionFailed = 0;
  */
 static BaseType_t shouldAbortOnAssertion = pdFALSE;
 
+/* ============================  EXTERN FUNCTIONS  ========================== */
+extern void prvCheckTasksWaitingTermination( void );
+
 /* ============================  HOOK FUNCTIONS  ============================ */
 static void dummy_operation()
 {
@@ -1000,6 +1003,70 @@ void test_vTaskDelete_sucess_not_current_task_no_yield( void )
     ASSERT_PORT_YIELD_WITHIN_API_NOT_CALLED();
 }
 
+/**
+ * @brief prvCheckTasksWaitingTermination - no waiting task.
+ *
+ * No task is waiting to be deleted. This test show it's result in the coverage
+ * report.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * while( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U )
+ * {
+ *     ...
+ * }
+ * @endcode
+ * ( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U ) is false.
+ */
+void test_prvCheckTasksWaitingTermination_no_waiting_task( void )
+{
+    /* Setup the variables and structure. */
+    uxDeletedTasksWaitingCleanUp = 0;
+
+    /* API Call. */
+    prvCheckTasksWaitingTermination();
+
+    /* Validation. */
+    /* No task is waiting to be cleand up. Nothing will be updated in this API. This
+     * test case shows its result in the coverage report. */
+}
+
+/**
+ * @brief prvCheckTasksWaitingTermination - delete waiting task.
+ *
+ * A task is waiting to be deleted. The number of tasks and number of tasks waiting to
+ * be deleted are verified in this test case.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * while( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U )
+ * {
+ *     ...
+ * }
+ * @endcode
+ * ( uxDeletedTasksWaitingCleanUp > ( UBaseType_t ) 0U ) is true.
+ */
+void test_prvCheckTasksWaitingTermination_delete_waiting_task( void )
+{
+    ptcb = ( TCB_t * ) create_task();
+
+    /* Setup the variables and structure. */
+    uxDeletedTasksWaitingCleanUp = 1;
+    uxCurrentNumberOfTasks = 1;
+
+    /* Expectations. */
+    listGET_OWNER_OF_HEAD_ENTRY_ExpectAnyArgsAndReturn( ptcb );
+    uxListRemove_ExpectAndReturn( &ptcb->xStateListItem, 0 );
+    vPortFree_Expect( stack );
+    vPortFree_Expect( ptcb );
+
+    /* API Call. */
+    prvCheckTasksWaitingTermination();
+
+    /* Validation. */
+    TEST_ASSERT_EQUAL( uxDeletedTasksWaitingCleanUp, 0 );
+    TEST_ASSERT_EQUAL( uxCurrentNumberOfTasks, 0 );
+}
 
 void test_vTaskStartScheduler_success( void )
 {
@@ -2813,6 +2880,71 @@ void test_xTaskIncrementTick_success_unblock_tasks2( void )
     ASSERT_APP_TICK_HOOK_CALLED();
     TEST_ASSERT_EQUAL( portMAX_DELAY, xNextTaskUnblockTime );
 }
+
+/**
+ * @brief xTaskIncrementTick - Ready a higher priority delayed task.
+ *
+ * Ready a higher priority delayed task. Verify the return value is pdTRUE.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * if( pxTCB->uxPriority > pxCurrentTCB->uxPriority )
+ * {
+ *     xSwitchRequired = pdTRUE;
+ * }
+ * else
+ * {
+ *     mtCOVERAGE_TEST_MARKER();
+ * }
+ * @endcode
+ * ( pxTCB->uxPriority > pxCurrentTCB->uxPriority ) is true.
+ */
+void test_xTaskIncrementTick_success_unblock_higher_prio_task( void )
+{
+    BaseType_t ret_task_incrementtick;
+    TaskHandle_t task_handle;
+    TaskHandle_t task_handle2;
+
+    /* setup */
+    create_task_priority = 2;
+    task_handle = create_task();
+    create_task_priority = 1;
+    task_handle2 = create_task();
+    /* task_handle 2 will be added to pxDelayedTaskList later. To wakup a higher priority
+     * task, uxPriority is set higher than current task, which is 2. */
+    task_handle2->uxPriority = 3;
+    ptcb = task_handle;
+    xPendedTicks = 0;
+    xTickCount = 50;
+    xNextTaskUnblockTime = 49; /* tasks due unblocking */
+    uxSchedulerSuspended = pdFALSE;
+
+    /* Expectations */
+    listLIST_IS_EMPTY_ExpectAndReturn( pxDelayedTaskList, pdFALSE );
+    listGET_OWNER_OF_HEAD_ENTRY_ExpectAndReturn( pxDelayedTaskList, task_handle2 );
+    listGET_LIST_ITEM_VALUE_ExpectAndReturn( &task_handle2->xStateListItem,
+                                             xTickCount - 5 );
+    listREMOVE_ITEM_Expect( &( task_handle2->xStateListItem ) );
+    listLIST_ITEM_CONTAINER_ExpectAndReturn( &task_handle2->xEventListItem,
+                                             &xPendingReadyList );
+    listREMOVE_ITEM_Expect( &( task_handle2->xEventListItem ) );
+    /* prvAddTaskToReadyList */
+    listINSERT_END_Expect( &pxReadyTasksLists[ task_handle2->uxPriority ],
+                           &task_handle2->xStateListItem );
+    listLIST_IS_EMPTY_ExpectAndReturn( pxDelayedTaskList, pdTRUE );
+    /* back */
+    listCURRENT_LIST_LENGTH_ExpectAndReturn( &pxReadyTasksLists[ ptcb->uxPriority ],
+                                             1 );
+
+    /* API Call */
+    ret_task_incrementtick = xTaskIncrementTick();
+
+    /* Validations */
+    TEST_ASSERT_EQUAL( pdTRUE, ret_task_incrementtick );
+    ASSERT_APP_TICK_HOOK_CALLED();
+    TEST_ASSERT_EQUAL( portMAX_DELAY, xNextTaskUnblockTime );
+}
+
 /* testing INCLUDE_xTaskAbortDelay */
 void test_xTaskAbortDelay_fail_current_task( void )
 {
