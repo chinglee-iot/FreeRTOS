@@ -229,19 +229,16 @@ void test_coverage_prvYieldCore_core_id_ne_current_coreid( void )
 }
 
 /**
- * @brief This test ensures that when the task is already in the yielding state,
+ * @brief prvYieldCore - task runstate equal to yielding.
+ *
+ * This test ensures that when the task is already in the yielding state,
  *        nothing is done
  *
  * <b>Coverage</b>
  * @code{c}
- * prvYieldCore( xCoreID );
- *
  * if( pxCurrentTCBs[ xCoreID ]->xTaskRunState != taskTASK_YIELDING )
- *
  * @endcode
- *
- * configNMBER_OF_CORES > 1
- * configUSE_TASK_PREEMPTION_DISABLE = 1
+ * ( pxCurrentTCBs[ xCoreID ]->xTaskRunState != taskTASK_YIELDING ) is false.
  */
 void test_prvYieldCore_runstate_eq_yielding( void )
 {
