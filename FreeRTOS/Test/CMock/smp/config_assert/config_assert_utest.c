@@ -660,6 +660,30 @@ void test_prvCheckForRunStateChange_assert_first_time_check_fail( void )
 }
 
 /**
+ * @brief vTaskStepTick - assert if scheduer suspended.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * configASSERT( uxSchedulerSuspended );
+ * @endcode
+ */
+void test_vTaskStepTick_assert_scheduler_not_suspended( void )
+{
+    TickType_t xTicksToJump;
+
+    xTickCount = 230;
+    xTicksToJump = 10;
+    xNextTaskUnblockTime = 240;
+    uxSchedulerSuspended = pdFALSE;
+
+    /* API Call */
+    EXPECT_ASSERT_BREAK( vTaskStepTick( xTicksToJump ) );
+
+    /* Test Verifications */
+    validate_and_clear_assertions();
+}
+
+/**
  * @brief prvCheckForRunStateChange - task state not changed.
  *
  * When the task is able to run after calling portENABLE_INTERRUPTS. The task state
@@ -690,6 +714,30 @@ void test_prvCheckForRunStateChange_assert_task_state_not_changed( void )
 
     /* API Call. */
     EXPECT_ASSERT_BREAK( prvCheckForRunStateChange() );
+
+    /* Test Verifications */
+    validate_and_clear_assertions();
+}
+
+/**
+ * @brief vTaskStepTick - assert if scheduer suspended.
+ *
+ * <b>Coverage</b>
+ * @code{c}
+ * configASSERT( xTicksToJump != ( TickType_t ) 0 );
+ * @endcode
+ */
+void test_vTaskStepTick_assert_tick_to_jump_eq_0( void )
+{
+    TickType_t xTicksToJump;
+
+    xTickCount = 240;
+    xTicksToJump = 0;
+    xNextTaskUnblockTime = 240;
+    uxSchedulerSuspended = pdTRUE;
+
+    /* API Call */
+    EXPECT_ASSERT_BREAK( vTaskStepTick( xTicksToJump ) );
 
     /* Test Verifications */
     validate_and_clear_assertions();
