@@ -177,6 +177,7 @@ void test_coverage_prvIdleTask_yield_for_idle_priority_task( void )
         xTaskTCBs[ i ].xStateListItem.pvOwner = &xTaskTCBs[ i ];
         xTaskTCBs[ i ].xStateListItem.pxContainer = &pxReadyTasksLists[ tskIDLE_PRIORITY ];
         xTaskTCBs[ i ].uxCoreAffinityMask = ( ( 1U << configNUMBER_OF_CORES ) - 1U );
+
         if( i < configNUMBER_OF_CORES )
         {
             pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
@@ -184,8 +185,9 @@ void test_coverage_prvIdleTask_yield_for_idle_priority_task( void )
         }
         else
         {
-            xTaskTCBs[ i ].xTaskRunState = -1;  /* Set run state to taskTASK_NOT_RUNNING. */
+            xTaskTCBs[ i ].xTaskRunState = -1; /* Set run state to taskTASK_NOT_RUNNING. */
         }
+
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
@@ -287,6 +289,7 @@ void test_coverage_prvMinimalIdleTask_yield_for_idle_priority_task( void )
         xTaskTCBs[ i ].xStateListItem.pvOwner = &xTaskTCBs[ i ];
         xTaskTCBs[ i ].xStateListItem.pxContainer = &pxReadyTasksLists[ tskIDLE_PRIORITY ];
         xTaskTCBs[ i ].uxCoreAffinityMask = ( ( 1U << configNUMBER_OF_CORES ) - 1U );
+
         if( i < configNUMBER_OF_CORES )
         {
             pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
@@ -294,8 +297,9 @@ void test_coverage_prvMinimalIdleTask_yield_for_idle_priority_task( void )
         }
         else
         {
-            xTaskTCBs[ i ].xTaskRunState = -1;  /* Set run state to taskTASK_NOT_RUNNING. */
+            xTaskTCBs[ i ].xTaskRunState = -1; /* Set run state to taskTASK_NOT_RUNNING. */
         }
+
         listINSERT_END( &pxReadyTasksLists[ tskIDLE_PRIORITY ], &xTaskTCBs[ i ].xStateListItem );
     }
 
