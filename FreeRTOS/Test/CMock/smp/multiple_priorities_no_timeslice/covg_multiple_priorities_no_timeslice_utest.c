@@ -106,12 +106,18 @@ void setUp( void )
 
     pxDelayedTaskList = &xDelayedTaskList1;
     pxOverflowDelayedTaskList = &xDelayedTaskList2;
+
+    /* Count memory allocate count. */
+    UnityMalloc_StartTest();
 }
 
 /*! called after each testcase */
 void tearDown( void )
 {
     commonTearDown();
+
+    /* Verify memory allocate count. */
+    UnityMalloc_EndTest();
 }
 
 /*! called at the beginning of the whole suite */
@@ -605,7 +611,6 @@ void test_coverage_uxTaskGetStackHighWaterMark( void )
     UBaseType_t uxReturn;
 
     /* Setup the variables and structure. */
-    UnityMalloc_StartTest();
     prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
 
     /* API call. */
@@ -618,7 +623,7 @@ void test_coverage_uxTaskGetStackHighWaterMark( void )
     /* Clean the allocated memory in the test. */
     vPortFreeStack( xTaskTCB.pxStack );
 
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 }
 
 /**
@@ -641,7 +646,6 @@ void test_coverage_uxTaskGetStackHighWaterMark_null_task_handle( void )
     UBaseType_t uxReturn;
 
     /* Setup the variables and structure. */
-    UnityMalloc_StartTest();
     prvInitialiseTestStack( &xTaskTCB, configMINIMAL_STACK_SIZE );
     pxCurrentTCBs[ 0 ] = &xTaskTCB;
 
@@ -655,7 +659,7 @@ void test_coverage_uxTaskGetStackHighWaterMark_null_task_handle( void )
     /* Clean the allocated memory in the test. */
     vPortFreeStack( xTaskTCB.pxStack );
 
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 }
 
 /**
@@ -788,14 +792,12 @@ void test_coverage_vTaskList_no_task_created( void )
 
     /* Setup the variables and structure. */
     uxCurrentNumberOfTasks = 0;         /* No task is created. */
-    UnityMalloc_StartTest();
 
     /* API calls. */
     vTaskList( pcWriteBuffer );
 
     /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
     /* No task is created. A string with zero legnth is returned. */
     TEST_ASSERT_EQUAL( 0x00, pcWriteBuffer[ 0 ] );
 }
@@ -849,8 +851,7 @@ void test_coverage_vTaskList_task_eRunning( void )
     vPortFreeStack( xTaskTCB.pxStack );
 
     /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 
     /* Verify the returned string. */
     for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
@@ -915,8 +916,7 @@ void test_coverage_vTaskList_task_eReady( void )
     vPortFreeStack( xTaskTCB.pxStack );
 
     /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 
     /* Verify the returned string. */
     for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
@@ -981,8 +981,7 @@ void test_coverage_vTaskList_task_eBlocked( void )
     vPortFreeStack( xTaskTCB.pxStack );
 
     /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 
     /* Verify the returned string. */
     for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
@@ -1047,8 +1046,7 @@ void test_coverage_vTaskList_task_eSuspended( void )
     vPortFreeStack( xTaskTCB.pxStack );
 
     /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 
     /* Verify the returned string. */
     for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
@@ -1113,8 +1111,7 @@ void test_coverage_vTaskList_task_eDeleted( void )
     vPortFreeStack( xTaskTCB.pxStack );
 
     /* Validation. */
-    /* Verify the malloc allocate count. */
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 
     /* Verify the returned string. */
     for( i = 0; i < ( configMAX_TASK_NAME_LEN - 1 ); i++ )
@@ -2976,7 +2973,6 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_not_running_task( void
     TCB_t *pxTaskTCB = NULL;
 
     /* Setup the variables and structure. */
-    UnityMalloc_StartTest();
     uxDeletedTasksWaitingCleanUp = 1;
     uxCurrentNumberOfTasks = 1;
 
@@ -3001,8 +2997,7 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_not_running_task( void
     /* Validation. */
     TEST_ASSERT_EQUAL( uxCurrentNumberOfTasks, 0 );
     TEST_ASSERT_EQUAL( uxDeletedTasksWaitingCleanUp, 0 );
-    /* Validate the memory allocate count. */
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 }
 
 /**
@@ -3033,7 +3028,6 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_running_task( void )
     TCB_t *pxTaskTCB = NULL;
 
     /* Setup the variables and structure. */
-    UnityMalloc_StartTest();
     uxDeletedTasksWaitingCleanUp = 1;
     uxCurrentNumberOfTasks = 1;
 
@@ -3066,8 +3060,7 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_running_task( void )
      * there won't have double free assertion. */
     vPortFree( pxTaskTCB );
     vPortFree( pxTaskTCB->pxStack );
-    /* Validate the memory allocate count. */
-    UnityMalloc_EndTest();
+    /* Verify memory allocate count in tearDown function. */
 }
 
 /**
@@ -3087,7 +3080,6 @@ void test_coverage_prvDeleteTCB_static_stack_only(void)
 {
     TCB_t *pxTaskTCB;
 
-    UnityMalloc_StartTest();
     pxTaskTCB = pvPortMalloc( sizeof(TCB_t) );
 
     pxTaskTCB->uxPriority = 1;
@@ -3099,8 +3091,8 @@ void test_coverage_prvDeleteTCB_static_stack_only(void)
 
     prvDeleteTCB( pxTaskTCB );
 
-    /* Validate the memory allocate count to ensure that allocated stack is freed. */
-    UnityMalloc_EndTest();
+    /* Validate the memory allocate count to ensure that allocated stack is freed
+     * in tearDown function. */
 }
 
 /** @brief xTaskResumeFromISR - resume task from within ISR context
@@ -3680,6 +3672,8 @@ void test_coverage_vTaskGetInfo_get_free_stack_space( void )
     uxSchedulerSuspended = pdTRUE;
 
     vTaskGetInfo( &xTaskTCBs[ 0 ], &pxTaskStatus, xFreeStackSpace, taskState );
+
+    vPortFreeStack( xTaskTCBs[ 0 ].pxStack );
 
     TEST_ASSERT_EQUAL( ( UBaseType_t ) 0, pxTaskStatus.xTaskNumber );
     TEST_ASSERT_EQUAL( eRunning, pxTaskStatus.eCurrentState );
