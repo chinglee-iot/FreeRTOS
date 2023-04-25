@@ -103,9 +103,10 @@ extern void vTaskExitCritical( void );
 extern portBASE_TYPE vTaskEnterCriticalFromISR( void );
 extern void vTaskExitCriticalFromISR( portBASE_TYPE xSavedInterruptStatus );
 
+
 /* Task function macros as described on the FreeRTOS.org WEB site. */
-#define portTASK_FUNCTION_PROTO( vFunction, pvParameters )    void vFunction( const void * pvParameters )
-#define portTASK_FUNCTION( vFunction, pvParameters )          void vFunction( const void * pvParameters )
+#define portTASK_FUNCTION_PROTO( vFunction, pvParameters )    void vFunction( void * pvParameters )
+#define portTASK_FUNCTION( vFunction, pvParameters )          void vFunction( void * pvParameters )
 
 #define portINTERRUPT_YIELD    ( 0UL )
 

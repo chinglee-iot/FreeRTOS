@@ -36,7 +36,7 @@
 #define portLONG                 long
 #define portSHORT                short
 #define portSTACK_TYPE           int32_t
-#define portBASE_TYPE            long
+#define portBASE_TYPE            int32_t
 #define portPOINTER_SIZE_TYPE    int32_t
 
 #define configISR_STACK_SIZE_WORDS
@@ -103,9 +103,13 @@ extern void vTaskExitCritical( void );
 #define portENTER_CRITICAL()
 #define portEXIT_CRITICAL()
 
+extern portBASE_TYPE vTaskEnterCriticalFromISR( void );
+extern void vTaskExitCriticalFromISR( portBASE_TYPE xSavedInterruptStatus );
+
+
 /* Task function macros as described on the FreeRTOS.org WEB site. */
-#define portTASK_FUNCTION_PROTO( vFunction, pvParameters )    void vFunction( const void * pvParameters )
-#define portTASK_FUNCTION( vFunction, pvParameters )          void vFunction( const void * pvParameters )
+#define portTASK_FUNCTION_PROTO( vFunction, pvParameters )    void vFunction( void * pvParameters )
+#define portTASK_FUNCTION( vFunction, pvParameters )          void vFunction( void * pvParameters )
 
 #define portINTERRUPT_YIELD    ( 0UL )
 
