@@ -62,9 +62,6 @@
 #define INCLUDE_vTaskSuspend                       1
 #define INCLUDE_xTaskGetCurrentTaskHandle          1
 #define INCLUDE_xTaskGetIdleTaskHandle             1
-#define portUSING_MPU_WRAPPERS                     1
-#define portCRITICAL_NESTING_IN_TCB                1
-#define portPRIVILEGE_BIT                          1U
 #define configUSE_TIME_SLICING                     1
 #define configRUN_MULTIPLE_PRIORITIES              0
 
@@ -87,7 +84,7 @@
 #define configUSE_NEWLIB_REENTRANT                 0
 #define configENABLE_BACKWARD_COMPATIBILITY        1
 #define configNUM_THREAD_LOCAL_STORAGE_POINTERS    5
-#define configUSE_MINI_LIST_ITEM                   1
+#define configUSE_MINI_LIST_ITEM                   0
 #define configSTACK_DEPTH_TYPE                     uint16_t
 #define configMESSAGE_BUFFER_LENGTH_TYPE           size_t
 #define configHEAP_CLEAR_MEMORY_ON_FREE            1

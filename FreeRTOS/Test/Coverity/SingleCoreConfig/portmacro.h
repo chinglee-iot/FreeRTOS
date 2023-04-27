@@ -103,6 +103,10 @@ extern void vRaisePrivilege( void );
 #define portRESET_PRIVILEGE()       vResetPrivilege()
 #define portRAISE_PRIVILEGE()       vRaisePrivilege()
 
+#define portUSING_MPU_WRAPPERS                     1
+#define portCRITICAL_NESTING_IN_TCB                1
+#define portPRIVILEGE_BIT                          1U
+
 /**
  * @brief MPU settings as stored in the TCB.
  */
