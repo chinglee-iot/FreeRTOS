@@ -36,7 +36,7 @@
 #define portLONG                 long
 #define portSHORT                short
 #define portSTACK_TYPE           int32_t
-#define portBASE_TYPE            long
+#define portBASE_TYPE            int32_t
 #define portPOINTER_SIZE_TYPE    int32_t
 
 #define configISR_STACK_SIZE_WORDS
@@ -94,7 +94,7 @@ extern void vTaskExitCritical( void );
 
 #define portINTERRUPT_YIELD    ( 0UL )
 
-#define portGET_RUN_TIME_COUNTER_VALUE(...)         ( 100U )
+#define portGET_RUN_TIME_COUNTER_VALUE(...)         ( UBaseType_t )( rand() )
 
 extern void vResetPrivilege( void );
 extern BaseType_t xIsPrivileged( void );

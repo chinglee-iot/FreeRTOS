@@ -73,7 +73,7 @@ typedef uint32_t         UBaseType_t;
 #define portSOFTWARE_BARRIER()
 #define portGET_CORE_ID()                         ( ( BaseType_t ) 1 )
 #define portYIELD_CORE(...)
-#define portSET_INTERRUPT_MASK(...)               ( ( UBaseType_t ) 0 )
+#define portSET_INTERRUPT_MASK(...)               ( ( portBASE_TYPE ) 0 )
 #define portCLEAR_INTERRUPT_MASK(...)
 #define portRELEASE_TASK_LOCK()
 #define portGET_TASK_LOCK()
@@ -81,9 +81,8 @@ typedef uint32_t         UBaseType_t;
 #define portGET_ISR_LOCK()
 
 extern BaseType_t isInISR;
-#define portCHECK_IF_IN_ISR(...)                  ( isInISR++ > ( BaseType_t ) 2 )
-
-#define portENTER_CRITICAL_FROM_ISR()             ( ( UBaseType_t ) 0 )
+#define portCHECK_IF_IN_ISR(...)                  ( ( isInISR++ > ( BaseType_t ) 2 ) ? ( pdTRUE ) : ( pdFALSE ) )
+#define portENTER_CRITICAL_FROM_ISR()             ( ( portBASE_TYPE ) 0 )
 #define portEXIT_CRITICAL_FROM_ISR(...)
 
 
@@ -113,7 +112,7 @@ extern void vTaskExitCriticalFromISR( portBASE_TYPE xSavedInterruptStatus );
 
 #define portINTERRUPT_YIELD    ( 0UL )
 
-#define portGET_RUN_TIME_COUNTER_VALUE(...)         ( 100U )
+#define portGET_RUN_TIME_COUNTER_VALUE(...)         ( UBaseType_t )( rand() )
 
 extern void vResetPrivilege( void );
 extern BaseType_t xIsPrivileged( void );
