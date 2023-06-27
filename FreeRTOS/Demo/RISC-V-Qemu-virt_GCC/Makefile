@@ -6,6 +6,7 @@ ARCH    = $(CROSS)ar
 BUILD_DIR       = build
 RTOS_SOURCE_DIR = $(abspath ../../Source)
 DEMO_SOURCE_DIR = $(abspath ../Common/Minimal)
+FREEDEOM_E_METAL = $(abspath ./freedom-metal)
 
 CPPFLAGS = \
 	-D__riscv_float_abi_soft \
@@ -13,7 +14,8 @@ CPPFLAGS = \
 	-I . -I ../Common/include \
 	-I $(RTOS_SOURCE_DIR)/include \
 	-I $(RTOS_SOURCE_DIR)/portable/GCC/RISC-V \
-	-I $(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RV32I_CLINT_no_extensions
+	-I $(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RV32I_CLINT_no_extensions \
+    -I $(FREEDEOM_E_METAL)
 CFLAGS  = -march=rv32imac -mabi=ilp32 -mcmodel=medany \
 	-Wall \
 	-fmessage-length=0 \
@@ -46,7 +48,10 @@ SRCS = main.c main_blinky.c riscv-virt.c ns16550.c \
 	$(RTOS_SOURCE_DIR)/tasks.c \
 	$(RTOS_SOURCE_DIR)/timers.c \
 	$(RTOS_SOURCE_DIR)/portable/MemMang/heap_4.c \
-	$(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/port.c
+	$(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/port.c \
+    $(FREEDEOM_E_METAL)/src/pmp.c \
+    $(FREEDEOM_E_METAL)/src/cpu.c \
+    example-pmp.c
 
 ASMS = start.S vector.S\
 	$(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/portASM.S

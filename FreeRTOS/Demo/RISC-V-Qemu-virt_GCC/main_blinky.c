@@ -34,6 +34,9 @@
 #include "riscv-virt.h"
 #include "ns16550.h"
 
+extern int test_main( void );
+
+
 /* Priorities used by the tasks. */
 #define mainQUEUE_RECEIVE_TASK_PRIORITY		( tskIDLE_PRIORITY + 2 )
 #define	mainQUEUE_SEND_TASK_PRIORITY		( tskIDLE_PRIORITY + 1 )
@@ -67,6 +70,10 @@ int f = 1;
 
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
+
+
+    test_main();
+
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
@@ -135,7 +142,6 @@ int f = 1;
 }
 
 /*-----------------------------------------------------------*/
-
 int main_blinky( void )
 {
 	vSendString( "Hello FreeRTOS!" );
