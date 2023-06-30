@@ -38,9 +38,11 @@ void store_access_fault_handler(struct metal_cpu *cpu, int ecode)
 }
 #endif
 
+extern void supervisor_mode_trap_handler(uintptr_t epc, int cause);
+extern void user_mode_trap_handler(uintptr_t epc, int cause);
 void freertos_risc_v_application_exception_handler( void )
 {
-    uint32_t mCasue, mEpc, mStatus;
+    uint32_t mCause, mEpc, mStatus;
     char temp[128];
 
     vSendString( "Exception\r\n" );
@@ -48,10 +50,10 @@ void freertos_risc_v_application_exception_handler( void )
     asm( "csrr %[varCause], mcause\n"
          "csrr %[varEpc], mepc\n"
          "csrr %[varStatus], mstatus\n":
-         [varCause] "=r" (mCasue), [varEpc] "=r" (mEpc), [varStatus] "=r" (mStatus)
+         [varCause] "=r" (mCause), [varEpc] "=r" (mEpc), [varStatus] "=r" (mStatus)
          :: );
 
-    snprintf( temp, 128, "mcause 0x%08lx\r\n", mCasue );
+    snprintf( temp, 128, "mcause 0x%08lx\r\n", mCause );
     vSendString( temp );
 
     snprintf( temp, 128, "mepc 0x%08lx\r\n", mEpc );
@@ -60,7 +62,20 @@ void freertos_risc_v_application_exception_handler( void )
     snprintf( temp, 128, "mstatus 0x%08lx\r\n", mStatus );
     vSendString( temp );
 
-    while( 1 );
+    switch( mCause )
+    {
+        case 0x09 : /* ECALL from s-mode. */
+            supervisor_mode_trap_handler( mEpc, mCause );
+            break;
+
+        case 0x08 : /* ECALL from u-mode. */
+            user_mode_trap_handler( mEpc, mCause);
+            break;
+            
+        default:
+            while( 1 );
+    }
+
 }
 
 int test_main()

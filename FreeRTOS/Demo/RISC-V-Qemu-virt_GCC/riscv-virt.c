@@ -57,6 +57,19 @@ size_t i;
 	portEXIT_CRITICAL();
 }
 
+void vSendStringRaw( const char *s )
+{
+struct device dev;
+size_t i;
+
+	dev.addr = NS16550_ADDR;
+
+    for (i = 0; i < strlen(s); i++) {
+		vOutNS16550( &dev, s[i] );
+	}
+	vOutNS16550( &dev, '\n' );
+}
+
 void handle_trap(void)
 {
 	while (1)

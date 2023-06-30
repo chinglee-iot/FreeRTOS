@@ -51,7 +51,9 @@ SRCS = main.c main_blinky.c riscv-virt.c ns16550.c \
 	$(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/port.c \
     $(FREEDEOM_E_METAL)/src/pmp.c \
     $(FREEDEOM_E_METAL)/src/cpu.c \
-    example-pmp.c
+    $(FREEDEOM_E_METAL)/src/privilege.c \
+    example-pmp.c \
+    example-privilege-level.c
 
 ASMS = start.S vector.S\
 	$(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/portASM.S

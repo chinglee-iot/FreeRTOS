@@ -35,6 +35,7 @@
 #include "ns16550.h"
 
 extern int test_main( void );
+extern int test_privilege_main(void);
 
 
 /* Priorities used by the tasks. */
@@ -71,9 +72,8 @@ int f = 1;
 	/* Remove compiler warning about unused parameter. */
 	( void ) pvParameters;
 
-
-    test_main();
-
+    vSendString( "Test privilege\r\n" );
+    test_privilege_main();
 
 	/* Initialise xNextWakeTime - this only needs to be done once. */
 	xNextWakeTime = xTaskGetTickCount();
