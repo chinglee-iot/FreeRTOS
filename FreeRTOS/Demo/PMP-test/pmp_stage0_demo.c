@@ -78,7 +78,7 @@ static void prvListPmpRegions( void )
     }
 }
 
-static void prvPmpStage1DemoThread( void *pvParameters )
+static void prvPmpstage0DemoThread( void *pvParameters )
 {
     char temp[ 128 ];
     int xPmpRegions;
@@ -158,11 +158,11 @@ static void prvPmpStage1DemoThread( void *pvParameters )
     }
 }
 
-int pmp_stage1_demo( void )
+int pmp_stage0_demo( void )
 {
 	vSendString( "Hello FreeRTOS!" );
 
-    xTaskCreate( prvPmpStage1DemoThread,
+    xTaskCreate( prvPmpstage0DemoThread,
                 "PMP_DEMO_1",
                 configMINIMAL_STACK_SIZE * 2U,
                 NULL,

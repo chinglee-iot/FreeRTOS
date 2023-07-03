@@ -39,7 +39,7 @@ void vApplicationIdleHook( void );
 void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName );
 void vApplicationTickHook( void );
 
-int pmp_stage1_demo( void );
+extern int pmp_stage0_demo( void );
 
 /*-----------------------------------------------------------*/
 
@@ -57,8 +57,8 @@ int main( void )
 	}
 	#endif
 
-    /* Enter the stage 1 PMP demo main. */
-    ret = pmp_stage1_demo();
+    /* Enter the stage 0 PMP demo main. */
+    ret = pmp_stage0_demo();
 
 	return ret;
 }
