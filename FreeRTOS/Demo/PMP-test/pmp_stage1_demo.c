@@ -182,6 +182,8 @@ static void prvPmpstage0DemoThread( void *pvParameters )
     /* ram (wxa) : ORIGIN = 0x80080000, LENGTH = 512K. */
     *( ( volatile int *)0x800e0000 ) = 0x12345678;
 
+    vSendStringRaw( "=========== portRAISE_PRIVILEGE ===========\r\n" );
+    portRAISE_PRIVILEGE();
 
     vSendStringRaw( "=========== test done ===========\r\n" );
 
