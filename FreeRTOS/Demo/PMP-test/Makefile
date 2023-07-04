@@ -16,7 +16,7 @@ CPPFLAGS = \
 	-I $(RTOS_SOURCE_DIR)/portable/GCC/RISC-V \
 	-I $(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/chip_specific_extensions/RV32I_CLINT_no_extensions \
     -I $(FREEDEOM_E_METAL)
-CFLAGS  = -march=rv32imac -mabi=ilp32 -mcmodel=medany \
+CFLAGS  = -march=rv32ima -mabi=ilp32 -mcmodel=medany \
 	-Wall \
 	-fmessage-length=0 \
 	-ffunction-sections \
@@ -38,7 +38,9 @@ SRCS = main.c \
     riscv-virt.c \
     ns16550.c \
     pmp_apis.c \
+    privilege_apis.c \
     pmp_stage0_demo.c \
+    pmp_stage1_demo.c \
 	$(RTOS_SOURCE_DIR)/event_groups.c \
 	$(RTOS_SOURCE_DIR)/list.c \
 	$(RTOS_SOURCE_DIR)/queue.c \
