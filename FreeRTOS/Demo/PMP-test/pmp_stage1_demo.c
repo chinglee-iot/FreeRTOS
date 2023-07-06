@@ -36,24 +36,27 @@ typedef enum {
 
 
 int retTrap = 0;
-int xSyscallNumber = 0;
 extern uint32_t * pxCurrentTCB;
 
-void user_mode_trap_handler( uintptr_t epc )
+void user_mode_trap_handler( int xSyscallNumber )
 {
 	int inst_len = 4;
 	uintptr_t value;
     char temp[64];
+
     uint32_t * uxTaskStackPointer;
+
+    /* Get the mstatus from the stack. */
+    uxTaskStackPointer = pxCurrentTCB[ 0 ];
 
     vSendStringRaw("Caught ecall from user mode\n");
 
-    if( xSyscallNumber == 0 )
+    if( xSyscallNumber == portECALL_IS_PRIVILEGED )
     {
         /* Store the value in a0. TODO : follow ABI coding convention. */
-        retTrap = pdFALSE;
+        uxTaskStackPointer[ 7 ] = pdFALSE;
     }
-    else
+    else if( xSyscallNumber == portECALL_RAISE_PRIORITY )
     {
         METAL_CPU_GET_CSR(mstatus, value);
         value = EXTRACT_FIELD(value, METAL_MSTATUS_MPP);
@@ -64,9 +67,6 @@ void user_mode_trap_handler( uintptr_t epc )
         value = value | ( 0x3 << 11 );
         snprintf( temp, 32, "The new mstatus.MPP is 0x%08x\n", value );
         vSendStringRaw( temp );
-
-        /* Get the mstatus from the stack. */
-        uxTaskStackPointer = pxCurrentTCB[ 0 ];
         
         uxTaskStackPointer[ 30 ] = uxTaskStackPointer[ 30 ] | ( 0x3 << 11 );
     }
@@ -74,6 +74,12 @@ void user_mode_trap_handler( uintptr_t epc )
 
 void freertos_risc_v_application_exception_handler( void )
 {
+    volatile int xSyscallNumber;
+    uint32_t * uxTaskStackPointer;
+    
+    uxTaskStackPointer = pxCurrentTCB[ 0 ];
+    xSyscallNumber = uxTaskStackPointer[ 14 ];
+
     uint32_t mCause, mEpc, mStatus;
     char temp[128];
     
@@ -94,14 +100,20 @@ void freertos_risc_v_application_exception_handler( void )
     snprintf( temp, 128, "mstatus 0x%08lx\r\n", mStatus );
     vSendStringRaw( temp );
 
+    snprintf( temp, 128, "xSyscallNumber 0x%08lx\r\n", xSyscallNumber );
+    vSendStringRaw( temp );
+
     switch( mCause )
     {
         case 0x07 : /* memory access violation. */
+            vSendStringRaw( "!!!!Memory access violation.!!!!" );
             break;
         case 0x08 : /* ECALL from u-mode. */
-            user_mode_trap_handler( mEpc );
+            user_mode_trap_handler( xSyscallNumber );
             break;
-            
+        case 0x0b : /* ECALL from m-mode. */
+            uxTaskStackPointer[ 7 ] = pdTRUE;
+            break;
         default:
             while( 1 );
     }

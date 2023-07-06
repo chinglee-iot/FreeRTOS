@@ -50,27 +50,20 @@ static void prvPrivilegeDropToMode( enum metal_privilege_mode mode )
     __asm__ volatile("mret");
 }
 
-extern int xSyscallNumber;
-extern int retTrap;
-
 BaseType_t portIS_PRIVILEGED( void )
 {
-    xSyscallNumber = 0;
-    retTrap = pdTRUE;
-
-    /* Ecall to machine mode. */
-    __asm__ volatile("ecall");
+    int ret;
+    
+    ret = __internal_syscall_0( portECALL_IS_PRIVILEGED );
 
     /* Get the machine previous privilege. */
-    return retTrap;
+    return ret;
 }
 
 void portRAISE_PRIVILEGE( void )
 {
-    xSyscallNumber = 1;
-
     /* Rasie privilege through ecall. */
-    __asm__ volatile("ecall");
+    __internal_syscall_0( portECALL_RAISE_PRIORITY );
 }
 
 void portRESET_PRIVILEGE( void )
