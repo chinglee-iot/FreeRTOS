@@ -48,7 +48,8 @@ SRCS = main.c \
 	$(RTOS_SOURCE_DIR)/tasks.c \
 	$(RTOS_SOURCE_DIR)/timers.c \
 	$(RTOS_SOURCE_DIR)/portable/MemMang/heap_4.c \
-	$(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/port.c
+	$(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/port.c \
+    $(RTOS_SOURCE_DIR)/portable/Common/mpu_wrappers.c
 
 ASMS = start.S vector.S\
 	$(RTOS_SOURCE_DIR)/portable/GCC/RISC-V/portASM.S
