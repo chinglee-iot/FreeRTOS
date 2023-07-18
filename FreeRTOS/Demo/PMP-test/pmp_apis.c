@@ -2,7 +2,7 @@
 
 #include "pmp_apis.h"
 
-#define IMPLEMENTED_PMP_REGIONS     8
+#define IMPLEMENTED_PMP_REGIONS     16
 
 #define CONFIG_TO_INT(_config) (*((char *)&(_config)))
 #define INT_TO_CONFIG(_int) (*((struct pmp_config *)(char *)&(_int)))
@@ -274,7 +274,10 @@ size_t xConvertNAPOTSize( size_t xAddress, size_t xSize )
 	protected_addr &= ~(xSize >> 3);
 
 	/* Set the bits up to the alignment bit */
-	protected_addr |= ((xSize >> 3) - 1);
+    if( (xSize >> 3) > 0 )
+    {
+        protected_addr |= ((xSize >> 3) - 1);
+    }
 
     return protected_addr;
 }
