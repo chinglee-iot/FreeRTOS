@@ -274,7 +274,10 @@ size_t xConvertNAPOTSize( size_t xAddress, size_t xSize )
 	protected_addr &= ~(xSize >> 3);
 
 	/* Set the bits up to the alignment bit */
-	protected_addr |= ((xSize >> 3) - 1);
+    if( (xSize >> 3) > 0 )
+    {
+        protected_addr |= ((xSize >> 3) - 1);
+    }
 
     return protected_addr;
 }

@@ -39,6 +39,7 @@ SRCS = main.c \
     ns16550.c \
     pmp_apis.c \
     privilege_apis.c \
+    exception_handler.c \
     pmp_stage0_demo.c \
     pmp_stage1_demo.c \
 	$(RTOS_SOURCE_DIR)/event_groups.c \

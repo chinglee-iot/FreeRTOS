@@ -53,7 +53,6 @@ static void prvPrivilegeDropToMode( enum metal_privilege_mode mode )
 BaseType_t portIS_PRIVILEGED( void )
 {
     int ret;
-    
     ret = __internal_syscall_0( portECALL_IS_PRIVILEGED );
 
     /* Get the machine previous privilege. */
