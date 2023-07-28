@@ -9,16 +9,46 @@ MEMORY
     ram2 (wxa) : ORIGIN = 0x800e0000, LENGTH = 64K
 }
 
+/* PMP sections. */
+__privileged_functions_region_size__  = 32K; /* 32000 bytes */
+__privileged_data_region_size__       = 64K; /* 32000 bytes */
+
+__FLASH_segment_start__               = ORIGIN( rom );
+__FLASH_segment_end__                 = __FLASH_segment_start__ + LENGTH( rom );
+
+__SRAM_segment_start__      = ORIGIN( ram );
+__SRAM_segment_end__        = __SRAM_segment_start__ + LENGTH( ram );
+
+__privileged_data_start__   = __SRAM_segment_start__;
+__privileged_data_end__     = __SRAM_segment_start__ + __privileged_data_region_size__;
+
+__privileged_functions_start__        = __FLASH_segment_start__;
+__privileged_functions_end__          = __FLASH_segment_start__ + __privileged_functions_region_size__;
+
+
 SECTIONS
 {
-	.init :
+    .privileged_functions :
 	{
 		_text = .;
 		KEEP (*(SORT_NONE(.init)))
+        . = ALIGN(4);
+        *(privileged_functions)
+        . = ALIGN(4);
+        FILL(0xDEAD);
+        /* Ensure that un-privileged code is placed after the region reserved                                                                                                                                         4          * for privileged kernel code. */
+        /* Note that dot (.) actually refers to the byte offset from the start
+            * of the current section (.privileged_functions in this case). As a
+            * result, setting dot (.) to a value sets the size of the section. */
+        . = __privileged_functions_region_size__;
 	} >rom AT>rom
 	
 	.text :
 	{
+        . = ALIGN(4);
+        __syscalls_flash_start__ = .;
+        *(freertos_system_calls)
+        __syscalls_flash_end__ = .;
 		*(.text.unlikely .text.unlikely.*)
 		*(.text.startup .text.startup.*)
 		*(.text .text.*)
@@ -50,6 +80,21 @@ SECTIONS
 		. = ALIGN(4);
 		_erodata = .;
 	} >rom AT>rom
+
+    .privileged_data :
+    {
+        . = ALIGN(4);
+        _sdata = .;        /* Create a global symbol at data start. */
+        *(privileged_data)
+        . = ALIGN(4);
+        FILL(0xDEAD);
+        /* Ensure that un-privileged data is placed after the region reserved
+            * for privileged kernel data. */
+        /* Note that dot (.) actually refers to the byte offset from the start
+            * * of the current section (.privileged_data in this case). As a result,
+            * * setting dot (.) to a value sets the size of the section. */
+        . = __privileged_data_region_size__;
+    } >ram AT>rom
 
 	.data.align :
 	{
