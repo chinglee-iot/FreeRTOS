@@ -3,6 +3,9 @@
 
 #include <stddef.h>
 
+#define CONFIG_TO_INT(_config) (*((char *)&(_config)))
+#define INT_TO_CONFIG(_int) (*((struct pmp_config *)(char *)&(_int)))
+
 /*!
  * @brief Set of available PMP addressing modes
  */
