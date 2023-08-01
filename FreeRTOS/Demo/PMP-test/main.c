@@ -31,7 +31,7 @@
 /* Run a simple demo just prints 'Blink' */
 #define mainVECTOR_MODE_DIRECT	1
 
-#define mainPMP_DEMO_STAGE  0
+#define mainPMP_DEMO_STAGE  2
 
 extern void freertos_risc_v_trap_handler( void );
 extern void freertos_vector_table( void );
@@ -43,6 +43,7 @@ void vApplicationTickHook( void );
 
 extern int pmp_stage0_demo( void );
 extern int pmp_stage1_demo( void );
+extern int pmp_stage2_demo( void );
 
 /*-----------------------------------------------------------*/
 
@@ -63,8 +64,10 @@ int main( void )
     /* Enter the stage 0 PMP demo main. */
 #if mainPMP_DEMO_STAGE == 0
     ret = pmp_stage0_demo();
-#else
+#elif mainPMP_DEMO_STAGE == 1
     ret = pmp_stage1_demo();
+#else
+    ret = pmp_stage2_demo();
 #endif
 
 	return ret;

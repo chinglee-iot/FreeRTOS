@@ -66,7 +66,7 @@ void freertos_risc_v_application_exception_handler( void )
     volatile int xSyscallNumber;
     uint32_t * uxTaskStackPointer;
 
-    uint32_t mCause, mEpc, mStatus;
+    volatile uint32_t mCause, mEpc, mStatus;
     char temp[128];    
 
     uxTaskStackPointer = pxCurrentTCB[ 0 ];
@@ -98,6 +98,7 @@ void freertos_risc_v_application_exception_handler( void )
 
     switch( mCause )
     {
+        case METAL_LAF_EXCEPTION_CODE:
         case METAL_SAMOAF_EXCEPTION_CODE : /* memory access violation. */
             xMemoryAcceccExceptionFlag = 1;
             break;

@@ -42,6 +42,7 @@ SRCS = main.c \
     exception_handler.c \
     pmp_stage0_demo.c \
     pmp_stage1_demo.c \
+    pmp_stage2_demo.c \
 	$(RTOS_SOURCE_DIR)/event_groups.c \
 	$(RTOS_SOURCE_DIR)/list.c \
 	$(RTOS_SOURCE_DIR)/queue.c \

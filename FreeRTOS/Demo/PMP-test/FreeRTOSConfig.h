@@ -106,4 +106,6 @@ to exclude the API function. */
 #define INCLUDE_xTaskGetHandle				1
 #define INCLUDE_xSemaphoreGetMutexHolder	1
 
+#define configENABLE_MPU                    1
+
 #endif /* FREERTOS_CONFIG_H */

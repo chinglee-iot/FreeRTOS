@@ -16,9 +16,12 @@ enum metal_privilege_mode {
 #define METAL_MSTATUS_MPP_OFFSET 11
 #define METAL_MSTATUS_MPP_MASK 3
 
+extern BaseType_t xPortStarted;
+
 static void prvPrivilegeDropToMode( enum metal_privilege_mode mode )
 {
     uintptr_t mstatus;
+
     __asm__ volatile("csrr %0, mstatus" : "=r"(mstatus));
 
     /* Set xPIE bits based on current xIE bits */
@@ -53,7 +56,15 @@ static void prvPrivilegeDropToMode( enum metal_privilege_mode mode )
 BaseType_t portIS_PRIVILEGED( void )
 {
     int ret;
-    ret = __internal_syscall_0( portECALL_IS_PRIVILEGED );
+
+    if( xPortStarted == pdFALSE )
+    {
+        ret = pdTRUE;
+    }
+    else
+    {
+        ret = __internal_syscall_0( portECALL_IS_PRIVILEGED );
+    }
 
     /* Get the machine previous privilege. */
     return ret;
@@ -61,14 +72,20 @@ BaseType_t portIS_PRIVILEGED( void )
 
 void portRAISE_PRIVILEGE( void )
 {
-    /* Rasie privilege through ecall. */
-    __internal_syscall_0( portECALL_RAISE_PRIORITY );
+    if( xPortStarted == pdTRUE )
+    {
+        /* Rasie privilege through ecall. */
+        __internal_syscall_0( portECALL_RAISE_PRIORITY );
+    }
 }
 
 void portRESET_PRIVILEGE( void )
 {
-    /* User mode entry point is the return address. */
-    prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
+    if( xPortStarted == pdTRUE )
+    {
+        /* User mode entry point is the return address. */
+        prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
+    }
 }
 
 void portSWITCH_TO_USER_MODE( void )
@@ -76,5 +93,8 @@ void portSWITCH_TO_USER_MODE( void )
     /* User mode still using the same stack. */
 
     /* User mode entry point is the return address. */
-    prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
+    if( xPortStarted == pdTRUE )
+    {
+        prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
+    }
 }
