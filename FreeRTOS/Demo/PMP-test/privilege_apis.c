@@ -91,10 +91,14 @@ void portRESET_PRIVILEGE( void )
 void portSWITCH_TO_USER_MODE( void )
 {
     /* User mode still using the same stack. */
+    BaseType_t xIsPrivileged;
 
     /* User mode entry point is the return address. */
     if( xPortStarted == pdTRUE )
     {
+        xIsPrivileged = portIS_PRIVILEGED();
+        while( xIsPrivileged == pdFALSE );
+
         prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
     }
 }
