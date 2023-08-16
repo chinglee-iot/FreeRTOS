@@ -48,6 +48,7 @@
 #define configMINIMAL_STACK_SIZE                   ( configSTACK_DEPTH_TYPE ) 256
 #define configUSE_16_BIT_TICKS                     0
 #define configIDLE_SHOULD_YIELD                    1
+#define configUSE_PREEMPTION                       1
 
 /* Synchronization Related */
 #define configUSE_MUTEXES                          1
@@ -136,5 +137,8 @@
 /* A header file that defines trace macro can be included here. */
 
 #include "test_config.h"
+
+extern uint32_t uxPortGetTimeUS( void );
+#define portTEST_GET_TIME                       uxPortGetTimeUS
 
 #endif /* FREERTOS_CONFIG_H */

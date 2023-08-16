@@ -165,10 +165,10 @@ static portTASK_FUNCTION( prvSemaphoreTest, pvParameters )
 
     /* See which check variable to use.  sNextCheckVariable is not semaphore
      * protected! */
-    portENTER_CRITICAL();
+    taskENTER_CRITICAL();
     sCheckVariableToUse = sNextCheckVariable;
     sNextCheckVariable++;
-    portEXIT_CRITICAL();
+    taskEXIT_CRITICAL();
 
     /* A structure is passed in as the parameter.  This contains the shared
      * variable being guarded. */

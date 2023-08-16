@@ -43,6 +43,7 @@
 /* Pico includes. */
 #include "pico/multicore.h"
 #include "pico/stdlib.h"
+#include "hardware/structs/systick.h"
 
 /*-----------------------------------------------------------*/
 
@@ -119,5 +120,11 @@ int main( void )
     panic_unsupported();
 
     return 0;
+}
+/*-----------------------------------------------------------*/
+
+uint32_t uxPortGetTimeUS( void )
+{
+    return time_us_32();
 }
 /*-----------------------------------------------------------*/

@@ -376,11 +376,11 @@ static void prvHigherPriorityNormallyEmptyTask( void * pvParameters )
                 memset( ucNormallyEmptyReceivedValues, 0x00, sizeof( ucNormallyEmptyReceivedValues ) );
 
                 uxHighPriorityLoops1++;
-                portENTER_CRITICAL();
+                taskENTER_CRITICAL();
                 {
                     uxValueForNormallyEmptyQueue = 0;
                 }
-                portEXIT_CRITICAL();
+                taskEXIT_CRITICAL();
 
                 /* Suspend ourselves, allowing the lower priority task to
                  * actually receive something from the queue.  Until now it
@@ -426,12 +426,12 @@ static void prvLowerPriorityNormallyEmptyTask( void * pvParameters )
              *  priority task, and ensure we get the Tx value into the queue. */
             vTaskPrioritySet( NULL, intqHIGHER_PRIORITY + 1 );
 
-            portENTER_CRITICAL();
+            taskENTER_CRITICAL();
             {
                 uxValueForNormallyEmptyQueue++;
                 uxValue = uxValueForNormallyEmptyQueue;
             }
-            portEXIT_CRITICAL();
+            taskEXIT_CRITICAL();
 
             if( xQueueSend( xNormallyEmptyQueue, &uxValue, portMAX_DELAY ) != pdPASS )
             {
@@ -455,24 +455,24 @@ static void prv1stHigherPriorityNormallyFullTask( void * pvParameters )
      * high priority tasks. */
     for( ux = 0; ux < ( intqQUEUE_LENGTH >> 1 ); ux++ )
     {
-        portENTER_CRITICAL();
+        taskENTER_CRITICAL();
         {
             uxValueForNormallyFullQueue++;
             uxValueToTx = uxValueForNormallyFullQueue;
         }
-        portEXIT_CRITICAL();
+        taskEXIT_CRITICAL();
 
         xQueueSend( xNormallyFullQueue, &uxValueToTx, intqSHORT_DELAY );
     }
 
     for( ; ; )
     {
-        portENTER_CRITICAL();
+        taskENTER_CRITICAL();
         {
             uxValueForNormallyFullQueue++;
             uxValueToTx = uxValueForNormallyFullQueue;
         }
-        portEXIT_CRITICAL();
+        taskEXIT_CRITICAL();
 
         if( xQueueSend( xNormallyFullQueue, &uxValueToTx, intqSHORT_DELAY ) != pdPASS )
         {
@@ -532,11 +532,11 @@ static void prv1stHigherPriorityNormallyFullTask( void * pvParameters )
             memset( ucNormallyFullReceivedValues, 0x00, sizeof( ucNormallyFullReceivedValues ) );
 
             uxHighPriorityLoops2++;
-            portENTER_CRITICAL();
+            taskENTER_CRITICAL();
             {
                 uxValueForNormallyFullQueue = 0;
             }
-            portEXIT_CRITICAL();
+            taskEXIT_CRITICAL();
 
             /* Suspend ourselves, allowing the lower priority task to
              * actually receive something from the queue.  Until now it
@@ -562,24 +562,24 @@ static void prv2ndHigherPriorityNormallyFullTask( void * pvParameters )
      * high priority tasks. */
     for( ux = 0; ux < ( intqQUEUE_LENGTH >> 1 ); ux++ )
     {
-        portENTER_CRITICAL();
+        taskENTER_CRITICAL();
         {
             uxValueForNormallyFullQueue++;
             uxValueToTx = uxValueForNormallyFullQueue;
         }
-        portEXIT_CRITICAL();
+        taskEXIT_CRITICAL();
 
         xQueueSend( xNormallyFullQueue, &uxValueToTx, intqSHORT_DELAY );
     }
 
     for( ; ; )
     {
-        portENTER_CRITICAL();
+        taskENTER_CRITICAL();
         {
             uxValueForNormallyFullQueue++;
             uxValueToTx = uxValueForNormallyFullQueue;
         }
-        portEXIT_CRITICAL();
+        taskEXIT_CRITICAL();
 
         if( xQueueSend( xNormallyFullQueue, &uxValueToTx, intqSHORT_DELAY ) != pdPASS )
         {
