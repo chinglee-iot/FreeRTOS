@@ -108,5 +108,6 @@ to exclude the API function. */
 
 #define configENABLE_MPU                    1
 #define configUSE_MPU_WRAPPERS_V1           1
+#define configENFORCE_SYSTEM_CALLS_FROM_KERNEL_ONLY     1
 
 #endif /* FREERTOS_CONFIG_H */

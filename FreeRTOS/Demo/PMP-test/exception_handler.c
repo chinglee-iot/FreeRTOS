@@ -46,6 +46,11 @@ static void user_mode_trap_handler( int xSyscallNumber )
     char temp[64];
     uint32_t * uxTaskStackPointer;
 
+    #if ( configENFORCE_SYSTEM_CALLS_FROM_KERNEL_ONLY == 1 )
+        extern uint32_t __syscalls_flash_start__[];
+        extern uint32_t __syscalls_flash_end__[];
+    #endif
+
     /* Get the mstatus from the stack. */
     uxTaskStackPointer = pxCurrentTCB[ 0 ];
 
@@ -56,11 +61,20 @@ static void user_mode_trap_handler( int xSyscallNumber )
     }
     else if( xSyscallNumber == portECALL_RAISE_PRIORITY )
     {
+        #if ( configENFORCE_SYSTEM_CALLS_FROM_KERNEL_ONLY == 1 )
+        if( ( uxTaskStackPointer[ 0 ] >= ( uint32_t ) __syscalls_flash_start__ ) &&
+            ( uxTaskStackPointer[ 0 ] <= ( uint32_t ) __syscalls_flash_end__ ) )
+        #endif
         /* Update the mstatus.MPP on to stack to return to M-mode. */
-        uxTaskStackPointer[ 30 ] = uxTaskStackPointer[ 30 ] | ( 0x3 << 11 );
+        {
+            uxTaskStackPointer[ 30 ] = uxTaskStackPointer[ 30 ] | ( 0x3 << 11 );
+        }
     }
 }
 
+#define SHARED_MEMORY_SIZE      32
+extern volatile uint8_t ucROTaskFaultTracker[ SHARED_MEMORY_SIZE ];
+extern void vHandleMemoryFault( uint32_t * pulFaultStackAddress );
 void freertos_risc_v_application_exception_handler( void )
 {
     volatile int xSyscallNumber;
@@ -98,9 +112,18 @@ void freertos_risc_v_application_exception_handler( void )
 
     switch( mCause )
     {
+        case METAL_II_EXCEPTION_CODE:
+            /* User mode tries to set the priority. */
+            break;
         case METAL_LAF_EXCEPTION_CODE:
         case METAL_SAMOAF_EXCEPTION_CODE : /* memory access violation. */
             xMemoryAcceccExceptionFlag = 1;
+            // vHandleMemoryFault( uxTaskStackPointer );
+            if( ucROTaskFaultTracker[ 0 ] == 1 )
+            {
+                /* Mark the fault as handled. */
+                ucROTaskFaultTracker[ 0 ] = 0;
+            }
             break;
         case METAL_ECALL_U_EXCEPTION_CODE : /* ECALL from u-mode. */
             user_mode_trap_handler( xSyscallNumber );

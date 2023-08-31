@@ -70,6 +70,8 @@ BaseType_t portIS_PRIVILEGED( void )
     return ret;
 }
 
+#if 0
+/* Use macro implementation in port. */
 void portRAISE_PRIVILEGE( void )
 {
     if( xPortStarted == pdTRUE )
@@ -78,13 +80,21 @@ void portRAISE_PRIVILEGE( void )
         __internal_syscall_0( portECALL_RAISE_PRIORITY );
     }
 }
+#endif
 
 void portRESET_PRIVILEGE( void )
 {
+    /* User mode still using the same stack. */
+    BaseType_t xIsPrivileged;
+
+    /* User mode entry point is the return address. */
     if( xPortStarted == pdTRUE )
     {
-        /* User mode entry point is the return address. */
-        prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
+        xIsPrivileged = portIS_PRIVILEGED();
+        if( xIsPrivileged == pdTRUE )
+        {
+            prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
+        }
     }
 }
 
@@ -97,8 +107,9 @@ void portSWITCH_TO_USER_MODE( void )
     if( xPortStarted == pdTRUE )
     {
         xIsPrivileged = portIS_PRIVILEGED();
-        while( xIsPrivileged == pdFALSE );
-
-        prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
+        if( xIsPrivileged == pdTRUE )
+        {
+            prvPrivilegeDropToMode( METAL_PRIVILEGE_USER );
+        }
     }
 }

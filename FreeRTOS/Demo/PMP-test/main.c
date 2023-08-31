@@ -31,7 +31,7 @@
 /* Run a simple demo just prints 'Blink' */
 #define mainVECTOR_MODE_DIRECT	1
 
-#define mainPMP_DEMO_STAGE  2
+#define mainPMP_DEMO_STAGE  3
 
 extern void freertos_risc_v_trap_handler( void );
 extern void freertos_vector_table( void );
@@ -44,12 +44,13 @@ void vApplicationTickHook( void );
 extern int pmp_stage0_demo( void );
 extern int pmp_stage1_demo( void );
 extern int pmp_stage2_demo( void );
+extern void vStartMPUDemo( void );
 
 /*-----------------------------------------------------------*/
 
 int main( void )
 {
-	int ret;
+	int ret = 0;
 	// trap handler initialization
 		#if( mainVECTOR_MODE_DIRECT == 1 )
 	{
@@ -66,8 +67,11 @@ int main( void )
     ret = pmp_stage0_demo();
 #elif mainPMP_DEMO_STAGE == 1
     ret = pmp_stage1_demo();
-#else
+#elif mainPMP_DEMO_STAGE == 2
     ret = pmp_stage2_demo();
+#else
+    vStartMPUDemo();
+    vTaskStartScheduler();
 #endif
 
 	return ret;
