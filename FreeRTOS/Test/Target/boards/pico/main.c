@@ -63,10 +63,12 @@ static void prvInitializeHardware( void )
     /* Needed for printf. */
     stdio_init_all();
 
+    #if 0
     while( !stdio_usb_connected() )
     {
         sleep_ms( 250 );
     }
+    #endif
 }
 /*-----------------------------------------------------------*/
 

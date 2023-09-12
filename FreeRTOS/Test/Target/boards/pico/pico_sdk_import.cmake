@@ -84,6 +84,6 @@ foreach (_variableName ${_variableNames})
 endforeach()
 
 macro(enable_board_functions EXECUTABLE_NAME)
-    pico_enable_stdio_usb(${EXECUTABLE_NAME} 1)
+    pico_enable_stdio_uart(${EXECUTABLE_NAME} 1)
     pico_add_extra_outputs(${EXECUTABLE_NAME})
 endmacro()

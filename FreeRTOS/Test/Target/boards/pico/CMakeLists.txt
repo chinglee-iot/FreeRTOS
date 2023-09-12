@@ -6,7 +6,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 set(UNITY_DIR ${CMAKE_CURRENT_LIST_DIR}/../../../CMock/CMock/vendor/unity)
-set(CMAKE_BUILD_TYPE "Debug" )
+# set(CMAKE_BUILD_TYPE "Debug" )
 
 include(pico_sdk_import.cmake)
 
