@@ -85,8 +85,6 @@ typedef uint32_t         UBaseType_t;
 #define portCLEAR_INTERRUPT_MASK( x )   ( ( void )( x ) )
 
 /* Critical section handling. */
-extern void vTaskEnterCritical( void );
-extern void vTaskExitCritical( void );
 #define portENTER_CRITICAL()
 #define portEXIT_CRITICAL()
 

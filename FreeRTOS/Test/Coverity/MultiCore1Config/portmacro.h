@@ -95,8 +95,6 @@ extern BaseType_t isInISR;
 #define portENABLE_INTERRUPTS()
 
 /* Critical section handling. */
-extern void vTaskEnterCritical( void );
-extern void vTaskExitCritical( void );
 #define portENTER_CRITICAL()
 #define portEXIT_CRITICAL()
 
