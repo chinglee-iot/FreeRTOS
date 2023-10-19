@@ -213,7 +213,7 @@ size_t xPortGetMinimumEverFreeHeapSize( void )
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationMinimalIdleHook( void )
+void vApplicationPassiveIdleHook( void )
 {
     return;
 }
