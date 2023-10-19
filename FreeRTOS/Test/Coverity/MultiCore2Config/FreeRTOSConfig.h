@@ -45,7 +45,7 @@
 #define configNUMBER_OF_CORES                      3U
 #define configUSE_CORE_AFFINITY                    1
 #define configUSE_MUTEXES                          1
-#define configUSE_MINIMAL_IDLE_HOOK                1
+#define configUSE_PASSIVE_IDLE_HOOK                1
 #define configUSE_PREEMPTION                       1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION    0
 #define configUSE_TRACE_FACILITY                   1
