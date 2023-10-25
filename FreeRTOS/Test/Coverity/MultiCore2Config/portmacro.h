@@ -115,7 +115,7 @@ extern void vRaisePrivilege( void );
 #define portRESET_PRIVILEGE()       vResetPrivilege()
 #define portRAISE_PRIVILEGE()       vRaisePrivilege()
 
-#define portUSING_MPU_WRAPPERS                     1
+#define portUSING_MPU_WRAPPERS                     0
 #define portCRITICAL_NESTING_IN_TCB                1
 #define portPRIVILEGE_BIT                          1U
 

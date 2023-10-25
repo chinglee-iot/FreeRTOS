@@ -110,6 +110,7 @@ BaseType_t xPortStartScheduler( void )
 }
 /*-----------------------------------------------------------*/
 
+#if ( portUSING_MPU_WRAPPERS == 1 )
 StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
                                      TaskFunction_t pxCode,
                                      void * pvParameters,
@@ -124,6 +125,18 @@ StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
 
     return NULL;
 }
+#else
+StackType_t * pxPortInitialiseStack( StackType_t * pxTopOfStack,
+                                     TaskFunction_t pxCode,
+                                     void * pvParameters )
+{
+    ( void ) pxTopOfStack;
+    ( void ) pxCode;
+    ( void ) pvParameters;
+
+    return NULL;
+}
+#endif
 /*-----------------------------------------------------------*/
 
 void vPortGenerateSimulatedInterrupt()
