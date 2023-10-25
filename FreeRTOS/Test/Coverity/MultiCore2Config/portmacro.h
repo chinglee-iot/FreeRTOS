@@ -37,7 +37,6 @@
 #define portSHORT                short
 #define portSTACK_TYPE           int32_t
 #define portBASE_TYPE            int32_t
-#define portPOINTER_SIZE_TYPE    intptr_t
 
 #define configISR_STACK_SIZE_WORDS
 
