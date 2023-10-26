@@ -49,6 +49,12 @@ file( GLOB FREERTOS_CONFIG_INCLUDE_MULTI_CORE2
 file( GLOB FREERTOS_CONFIG_INCLUDE_SINGLE_CORE
       ${CMAKE_CURRENT_LIST_DIR}/SingleCoreConfig )
 
+file( GLOB FREERTOS_CONFIG_INCLUDE_MPU_V1
+      ${CMAKE_CURRENT_LIST_DIR}/mpu_v1 )
+
+file( GLOB FREERTOS_CONFIG_INCLUDE_MPU_V2
+      ${CMAKE_CURRENT_LIST_DIR}/mpu_v2 )
+
 # A better way would be to create a library such that all other dependencies are
 # ignored by the static analysis tool. But, since +TCP is very closely linked
 # with the FreeRTOS-Kernel, an executable had to be created.
@@ -101,5 +107,38 @@ target_compile_options(single PRIVATE
   -Wall -Wextra -Wpedantic
 )
 
+# Add the executable for static analysis
+add_executable( mpu_v1 ${KERNEL_SOURCES}
+                       ${KERNEL_DIRECTORY}/portable/Common/mpu_wrappers.c
+                               ${CMAKE_CURRENT_LIST_DIR}/Portable.c )
+
+# Link the include directories with the target
+target_include_directories( mpu_v1
+                            PUBLIC "${KERNEL_DIRECTORY}/include"
+                            PUBLIC "${FREERTOS_CONFIG_INCLUDE_MPU_V1}" )
+
+# Uncomment the below line if the desired platform is 32-bit
+# set_target_properties( mpu_v1 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32" )
+
+target_compile_options(mpu_v1 PRIVATE
+  -Wall -Wextra -Wpedantic
+)
+
+# Add the executable for static analysis
+add_executable( mpu_v2 ${KERNEL_SOURCES}
+                       ${KERNEL_DIRECTORY}/portable/Common/mpu_wrappers_v2.c
+                       ${CMAKE_CURRENT_LIST_DIR}/Portable.c )
+
+# Link the include directories with the target
+target_include_directories( mpu_v2
+                            PUBLIC "${KERNEL_DIRECTORY}/include"
+                            PUBLIC "${FREERTOS_CONFIG_INCLUDE_MPU_V2}" )
+
+# Uncomment the below line if the desired platform is 32-bit
+# set_target_properties( mpu_v2 PROPERTIES COMPILE_FLAGS "-m32" LINK_FLAGS "-m32" )
+
+target_compile_options(mpu_v2 PRIVATE
+  -Wall -Wextra -Wpedantic
+)
 
 
