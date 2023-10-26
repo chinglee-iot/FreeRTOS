@@ -114,4 +114,7 @@ typedef struct MPU_SETTINGS
     uint32_t dummy;
 } xMPU_SETTINGS;
 
+extern BaseType_t xPortIsTaskPrivileged( void );
+#define portIS_TASK_PRIVILEGED()    xPortIsTaskPrivileged()
+
 #endif /* ifndef PORTMACRO_H */

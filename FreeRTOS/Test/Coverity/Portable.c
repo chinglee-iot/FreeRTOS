@@ -224,3 +224,82 @@ void vRaisePrivilege( void )
     return;
 }
 /*-----------------------------------------------------------*/
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 )
+    #if ( configKERNEL_PROVIDED_STATIC_MEMORY == 0 ) || ( portUSING_MPU_WRAPPERS == 1 )
+
+        #if ( configNUMBER_OF_CORES == 1 )
+
+            void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
+                                                StackType_t ** ppxIdleTaskStackBuffer,
+                                                uint32_t * pulIdleTaskStackSize )
+            {
+                static StaticTask_t xIdleTaskTCB;
+                static StackType_t uxIdleTaskStack[ configMINIMAL_STACK_SIZE ];
+
+                *ppxIdleTaskTCBBuffer = &( xIdleTaskTCB );
+                *ppxIdleTaskStackBuffer = &( uxIdleTaskStack[ 0 ] );
+                *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+            }
+
+        #else /* #if ( configNUMBER_OF_CORES == 1 ) */
+
+            void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
+                                                StackType_t ** ppxIdleTaskStackBuffer,
+                                                uint32_t * pulIdleTaskStackSize,
+                                                BaseType_t xCoreID )
+            {
+                static StaticTask_t xIdleTaskTCBs[ configNUMBER_OF_CORES ];
+                static StackType_t uxIdleTaskStacks[ configNUMBER_OF_CORES ][ configMINIMAL_STACK_SIZE ];
+
+                *ppxIdleTaskTCBBuffer = &( xIdleTaskTCBs[ xCoreID ] );
+                *ppxIdleTaskStackBuffer = &( uxIdleTaskStacks[ xCoreID ][ 0 ] );
+                *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+            }
+
+        #endif /* #if ( configNUMBER_OF_CORES == 1 ) */
+
+    #endif
+#endif
+/*-----------------------------------------------------------*/
+
+#if ( configSUPPORT_STATIC_ALLOCATION == 1 ) 
+    #if ( configKERNEL_PROVIDED_STATIC_MEMORY == 0 ) || ( portUSING_MPU_WRAPPERS == 1 )
+        void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
+                                            StackType_t ** ppxTimerTaskStackBuffer,
+                                            uint32_t * pulTimerTaskStackSize )
+        {
+            static StaticTask_t xTimerTaskTCB;
+            static StackType_t uxTimerTaskStack[ configTIMER_TASK_STACK_DEPTH ];
+
+            *ppxTimerTaskTCBBuffer = &( xTimerTaskTCB );
+            *ppxTimerTaskStackBuffer = &( uxTimerTaskStack[ 0 ] );
+            *pulTimerTaskStackSize = configTIMER_TASK_STACK_DEPTH;
+        }
+    #endif
+#endif 
+/*-----------------------------------------------------------*/
+
+BaseType_t xPortIsAuthorizedToAccessKernelObject( int32_t lInternalIndexOfKernelObject )
+{
+    ( void ) lInternalIndexOfKernelObject;
+    return pdTRUE;
+}
+/*-----------------------------------------------------------*/
+
+BaseType_t xPortIsAuthorizedToAccessBuffer( const void * pvBuffer,
+                                            uint32_t ulBufferLength,
+                                            uint32_t ulAccessRequested )
+{
+    ( void ) pvBuffer;
+    ( void ) ulBufferLength;
+    ( void ) ulAccessRequested;
+    return pdTRUE;
+}
+/*-----------------------------------------------------------*/
+
+BaseType_t xPortIsTaskPrivileged( void )
+{
+    return pdTRUE;
+}
+/*-----------------------------------------------------------*/
