@@ -70,16 +70,6 @@ void vApplicationDaemonTaskStartupHook( void )
 }
 /*-----------------------------------------------------------*/
 
-void vApplicationGetTimerTaskMemory( StaticTask_t ** ppxTimerTaskTCBBuffer,
-                                     StackType_t ** ppxTimerTaskStackBuffer,
-                                     uint32_t * pulTimerTaskStackSize )
-{
-    ( void ) ppxTimerTaskTCBBuffer;
-    ( void ) ppxTimerTaskStackBuffer;
-    ( void ) pulTimerTaskStackSize;
-}
-/*-----------------------------------------------------------*/
-
 void vApplicationIdleHook( void )
 {
     return;
@@ -149,30 +139,6 @@ void portAssert()
 {
     return;
 }
-/*-----------------------------------------------------------*/
-
-#if ( configNUMBER_OF_CORES == 1 )
-void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
-                                    StackType_t ** ppxIdleTaskStackBuffer,
-                                    uint32_t * pulIdleTaskStackSize )
-{
-    ( void ) ppxIdleTaskTCBBuffer;
-    ( void ) ppxIdleTaskStackBuffer;
-    ( void ) pulIdleTaskStackSize;
-}
-#else
-void vApplicationGetIdleTaskMemory( StaticTask_t ** ppxIdleTaskTCBBuffer,
-                                    StackType_t ** ppxIdleTaskStackBuffer,
-                                    uint32_t * pulIdleTaskStackSize,
-				    BaseType_t xCoreID )
-{
-    ( void ) ppxIdleTaskTCBBuffer;
-    ( void ) ppxIdleTaskStackBuffer;
-    ( void ) pulIdleTaskStackSize;
-    ( void ) xCoreID;
-}
-
-#endif
 /*-----------------------------------------------------------*/
 
 void vPortStoreTaskMPUSettings( xMPU_SETTINGS * xMPUSettings,

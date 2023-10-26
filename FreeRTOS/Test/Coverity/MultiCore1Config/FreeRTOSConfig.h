@@ -45,7 +45,7 @@
 #define configNUMBER_OF_CORES                      3U
 #define configUSE_CORE_AFFINITY                    1
 #define configUSE_MUTEXES                          1
-#define configUSE_PASSIVE_IDLE_HOOK                1
+#define configUSE_PASSIVE_IDLE_HOOK                0
 #define configUSE_PREEMPTION                       1
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION    0
 #define configUSE_TRACE_FACILITY                   1
@@ -96,11 +96,11 @@
 #define configSTACK_ALLOCATION_FROM_SEPARATE_HEAP  0
 
 /* Hook function related definitions. */
-#define configUSE_IDLE_HOOK                        1
-#define configUSE_TICK_HOOK                        1
+#define configUSE_IDLE_HOOK                        0
+#define configUSE_TICK_HOOK                        0
 #define configCHECK_FOR_STACK_OVERFLOW             0
 #define configUSE_MALLOC_FAILED_HOOK               1
-#define configUSE_DAEMON_TASK_STARTUP_HOOK         1
+#define configUSE_DAEMON_TASK_STARTUP_HOOK         0
 #define configUSE_SB_COMPLETED_CALLBACK            1
 
 /* Run time and task stats gathering related definitions. */
@@ -146,5 +146,7 @@
 
 /* Run time stats gathering configuration options. */
 #define portCONFIGURE_TIMER_FOR_RUN_TIME_STATS()
+
+#define configKERNEL_PROVIDED_STATIC_MEMORY     1
 
 #endif /* FREERTOS_CONFIG_H */
