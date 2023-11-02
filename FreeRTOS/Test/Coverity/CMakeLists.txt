@@ -55,6 +55,14 @@ file( GLOB FREERTOS_CONFIG_INCLUDE_MPU_V1
 file( GLOB FREERTOS_CONFIG_INCLUDE_MPU_V2
       ${CMAKE_CURRENT_LIST_DIR}/mpu_v2 )
 
+# pdTRUE and pdFALSE will be regarded as boolean type by naming convention
+# which Coverity uses to determine the intent. However, boolean type is not used
+# in FreeRTOS to support compiler of older standard. Replace pdTRUE with pdPASS
+# and pdFALSE with pdFAIL in this example to suppress this false positive warning.
+add_custom_target( fix_source ALL
+    COMMAND sed -i -b -e 's/pdFALSE/pdFAIL/g' -e 's/pdTRUE/pdPASS/g' ${KERNEL_SOURCES}
+    DEPENDS ${KERNEL_SOURCES} )
+
 # A better way would be to create a library such that all other dependencies are
 # ignored by the static analysis tool. But, since +TCP is very closely linked
 # with the FreeRTOS-Kernel, an executable had to be created.
@@ -62,6 +70,7 @@ file( GLOB FREERTOS_CONFIG_INCLUDE_MPU_V2
 # Add the executable for static analysis
 add_executable( smp1 ${KERNEL_SOURCES}
                                ${CMAKE_CURRENT_LIST_DIR}/Portable.c )
+add_dependencies( smp1 fix_source )
 
 # Link the include directories with the target
 target_include_directories( smp1
@@ -78,6 +87,7 @@ target_compile_options(smp1 PRIVATE
 # Add the executable for static analysis
 add_executable( smp2 ${KERNEL_SOURCES}
                                ${CMAKE_CURRENT_LIST_DIR}/Portable.c )
+add_dependencies( smp2 fix_source )
 
 # Link the include directories with the target
 target_include_directories( smp2
@@ -94,6 +104,7 @@ target_compile_options(smp2 PRIVATE
 # Add the executable for static analysis
 add_executable( single ${KERNEL_SOURCES}
                                ${CMAKE_CURRENT_LIST_DIR}/Portable.c )
+add_dependencies( single fix_source )
 
 # Link the include directories with the target
 target_include_directories( single
@@ -111,6 +122,7 @@ target_compile_options(single PRIVATE
 add_executable( mpu_v1 ${KERNEL_SOURCES}
                        ${KERNEL_DIRECTORY}/portable/Common/mpu_wrappers.c
                                ${CMAKE_CURRENT_LIST_DIR}/Portable.c )
+add_dependencies( mpu_v1 fix_source )
 
 # Link the include directories with the target
 target_include_directories( mpu_v1
@@ -128,6 +140,7 @@ target_compile_options(mpu_v1 PRIVATE
 add_executable( mpu_v2 ${KERNEL_SOURCES}
                        ${KERNEL_DIRECTORY}/portable/Common/mpu_wrappers_v2.c
                        ${CMAKE_CURRENT_LIST_DIR}/Portable.c )
+add_dependencies( mpu_v2 fix_source )
 
 # Link the include directories with the target
 target_include_directories( mpu_v2
