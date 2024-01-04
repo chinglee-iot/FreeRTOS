@@ -42,7 +42,9 @@ target_include_directories( freertos_config
     INTERFACE
         ./
         ./Trace_Recorder_Configuration
-        ${FREERTOS_PLUS_TRACE_PATH}/Include
+        ${FREERTOS_PLUS_TRACE_PATH}/include
+        ${FREERTOS_PLUS_TRACE_PATH}/kernelports/FreeRTOS
+        ${FREERTOS_PLUS_TRACE_PATH}/kernelports/FreeRTOS/include
 )
 
 # Select the heap port
@@ -70,6 +72,7 @@ add_executable( posix_demo
                 main_full.c
                 run-time-stats-utils.c
                 $<$<NOT:${COVERAGE_TEST}>:${FREERTOS_PLUS_TRACE_SOURCES}>
+		$<$<NOT:${COVERAGE_TEST}>:${FREERTOS_PLUS_TRACE_PATH}/kernelports/FreeRTOS/trcKernelPort.c>
                 ${CMAKE_CURRENT_LIST_DIR}/../Common/Minimal/AbortDelay.c
                 ${CMAKE_CURRENT_LIST_DIR}/../Common/Minimal/BlockQ.c
                 ${CMAKE_CURRENT_LIST_DIR}/../Common/Minimal/blocktim.c
@@ -101,7 +104,7 @@ target_include_directories( posix_demo
     PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
         ${CMAKE_CURRENT_LIST_DIR}/../Common/include
-        ${FREERTOS_PLUS_TRACE_PATH}/Include
+        ${FREERTOS_PLUS_TRACE_PATH}/include
         ${FREERTOS_PLUS_TRACE_PATH}/streamports/File/include
         ${FREERTOS_PLUS_TRACE_PATH}/streamports/File/config
 )
