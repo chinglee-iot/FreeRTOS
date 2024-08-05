@@ -105,8 +105,8 @@
 #define configTICK_CORE                      1
 #define configRUN_MULTIPLE_PRIORITIES        1
 #define configUSE_CORE_AFFINITY              1
-#define configUSE_MINIMAL_IDLE_HOOK          0
-#define configUSE_TASK_PREEMPTION_DISABLE    0
+#define configUSE_PASSIVE_IDLE_HOOK          0
+#define configUSE_TASK_PREEMPTION_DISABLE    1
 
 /* RP2040 specific */
 #define configSUPPORT_PICO_SYNC_INTEROP      1

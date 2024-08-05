@@ -57,8 +57,8 @@
 #define configRUN_MULTIPLE_PRIORITIES        1
 #define configUSE_CORE_AFFINITY              0
 #define configUSE_MINIMAL_IDLE_HOOK          0
-#define configUSE_TASK_PREEMPTION_DISABLE    0
+#define configUSE_TASK_PREEMPTION_DISABLE    1
 #define configUSE_TIME_SLICING               0
-#define configUSE_PREEMPTION                 0
+#define configUSE_PREEMPTION                 1
 
 #endif /* ifndef TEST_CONFIG_H */
