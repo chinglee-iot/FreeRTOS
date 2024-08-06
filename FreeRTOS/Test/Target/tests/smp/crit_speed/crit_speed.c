@@ -43,7 +43,7 @@
  * Test macros to be defined by each port
  */
     #define portTEST_GET_TIME()    ( ( UBaseType_t ) esp_cpu_get_cycle_count() )
-    #define portTEST_NUM_SAMPLES    128
+    #define portTEST_NUM_SAMPLES    2048
 /*-----------------------------------------------------------*/
 
 #endif /* UPSTREAM_BUILD */
@@ -83,17 +83,19 @@ static void Test_CriticalSectionSpeed( void )
     {
         /* Test taskENTER_CRITICAL() elapsed time */
         uxTemp = portTEST_GET_TIME();
-        taskENTER_CRITICAL();
+
+        vTaskEnterCritical();
         uxEntryElapsedCumulative += ( portTEST_GET_TIME() - uxTemp );
 
         /* Test taskEXIT_CRITICAL elapsed time */
         uxTemp = portTEST_GET_TIME();
-        taskEXIT_CRITICAL();
+
+        vTaskExitCritical();
         uxExitElapsedCumulative += ( portTEST_GET_TIME() - uxTemp );
     }
 
-    printf( "taskENTER_CRITICAL() average elapsed time: %u\n", uxEntryElapsedCumulative / portTEST_NUM_SAMPLES );
-    printf( "taskEXIT_CRITICAL() average elapsed time: %u\n", uxExitElapsedCumulative / portTEST_NUM_SAMPLES );
+    printf( "taskENTER_CRITICAL() accumulated elapsed time: %u\n", uxEntryElapsedCumulative );
+    printf( "taskEXIT_CRITICAL() accumulated elapsed time: %u\n", uxExitElapsedCumulative );
 }
 /*-----------------------------------------------------------*/
 

@@ -67,8 +67,10 @@
 #endif /* UPSTREAM_BUILD */
 
 #if ( configNUMBER_OF_CORES < 2 )
-    #error This test is for FreeRTOS SMP and therefore, requires at least 2 cores.
+    // #error This test is for FreeRTOS SMP and therefore, requires at least 2 cores.
 #endif /* if configNUMBER_OF_CORES != 2 */
+
+#define testNUMBER_OF_CORES 2
 
 #if ( configRUN_MULTIPLE_PRIORITIES != 1 )
     #error configRUN_MULTIPLE_PRIORITIES must be set to 1 for this test.
@@ -104,31 +106,31 @@ static void prvConsumerTask( void * pvParameters );
 /**
  * @brief Handles of the queues accessed by each core
  */
-static QueueHandle_t xQueueHandles[ configNUMBER_OF_CORES ];
+static QueueHandle_t xQueueHandles[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
  * @brief Handles of the producer tasks created for each core
  */
-static TaskHandle_t xProducerTaskHandles[ configNUMBER_OF_CORES ];
+static TaskHandle_t xProducerTaskHandles[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
  * @brief Handles of the consumer tasks created for each core
  */
-static TaskHandle_t xConsumerTaskHandles[ configNUMBER_OF_CORES ];
+static TaskHandle_t xConsumerTaskHandles[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
  * @brief Start times of each iteration for each core
  */
-static UBaseType_t uxStartTimes[ configNUMBER_OF_CORES ];
+static UBaseType_t uxStartTimes[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
  * @brief Cumulative elapsed time of all iterations for each core
  */
-static UBaseType_t uxElapsedCumulative[ configNUMBER_OF_CORES ];
+static UBaseType_t uxElapsedCumulative[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
@@ -203,7 +205,7 @@ static void Test_LockContentionEndToEnd( void )
     /* Run test for portTEST_NUM_SAMPLES number of iterations */
     for( iIter = 0; iIter < portTEST_NUM_SAMPLES; iIter++ )
     {
-        for( iCore = 0; iCore < configNUMBER_OF_CORES; iCore++ )
+        for( iCore = 0; iCore < testNUMBER_OF_CORES; iCore++ )
         {
             /* Start the consumer task, which in turn starts the producer task.
              * Start them on the other cores first so that we don't get
@@ -217,7 +219,7 @@ static void Test_LockContentionEndToEnd( void )
         xTaskNotifyGive( xConsumerTaskHandles[ portGET_CORE_ID() ] );
 
         /* Wait until both cores have completed this iteration */
-        for( iCore = 0; iCore < configNUMBER_OF_CORES; iCore++ )
+        for( iCore = 0; iCore < testNUMBER_OF_CORES; iCore++ )
         {
             xSemaphoreTake( xIterDoneSem, portMAX_DELAY );
         }
@@ -225,7 +227,7 @@ static void Test_LockContentionEndToEnd( void )
 
     /* Print average results */
     printf("Time taken to send %d items, averaged over %d samples\n", portTEST_NUM_ITEMS, portTEST_NUM_SAMPLES);
-    for( iCore = 0; iCore < configNUMBER_OF_CORES; iCore++ )
+    for( iCore = 0; iCore < testNUMBER_OF_CORES; iCore++ )
     {
         printf("Core %d: %d\n", iCore, ( uxElapsedCumulative[ iCore ] / portTEST_NUM_SAMPLES ) );
     }
@@ -242,11 +244,11 @@ static void Test_LockContentionEndToEnd( void )
     int i;
 
     /* Create counting semaphore to indicate iteration completion */
-    xIterDoneSem = xSemaphoreCreateCounting( configNUMBER_OF_CORES, 0 );
+    xIterDoneSem = xSemaphoreCreateCounting( testNUMBER_OF_CORES, 0 );
     TEST_ASSERT_NOT_NULL_MESSAGE( xIterDoneSem, "Failed to create counting semaphore");
 
     /* Create separate queues and tasks for each core */
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    for( i = 0; i < testNUMBER_OF_CORES; i++ )
     {
         BaseType_t xRet;
 
@@ -291,7 +293,7 @@ static void Test_LockContentionEndToEnd( void )
     vSemaphoreDelete( xIterDoneSem );
 
     /* Delete tasks and queues */
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    for( i = 0; i < testNUMBER_OF_CORES; i++ )
     {
         vTaskDelete( xProducerTaskHandles[ i ] );
         vTaskDelete( xConsumerTaskHandles[ i ] );
