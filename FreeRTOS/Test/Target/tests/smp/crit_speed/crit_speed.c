@@ -84,13 +84,21 @@ static void Test_CriticalSectionSpeed( void )
         /* Test taskENTER_CRITICAL() elapsed time */
         uxTemp = portTEST_GET_TIME();
 
-        vTaskEnterCritical();
+        #if ( portGRANULAR_LOCKING == 1 )
+            taskENTER_CRITICAL();
+        #else
+            vTaskEnterCritical();
+        #endif
         uxEntryElapsedCumulative += ( portTEST_GET_TIME() - uxTemp );
 
         /* Test taskEXIT_CRITICAL elapsed time */
         uxTemp = portTEST_GET_TIME();
 
-        vTaskExitCritical();
+        #if ( portGRANULAR_LOCKING == 1 )
+            taskEXIT_CRITICAL();
+        #else
+            vTaskExitCritical();
+        #endif
         uxExitElapsedCumulative += ( portTEST_GET_TIME() - uxTemp );
     }
 
