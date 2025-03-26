@@ -16,6 +16,9 @@ SUITES	+=	multiple_priorities_no_timeslice_mock
 # SUITS for configASSERT
 SUITES	+=	config_assert
 
+# SUITS for configASSERT
+SUITES	+=	granular_lock
+
 # PROJECT and SUITE variables are determined based on path like so:
 #   $(UT_ROOT_DIR)/$(PROJECT)/$(SUITE)
 PROJECT :=  $(lastword $(subst /, ,$(dir $(abspath $(MAKEFILE_ABSPATH)))))
