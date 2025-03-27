@@ -36,6 +36,7 @@
 #include "FreeRTOSConfig.h"
 #include "event_groups.h"
 #include "queue.h"
+#include "semphr.h"
 
 /* Test includes. */
 #include "unity.h"
@@ -57,6 +58,19 @@ extern portSPINLOCK_TYPE xISRSpinlock;
 
 static TaskHandle_t xTaskHandles[ configNUMBER_OF_CORES ] = { NULL };
 uint32_t xPortCriticalNestingCount[ configNUMBER_OF_CORES ] = { 0U };
+/* Test modes:
+ * 0: xQueueReceive vs vTaskDelete
+ * 1: xQueueReceive vs vTaskSuspend
+ * 2: xQueueReceive suspend/resume state
+ * 3: xQueueSend vs vTaskDelete 
+ * 4: xQueueSend vs vTaskSuspend
+ * 5: xEventGroupWaitBits vs vTaskDelete
+ * 6: xEventGroupWaitBits vs vTaskSuspend
+ * 7: xSemaphoreTake vs vTaskDelete
+ * 8: xSemaphoreTake vs vTaskSuspend
+ * 9: xSemaphoreGive vs vTaskDelete
+ * 10: xSemaphoreGive vs vTaskSuspend
+ */
 static int xQueueTestMode = 0;
 
 static BaseType_t xCoreYields[ configNUMBER_OF_CORES ] = { 0 };
@@ -258,7 +272,61 @@ int xTraceBlockingOnQueueReceive( void * pxQueue )
         }
         xTaskCallNumbers++;
     }
+    else if( xQueueTestMode == 3 || xQueueTestMode == 4 || 
+             xQueueTestMode == 5 || xQueueTestMode == 6 || 
+             xQueueTestMode == 7 || xQueueTestMode == 8 || 
+             xQueueTestMode == 9 || xQueueTestMode == 10 )
+    {
+        /* For other test modes, don't use this trace point */
+        xReturn = 0;
+    }
 
+    return xReturn;
+}
+
+int xTraceBlockingOnQueueSend( void * pxQueue )
+{
+    int xReturn;
+    
+    ( void ) pxQueue;
+    
+    if( xQueueTestMode == 3 )
+    {
+        /* xQueueSend vs vTaskDelete */
+        vSetCurrentCore( 1 );
+        vTaskDelete( xTaskHandles[ 0 ] );
+        vSetCurrentCore( 0 );
+        xReturn = 0;
+    }
+    else if( xQueueTestMode == 4 )
+    {
+        /* xQueueSend vs vTaskSuspend */
+        vSetCurrentCore( 1 );
+        vTaskSuspend( xTaskHandles[ 0 ] );
+        vSetCurrentCore( 0 );
+        xReturn = 0;
+    }
+    else if( xQueueTestMode == 9 )
+    {
+        /* xSemaphoreGive vs vTaskDelete */
+        vSetCurrentCore( 1 );
+        vTaskDelete( xTaskHandles[ 0 ] );
+        vSetCurrentCore( 0 );
+        xReturn = 0;
+    }
+    else if( xQueueTestMode == 10 )
+    {
+        /* xSemaphoreGive vs vTaskSuspend */
+        vSetCurrentCore( 1 );
+        vTaskSuspend( xTaskHandles[ 0 ] );
+        vSetCurrentCore( 0 );
+        xReturn = 0;
+    }
+    else
+    {
+        xReturn = 0;
+    }
+    
     return xReturn;
 }
 
@@ -270,12 +338,12 @@ int xTraceUnblockingOnQueueReceive( void * pxQueue )
 
     if( xQueueTestMode == 0 )
     {
-        /* vTaskDelete test. */
+        /* xQueueReceive vs vTaskDelete - return early */
         xReturn = 1;
     }
     else if( xQueueTestMode == 1 )
     {
-        /* vTaskSuspend test. */
+        /* xQueueReceive vs vTaskSuspend - return early */
         xReturn = 1;
     }
     else if( xQueueTestMode == 2 )
@@ -295,10 +363,112 @@ int xTraceUnblockingOnQueueReceive( void * pxQueue )
         }
         xTaskCallNumbers++;
     }
+    else if( xQueueTestMode == 7 )
+    {
+        /* xSemaphoreTake vs vTaskDelete - return early */
+        xReturn = 1;
+    }
+    else if( xQueueTestMode == 8 )
+    {
+        /* xSemaphoreTake vs vTaskSuspend - return early */
+        xReturn = 1;
+    }
+    else
+    {
+        /* Don't return early for other test modes */
+        xReturn = 0;
+    }
 
     return xReturn;
 }
 
+int xTraceUnblockingOnQueueSend( void * pxQueue )
+{
+    int xReturn;
+
+    ( void ) pxQueue;
+
+    if( xQueueTestMode == 3 )
+    {
+        /* xQueueSend vs vTaskDelete - return early */
+        xReturn = 1;
+    }
+    else if( xQueueTestMode == 4 )
+    {
+        /* xQueueSend vs vTaskSuspend - return early */
+        xReturn = 1;
+    }
+    else if( xQueueTestMode == 9 )
+    {
+        /* xSemaphoreGive vs vTaskDelete - return early */
+        xReturn = 1;
+    }
+    else if( xQueueTestMode == 10 )
+    {
+        /* xSemaphoreGive vs vTaskSuspend - return early */
+        xReturn = 1;
+    }
+    else
+    {
+        xReturn = 0;
+    }
+
+    return xReturn;
+}
+
+int xTraceEventGroupTaskBlocked( void * pxEventGroup )
+{
+    int xReturn;
+
+    ( void ) pxEventGroup;
+
+    if( xQueueTestMode == 5 )
+    {
+        /* xEventGroupWaitBits vs vTaskDelete */
+        vSetCurrentCore( 1 );
+        vTaskDelete( xTaskHandles[ 0 ] );
+        vSetCurrentCore( 0 );
+        xReturn = 0;
+    }
+    else if( xQueueTestMode == 6 )
+    {
+        /* xEventGroupWaitBits vs vTaskSuspend */
+        vSetCurrentCore( 1 );
+        vTaskSuspend( xTaskHandles[ 0 ] );
+        vSetCurrentCore( 0 );
+        xReturn = 0;
+    }
+    else
+    {
+        xReturn = 0;
+    }
+
+    return xReturn;
+}
+
+int xTraceEventGroupTaskUnblocked( void * pxEventGroup )
+{
+    int xReturn;
+
+    ( void ) pxEventGroup;
+
+    if( xQueueTestMode == 5 )
+    {
+        /* xEventGroupWaitBits vs vTaskDelete - return early */
+        xReturn = 1;
+    }
+    else if( xQueueTestMode == 6 )
+    {
+        /* xEventGroupWaitBits vs vTaskSuspend - return early */
+        xReturn = 1;
+    }
+    else
+    {
+        xReturn = 0;
+    }
+
+    return xReturn;
+}
 
 /* ============================  Unity Fixtures  ============================ */
 
@@ -459,6 +629,438 @@ void test_xQueueReceive_suspend_state_resume( void )
     /* Task 0 continues to run until queue is unlocked and preemption enabled. Then
      * task 0 is switched out to run an idle task on core 0. */
     verifySmpTask( &xTaskHandles[ 0 ], eBlocked, -1 );
+
+    /* Verify all configNUMBER_OF_CORES tasks are in the running state */
+    for( i = 1; i < configNUMBER_OF_CORES; i++ )
+    {
+        verifySmpTask( &xTaskHandles[ i ], eRunning, i );
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-TBD
+ * Tests for run state nullification issue with xQueueSend vs vTaskDelete
+ *  1. Task A calls xQueueSend. When queueLOCK is called, Task A has preemption disabled and holds the queue lock
+ *  2. Task B calls vTaskDelete(Task A), placing Task A on xTasksWaitingTermination list
+ *  3. Task A continues running since preemption is disabled
+ *  4. When Task A calls vTaskPlaceOnEventList():
+ *     - First it uses vListInsert to put itself on the event list
+ *     - Then it calls prvAddCurrentTaskToDelayedList which:
+ *         - Removes the task from the ready list (uxListRemove)
+ *         - Places it on either the suspended or delayed list based on timeout
+ *     - This removes Task A from where Task B had placed it (xTasksWaitingTermination)
+ *  This creates a race condition where Task A effectively "escapes" deletion.
+ */
+void test_xQueueSend_delete_state_nullification( void )
+{
+    uint32_t i;
+    QueueHandle_t xQueueHandle;
+    uint8_t queueBuffer = 0xAA;  /* Data to send to the queue */
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
+    }
+
+    vTaskStartScheduler();
+    
+    /* Create a queue with 0 items to force task blocking when sending */
+    xQueueHandle = xQueueCreate( 1U, 1U );
+    TEST_ASSERT_NOT_EQUAL( NULL, xQueueHandle );
+    
+    /* Fill the queue so next send will block */
+    ( void ) xQueueSend( xQueueHandle, &queueBuffer, 0 );
+    
+    /* Set test mode for QueueSend vs vTaskDelete scenario */
+    xQueueTestMode = 3;
+    
+    /* Task 0 calls xQueueSend to place itself in an event list for waiting.
+     * During the trace for xTraceBlockingOnQueueSend, task 1 will delete task 0,
+     * then the function will return after queueUNLOCK via traceUNBLOCKING_ON_QUEUE_SEND */
+    BaseType_t xResult = xQueueSend( xQueueHandle, &queueBuffer, 10U );
+    
+    /* Function should have returned early with errQUEUE_FULL */
+    TEST_ASSERT_EQUAL( errQUEUE_FULL, xResult );
+
+    /* Task 0 should be properly deleted and not present in any list */
+    verifySmpTask( &xTaskHandles[ 0 ], eDeleted, -1 );
+
+    /* Verify all configNUMBER_OF_CORES tasks are in the running state */
+    for( i = 1; i < configNUMBER_OF_CORES; i++ )
+    {
+        verifySmpTask( &xTaskHandles[ i ], eRunning, i );
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-TBD
+ * Tests for run state nullification issue with xQueueSend vs vTaskSuspend
+ *  1. Task A calls xQueueSend. When queueLOCK is called, Task A has preemption disabled and holds the queue lock
+ *  2. Task B calls vTaskSuspend(Task A), placing Task A on xSuspendedTaskList
+ *  3. Task A continues running since preemption is disabled
+ *  4. When Task A calls vTaskPlaceOnEventList():
+ *     - First it uses vListInsert to put itself on the event list
+ *     - Then it calls prvAddCurrentTaskToDelayedList which:
+ *         - Removes the task from the ready list (uxListRemove)
+ *         - Places it on either the suspended or delayed list based on timeout
+ *     - This removes Task A from where Task B had placed it (xSuspendedTaskList)
+ *  This creates a race condition where Task A effectively "escapes" suspension.
+ */
+void test_xQueueSend_suspend_state_nullification( void )
+{
+    uint32_t i;
+    QueueHandle_t xQueueHandle;
+    uint8_t queueBuffer = 0xAA;  /* Data to send to the queue */
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
+    }
+
+    vTaskStartScheduler();
+    
+    /* Create a queue with 0 items to force task blocking when sending */
+    xQueueHandle = xQueueCreate( 1U, 1U );
+    TEST_ASSERT_NOT_EQUAL( NULL, xQueueHandle );
+    
+    /* Fill the queue so next send will block */
+    ( void ) xQueueSend( xQueueHandle, &queueBuffer, 0 );
+    
+    /* Set test mode for QueueSend vs vTaskSuspend scenario */
+    xQueueTestMode = 4;
+    
+    /* Task 0 calls xQueueSend to place itself in an event list for waiting.
+     * During the trace for xTraceBlockingOnQueueSend, task 1 will suspend task 0,
+     * then the function will return after queueUNLOCK via traceUNBLOCKING_ON_QUEUE_SEND */
+    BaseType_t xResult = xQueueSend( xQueueHandle, &queueBuffer, 10U );
+    
+    /* Function should have returned early with errQUEUE_FULL */
+    TEST_ASSERT_EQUAL( errQUEUE_FULL, xResult );
+
+    /* Task 0 should be properly suspended and not present in any other list */
+    verifySmpTask( &xTaskHandles[ 0 ], eSuspended, -1 );
+
+    /* Verify all configNUMBER_OF_CORES tasks are in the running state */
+    for( i = 1; i < configNUMBER_OF_CORES; i++ )
+    {
+        verifySmpTask( &xTaskHandles[ i ], eRunning, i );
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-TBD
+ * Tests for run state nullification issue with xEventGroupWaitBits vs vTaskDelete
+ *  1. Task A calls xEventGroupWaitBits. When lock is acquired, Task A has preemption disabled
+ *  2. Task B calls vTaskDelete(Task A), placing Task A on xTasksWaitingTermination list
+ *  3. Task A continues running since preemption is disabled
+ *  4. When Task A calls vTaskPlaceOnEventList():
+ *     - First it uses vListInsert to put itself on the event list
+ *     - Then it calls prvAddCurrentTaskToDelayedList which:
+ *         - Removes the task from the ready list (uxListRemove)
+ *         - Places it on either the suspended or delayed list based on timeout
+ *     - This removes Task A from where Task B had placed it (xTasksWaitingTermination)
+ *  This creates a race condition where Task A effectively "escapes" deletion.
+ */
+void test_xEventGroupWaitBits_delete_state_nullification( void )
+{
+    uint32_t i;
+    EventGroupHandle_t xEventGroup;
+    EventBits_t uxBits;
+    const EventBits_t uxBitsToWaitFor = 0x01UL;
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
+    }
+
+    vTaskStartScheduler();
+    
+    /* Create an event group */
+    xEventGroup = xEventGroupCreate();
+    TEST_ASSERT_NOT_EQUAL( NULL, xEventGroup );
+    
+    /* Set test mode for EventGroup vs vTaskDelete scenario */
+    xQueueTestMode = 5;
+    
+    /* Task 0 calls xEventGroupWaitBits to place itself in an event list for waiting.
+     * During the trace for xTraceEventGroupTaskBlocked, task 1 will delete task 0,
+     * then the function will return early via xTraceEventGroupTaskUnblocked */
+    uxBits = xEventGroupWaitBits( xEventGroup, uxBitsToWaitFor, pdFALSE, pdTRUE, 10 );
+    
+    /* Function should have returned without the requested bits */
+    TEST_ASSERT_EQUAL( 0, uxBits );
+
+    /* Task 0 should be properly deleted and not present in any list */
+    verifySmpTask( &xTaskHandles[ 0 ], eDeleted, -1 );
+
+    /* Verify all configNUMBER_OF_CORES tasks are in the running state */
+    for( i = 1; i < configNUMBER_OF_CORES; i++ )
+    {
+        verifySmpTask( &xTaskHandles[ i ], eRunning, i );
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-TBD
+ * Tests for run state nullification issue with xEventGroupWaitBits vs vTaskSuspend
+ *  1. Task A calls xEventGroupWaitBits. When lock is acquired, Task A has preemption disabled
+ *  2. Task B calls vTaskSuspend(Task A), placing Task A on xSuspendedTaskList
+ *  3. Task A continues running since preemption is disabled
+ *  4. When Task A calls vTaskPlaceOnEventList():
+ *     - First it uses vListInsert to put itself on the event list
+ *     - Then it calls prvAddCurrentTaskToDelayedList which:
+ *         - Removes the task from the ready list (uxListRemove)
+ *         - Places it on either the suspended or delayed list based on timeout
+ *     - This removes Task A from where Task B had placed it (xSuspendedTaskList)
+ *  This creates a race condition where Task A effectively "escapes" suspension.
+ */
+void test_xEventGroupWaitBits_suspend_state_nullification( void )
+{
+    uint32_t i;
+    EventGroupHandle_t xEventGroup;
+    EventBits_t uxBits;
+    const EventBits_t uxBitsToWaitFor = 0x01UL;
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
+    }
+
+    vTaskStartScheduler();
+    
+    /* Create an event group */
+    xEventGroup = xEventGroupCreate();
+    TEST_ASSERT_NOT_EQUAL( NULL, xEventGroup );
+    
+    /* Set test mode for EventGroup vs vTaskSuspend scenario */
+    xQueueTestMode = 6;
+    
+    /* Task 0 calls xEventGroupWaitBits to place itself in an event list for waiting.
+     * During the trace for xTraceEventGroupTaskBlocked, task 1 will suspend task 0,
+     * then the function will return early via xTraceEventGroupTaskUnblocked */
+    uxBits = xEventGroupWaitBits( xEventGroup, uxBitsToWaitFor, pdFALSE, pdTRUE, 10 );
+    
+    /* Function should have returned without the requested bits */
+    TEST_ASSERT_EQUAL( 0, uxBits );
+
+    /* Task 0 should be properly suspended and not present in any other list */
+    verifySmpTask( &xTaskHandles[ 0 ], eSuspended, -1 );
+
+    /* Verify all configNUMBER_OF_CORES tasks are in the running state */
+    for( i = 1; i < configNUMBER_OF_CORES; i++ )
+    {
+        verifySmpTask( &xTaskHandles[ i ], eRunning, i );
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-TBD
+ * Tests for run state nullification issue with xSemaphoreTake (xQueueReceive) vs vTaskDelete
+ *  1. Task A calls xSemaphoreTake. When queueLOCK is called, Task A has preemption disabled
+ *  2. Task B calls vTaskDelete(Task A), placing Task A on xTasksWaitingTermination list
+ *  3. Task A continues running since preemption is disabled
+ *  4. When Task A calls vTaskPlaceOnEventList():
+ *     - First it uses vListInsert to put itself on the event list
+ *     - Then it calls prvAddCurrentTaskToDelayedList which:
+ *         - Removes the task from the ready list (uxListRemove)
+ *         - Places it on either the suspended or delayed list based on timeout
+ *     - This removes Task A from where Task B had placed it (xTasksWaitingTermination)
+ *  This creates a race condition where Task A effectively "escapes" deletion.
+ */
+void test_xSemaphoreTake_delete_state_nullification( void )
+{
+    uint32_t i;
+    QueueHandle_t xSemaphoreHandle;
+    BaseType_t xResult;
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
+    }
+
+    vTaskStartScheduler();
+    
+    /* Create a binary semaphore */
+    xSemaphoreHandle = xQueueCreateCountingSemaphore( 1, 0 );  /* Initial count 0 to force blocking */
+    TEST_ASSERT_NOT_EQUAL( NULL, xSemaphoreHandle );
+    
+    /* Set test mode for SemaphoreTake vs vTaskDelete scenario */
+    xQueueTestMode = 7;
+    
+    /* Task 0 calls xSemaphoreTake which will call xQueueReceive internally
+     * During the trace for xTraceBlockingOnQueueReceive, task 1 will delete task 0,
+     * then the function will return early via xTraceUnblockingOnQueueReceive */
+    xResult = xSemaphoreTake( xSemaphoreHandle, 10 );
+    
+    /* Function should have returned failure */
+    TEST_ASSERT_EQUAL( pdFALSE, xResult );
+
+    /* Task 0 should be properly deleted and not present in any list */
+    verifySmpTask( &xTaskHandles[ 0 ], eDeleted, -1 );
+
+    /* Verify all configNUMBER_OF_CORES tasks are in the running state */
+    for( i = 1; i < configNUMBER_OF_CORES; i++ )
+    {
+        verifySmpTask( &xTaskHandles[ i ], eRunning, i );
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-TBD
+ * Tests for run state nullification issue with xSemaphoreTake (xQueueReceive) vs vTaskSuspend
+ *  1. Task A calls xSemaphoreTake. When queueLOCK is called, Task A has preemption disabled
+ *  2. Task B calls vTaskSuspend(Task A), placing Task A on xSuspendedTaskList
+ *  3. Task A continues running since preemption is disabled
+ *  4. When Task A calls vTaskPlaceOnEventList():
+ *     - First it uses vListInsert to put itself on the event list
+ *     - Then it calls prvAddCurrentTaskToDelayedList which:
+ *         - Removes the task from the ready list (uxListRemove)
+ *         - Places it on either the suspended or delayed list based on timeout
+ *     - This removes Task A from where Task B had placed it (xSuspendedTaskList)
+ *  This creates a race condition where Task A effectively "escapes" suspension.
+ */
+void test_xSemaphoreTake_suspend_state_nullification( void )
+{
+    uint32_t i;
+    QueueHandle_t xSemaphoreHandle;
+    BaseType_t xResult;
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
+    }
+
+    vTaskStartScheduler();
+    
+    /* Create a binary semaphore */
+    xSemaphoreHandle = xQueueCreateCountingSemaphore( 1, 0 );  /* Initial count 0 to force blocking */
+    TEST_ASSERT_NOT_EQUAL( NULL, xSemaphoreHandle );
+    
+    /* Set test mode for SemaphoreTake vs vTaskSuspend scenario */
+    xQueueTestMode = 8;
+    
+    /* Task 0 calls xSemaphoreTake which will call xQueueReceive internally
+     * During the trace for xTraceBlockingOnQueueReceive, task 1 will suspend task 0,
+     * then the function will return early via xTraceUnblockingOnQueueReceive */
+    xResult = xSemaphoreTake( xSemaphoreHandle, 10 );
+    
+    /* Function should have returned failure */
+    TEST_ASSERT_EQUAL( pdFALSE, xResult );
+
+    /* Task 0 should be properly suspended and not present in any other list */
+    verifySmpTask( &xTaskHandles[ 0 ], eSuspended, -1 );
+
+    /* Verify all configNUMBER_OF_CORES tasks are in the running state */
+    for( i = 1; i < configNUMBER_OF_CORES; i++ )
+    {
+        verifySmpTask( &xTaskHandles[ i ], eRunning, i );
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-TBD
+ * Tests for run state nullification issue with xSemaphoreGive vs vTaskDelete
+ *  1. Task A calls xSemaphoreGive. When queueLOCK is called, Task A has preemption disabled
+ *  2. Task B calls vTaskDelete(Task A), placing Task A on xTasksWaitingTermination list
+ *  3. Task A continues running since preemption is disabled
+ *  4. When Task A calls vTaskPlaceOnEventList() (if queue is full and it needs to block):
+ *     - First it uses vListInsert to put itself on the event list
+ *     - Then it calls prvAddCurrentTaskToDelayedList which:
+ *         - Removes the task from the ready list (uxListRemove)
+ *         - Places it on either the suspended or delayed list based on timeout
+ *     - This removes Task A from where Task B had placed it (xTasksWaitingTermination)
+ *  This creates a race condition where Task A effectively "escapes" deletion.
+ */
+void test_xSemaphoreGive_delete_state_nullification( void )
+{
+    uint32_t i;
+    QueueHandle_t xSemaphoreHandle;
+    BaseType_t xResult;
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
+    }
+
+    vTaskStartScheduler();
+    
+    /* Create a binary semaphore that is already full to force blocking on give */
+    xSemaphoreHandle = xQueueCreateCountingSemaphore( 1, 1 );  /* Max count 1, initial count 1 */
+    TEST_ASSERT_NOT_EQUAL( NULL, xSemaphoreHandle );
+    
+    /* Set test mode for SemaphoreGive vs vTaskDelete scenario */
+    xQueueTestMode = 9;
+    
+    /* Task 0 calls xSemaphoreGive which will call xQueueGenericSend internally
+     * During the trace for xTraceBlockingOnQueueSend, task 1 will delete task 0,
+     * then the function will return early via xTraceUnblockingOnQueueSend */
+    xResult = xSemaphoreGive( xSemaphoreHandle );
+    
+    /* Function should have returned failure */
+    TEST_ASSERT_EQUAL( pdFALSE, xResult );
+
+    /* Task 0 should be properly deleted and not present in any list */
+    verifySmpTask( &xTaskHandles[ 0 ], eDeleted, -1 );
+
+    /* Verify all configNUMBER_OF_CORES tasks are in the running state */
+    for( i = 1; i < configNUMBER_OF_CORES; i++ )
+    {
+        verifySmpTask( &xTaskHandles[ i ], eRunning, i );
+    }
+}
+
+/**
+ * @brief AWS_IoT-FreeRTOS_SMP_TC-TBD
+ * Tests for run state nullification issue with xSemaphoreGive vs vTaskSuspend
+ *  1. Task A calls xSemaphoreGive. When queueLOCK is called, Task A has preemption disabled
+ *  2. Task B calls vTaskSuspend(Task A), placing Task A on xSuspendedTaskList
+ *  3. Task A continues running since preemption is disabled
+ *  4. When Task A calls vTaskPlaceOnEventList() (if queue is full and it needs to block):
+ *     - First it uses vListInsert to put itself on the event list
+ *     - Then it calls prvAddCurrentTaskToDelayedList which:
+ *         - Removes the task from the ready list (uxListRemove)
+ *         - Places it on either the suspended or delayed list based on timeout
+ *     - This removes Task A from where Task B had placed it (xSuspendedTaskList)
+ *  This creates a race condition where Task A effectively "escapes" suspension.
+ */
+void test_xSemaphoreGive_suspend_state_nullification( void )
+{
+    uint32_t i;
+    QueueHandle_t xSemaphoreHandle;
+    BaseType_t xResult;
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
+    }
+
+    vTaskStartScheduler();
+    
+    /* Create a binary semaphore that is already full to force blocking on give */
+    xSemaphoreHandle = xQueueCreateCountingSemaphore( 1, 1 );  /* Max count 1, initial count 1 */
+    TEST_ASSERT_NOT_EQUAL( NULL, xSemaphoreHandle );
+    
+    /* Set test mode for SemaphoreGive vs vTaskSuspend scenario */
+    xQueueTestMode = 10;
+    
+    /* Task 0 calls xSemaphoreGive which will call xQueueGenericSend internally
+     * During the trace for xTraceBlockingOnQueueSend, task 1 will suspend task 0,
+     * then the function will return early via xTraceUnblockingOnQueueSend */
+    xResult = xSemaphoreGive( xSemaphoreHandle );
+    
+    /* Function should have returned failure */
+    TEST_ASSERT_EQUAL( pdFALSE, xResult );
+
+    /* Task 0 should be properly suspended and not present in any other list */
+    verifySmpTask( &xTaskHandles[ 0 ], eSuspended, -1 );
 
     /* Verify all configNUMBER_OF_CORES tasks are in the running state */
     for( i = 1; i < configNUMBER_OF_CORES; i++ )

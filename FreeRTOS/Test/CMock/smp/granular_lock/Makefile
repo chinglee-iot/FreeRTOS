@@ -10,7 +10,7 @@ PROJECT_SRC         :=  tasks.c
 
 # PROJECT_DEPS_SRC list the .c file that are dependencies of PROJECT_SRC files
 # Files in PROJECT_DEPS_SRC are excluded from coverage measurements
-PROJECT_DEPS_SRC    := list.c queue.c
+PROJECT_DEPS_SRC    := list.c queue.c event_groups.c
 
 # PROJECT_HEADER_DEPS: headers that should be excluded from coverage measurements.
 PROJECT_HEADER_DEPS :=  FreeRTOS.h
