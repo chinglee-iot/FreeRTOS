@@ -58,10 +58,14 @@ extern portSPINLOCK_TYPE xISRSpinlock;
 static TaskHandle_t xTaskHandles[ configNUMBER_OF_CORES ] = { NULL };
 uint32_t xPortCriticalNestingCount[ configNUMBER_OF_CORES ] = { 0U };
 static int xQueueTestMode = 0;
+
 static BaseType_t xCoreYields[ configNUMBER_OF_CORES ] = { 0 };
 
+static UBaseType_t xInterruptMaskCount[ configNUMBER_OF_CORES ] = { 0U };
+static BaseType_t xInterruptDisableStatus[ configNUMBER_OF_CORES ] = { 0U };
+
 /* ============================  Callback Functions  ============================ */
-void vFakePortInitSpinlock_callback( portSPINLOCK_TYPE *pxSpinlock, int cmock_num_calls )
+static void vFakePortInitSpinlock_callback( portSPINLOCK_TYPE *pxSpinlock, int cmock_num_calls )
 {
     TEST_ASSERT_NOT_EQUAL( NULL, pxSpinlock );
 
@@ -74,21 +78,25 @@ static void vYieldCores( void )
     BaseType_t i;
     BaseType_t xPreviousCoreId = portGET_CORE_ID();
 
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    if( ( xTaskSpinlock.uxLockCount == 0U ) && ( xISRSpinlock.uxLockCount == 0U ) )
     {
-        if( xCoreYields[ i ] == pdTRUE )
+        for( i = 0; i < configNUMBER_OF_CORES; i++ )
         {
-            vSetCurrentCore( i );
-            printf( "%s:%d %ld\r\n", __FUNCTION__, __LINE__, i );
-            xCoreYields[ i ] = pdFALSE;
-            vTaskSwitchContext( i );
+            if( ( xCoreYields[ i ] == pdTRUE ) &&
+                ( xInterruptMaskCount[ i ] == 0 ) &&
+                ( xInterruptDisableStatus[ i ] == pdFALSE ) )
+            {
+                vSetCurrentCore( i );
+                xCoreYields[ i ] = pdFALSE;
+                vTaskSwitchContext( i );
+            }
         }
-    }
 
-    vSetCurrentCore( xPreviousCoreId );
+        vSetCurrentCore( xPreviousCoreId );
+    }
 }
 
-void vFakePortReleaseSpinlock_callback( BaseType_t xCoreID, portSPINLOCK_TYPE *pxSpinlock, int cmock_num_calls )
+static void vFakePortReleaseSpinlock_callback( BaseType_t xCoreID, portSPINLOCK_TYPE *pxSpinlock, int cmock_num_calls )
 {
     TEST_ASSERT_NOT_EQUAL( NULL, pxSpinlock );
     TEST_ASSERT_NOT_EQUAL( -1, pxSpinlock->xOwnerCore );
@@ -101,14 +109,11 @@ void vFakePortReleaseSpinlock_callback( BaseType_t xCoreID, portSPINLOCK_TYPE *p
         pxSpinlock->xOwnerCore = -1;
     }
 
-    /* Check if the lock is acquired by any core. */
-    if( ( xTaskSpinlock.uxLockCount == 0U ) && ( xISRSpinlock.uxLockCount == 0U ) )
-    {
-        vYieldCores();
-    }
+    /* Check if and pending core yield. */
+    vYieldCores();
 }
 
-void vFakePortGetSpinlock_callback( BaseType_t xCoreID, portSPINLOCK_TYPE *pxSpinlock, int cmock_num_calls )
+static void vFakePortGetSpinlock_callback( BaseType_t xCoreID, portSPINLOCK_TYPE *pxSpinlock, int cmock_num_calls )
 {
     TEST_ASSERT_NOT_EQUAL( NULL, pxSpinlock );
     
@@ -125,8 +130,8 @@ void vFakePortGetSpinlock_callback( BaseType_t xCoreID, portSPINLOCK_TYPE *pxSpi
     }
 }
 
-void vFakePortYieldCore_callback( int xCoreID,
-                                  int cmock_num_calls )
+static void vFakePortYieldCore_callback( int xCoreID,
+                                         int cmock_num_calls )
 {
     BaseType_t xCoreInCritical = pdFALSE;
     BaseType_t xPreviousCoreId;
@@ -139,8 +144,8 @@ void vFakePortYieldCore_callback( int xCoreID,
 
     if( xCoreInCritical == pdTRUE )
     {
-        /* If a is in the critical section, pend the core yield until the
-         * task spinlock is released. */
+        /* If a task is in the critical section, pend the core yield until the
+         * spinlock is released. */
         xCoreYields[ xCoreID ] = pdTRUE;
     }
     else
@@ -153,7 +158,61 @@ void vFakePortYieldCore_callback( int xCoreID,
     }
 }
 
-int xTraceBlockingOnQueueReceiveCallback( void * pxQueue )
+static UBaseType_t ulFakePortSetInterruptMaskFromISR_callback( int cmock_num_calls )
+{
+    ( void )cmock_num_calls;
+    xInterruptMaskCount[ portGET_CORE_ID() ]++;
+    return xInterruptMaskCount[ portGET_CORE_ID() ];
+}
+
+static void vFakePortClearInterruptMaskFromISR_callback( UBaseType_t uxNewMaskValue, int cmock_num_calls )
+{
+    ( void )uxNewMaskValue;
+    ( void )cmock_num_calls;
+    TEST_ASSERT_EQUAL( uxNewMaskValue, xInterruptMaskCount[ portGET_CORE_ID() ] );
+    TEST_ASSERT_NOT_EQUAL( 0, xInterruptMaskCount[ portGET_CORE_ID() ] );
+    xInterruptMaskCount[ portGET_CORE_ID() ]--;
+
+    /* Check if and pending core yield. */
+    vYieldCores();
+}
+
+static UBaseType_t ulFakePortSetInterruptMask_callback( int cmock_num_calls )
+{
+    ( void )cmock_num_calls;
+    xInterruptMaskCount[ portGET_CORE_ID() ]++;
+    return xInterruptMaskCount[ portGET_CORE_ID() ];
+}
+
+static void vFakePortClearInterruptMask_callback( UBaseType_t uxNewMaskValue, int cmock_num_calls )
+{
+    ( void )uxNewMaskValue;
+    ( void )cmock_num_calls;
+    TEST_ASSERT_EQUAL( uxNewMaskValue, xInterruptMaskCount[ portGET_CORE_ID() ] );
+    TEST_ASSERT_NOT_EQUAL( 0, xInterruptMaskCount[ portGET_CORE_ID() ] );
+    xInterruptMaskCount[ portGET_CORE_ID() ]--;
+
+    /* Check if and pending core yield. */
+    vYieldCores();
+}
+
+static uint32_t vFakePortDisableInterrupts_callback( int cmock_num_calls )
+{
+    xInterruptDisableStatus[ portGET_CORE_ID() ] = pdTRUE;
+    return 0;
+}
+
+static void vFakePortEnableInterrupts_callback( int cmock_num_calls )
+{
+    xInterruptDisableStatus[ portGET_CORE_ID() ] = pdFALSE;
+
+    /* Check if and pending core yield. */
+    vYieldCores();
+}
+
+/* ============================  Trace Functions  ============================ */
+
+int xTraceBlockingOnQueueReceive( void * pxQueue )
 {
     int xReturn;
 
@@ -188,7 +247,6 @@ int xTraceBlockingOnQueueReceiveCallback( void * pxQueue )
             /* After the queue lock is acquired but before the task state is changed, task B
              * running on core 1 delete task A. Trace macro is used to simulate asynchronous
              * behavior. */
-            printf( "%s:%d\r\n", __FUNCTION__, __LINE__ );
             vSetCurrentCore( 1 );
             vTaskSuspend( xTaskHandles[ 0 ] );
             vSetCurrentCore( 0 );
@@ -196,7 +254,6 @@ int xTraceBlockingOnQueueReceiveCallback( void * pxQueue )
         }
         else
         {
-            printf( "%s:%d\r\n", __FUNCTION__, __LINE__ );
             xReturn = 0;
         }
         xTaskCallNumbers++;
@@ -205,7 +262,7 @@ int xTraceBlockingOnQueueReceiveCallback( void * pxQueue )
     return xReturn;
 }
 
-int xTraceUnblockingOnQueueReceiveCallback( void * pxQueue )
+int xTraceUnblockingOnQueueReceive( void * pxQueue )
 {
     int xReturn;
 
@@ -227,7 +284,6 @@ int xTraceUnblockingOnQueueReceiveCallback( void * pxQueue )
         if( xTaskCallNumbers == 0 )
         {
             /* Keep looping in the xQueueReceive function. */
-            printf( "%s:%d\r\n", __FUNCTION__, __LINE__ );
             vSetCurrentCore( 1 );
             vTaskResume( xTaskHandles[ 0 ] );
             vSetCurrentCore( 0 );
@@ -235,7 +291,6 @@ int xTraceUnblockingOnQueueReceiveCallback( void * pxQueue )
         }
         else
         {
-            printf( "%s:%d\r\n", __FUNCTION__, __LINE__ );
             xReturn = 1;
         }
         xTaskCallNumbers++;
@@ -246,14 +301,36 @@ int xTraceUnblockingOnQueueReceiveCallback( void * pxQueue )
 
 
 /* ============================  Unity Fixtures  ============================ */
+
 /*! called before each testcase */
 void setUp( void )
 {
+    /* Use the common setup for the testing. */
     commonSetUp();
+
+    /* Specify the granular lock specific implementation. */
     vFakePortInitSpinlock_Stub( vFakePortInitSpinlock_callback );
     vFakePortReleaseSpinlock_Stub( vFakePortReleaseSpinlock_callback );
     vFakePortGetSpinlock_Stub( vFakePortGetSpinlock_callback );
-    vFakePortYieldCore_StubWithCallback( vFakePortYieldCore_callback );
+    vFakePortYieldCore_Stub( vFakePortYieldCore_callback );
+
+    /* Interrupt masks. */
+    memset( xInterruptMaskCount, 0, sizeof( UBaseType_t ) * configNUMBER_OF_CORES );
+    ulFakePortSetInterruptMaskFromISR_StopIgnore();
+    ulFakePortSetInterruptMaskFromISR_Stub( ulFakePortSetInterruptMaskFromISR_callback );
+    vFakePortClearInterruptMaskFromISR_StopIgnore();
+    vFakePortClearInterruptMaskFromISR_Stub( vFakePortClearInterruptMaskFromISR_callback );
+
+    ulFakePortSetInterruptMask_StopIgnore();
+    ulFakePortSetInterruptMask_Stub( ulFakePortSetInterruptMask_callback );
+    vFakePortClearInterruptMask_StopIgnore();
+    vFakePortClearInterruptMask_Stub( vFakePortClearInterruptMask_callback );
+
+    memset( xInterruptDisableStatus, 0, sizeof( BaseType_t ) * configNUMBER_OF_CORES );
+    vFakePortDisableInterrupts_StopIgnore();
+    vFakePortDisableInterrupts_Stub( vFakePortDisableInterrupts_callback );
+    vFakePortEnableInterrupts_StopIgnore();
+    vFakePortEnableInterrupts_Stub( vFakePortEnableInterrupts_callback );
 }
 
 /*! called after each testcase */
@@ -377,7 +454,6 @@ void test_xQueueReceive_suspend_state_resume( void )
     /* After task 0 get the queue lock but before task 0 calls vTaskPlaceOnEventList
      * task 1 tries to delete task 0. This is done in the prvGET_SPINLOCK callback. */
     xQueueTestMode = 2;
-    printf( "%s:%d\r\n", __FUNCTION__, __LINE__ );
     ( void ) xQueueReceive( xQueueHandle, queueBuffer, 10U );
 
     /* Task 0 continues to run until queue is unlocked and preemption enabled. Then

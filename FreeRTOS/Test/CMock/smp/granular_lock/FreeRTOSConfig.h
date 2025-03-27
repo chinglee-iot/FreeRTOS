@@ -153,10 +153,10 @@ void vConfigureTimerForRunTimeStats( void );    /* Prototype of function that in
 #endif /* configINCLUDE_MESSAGE_BUFFER_AMP_DEMO */
 
 /* ===========================  INSTRUMENT THROUGH TRACE MACRO  =========================== */
-int xTraceBlockingOnQueueReceiveCallback( void * pxQueue );
-#define traceBLOCKING_ON_QUEUE_RECEIVE( pxQueue ) do{ if( xTraceBlockingOnQueueReceiveCallback( pxQueue ) != 0 ) { return errQUEUE_EMPTY; } } while( 0 )
+int xTraceBlockingOnQueueReceive( void * pxQueue );
+#define traceBLOCKING_ON_QUEUE_RECEIVE( pxQueue ) do{ if( xTraceBlockingOnQueueReceive( pxQueue ) != 0 ) { return errQUEUE_EMPTY; } } while( 0 )
 
-int xTraceUnblockingOnQueueReceiveCallback( void * pxQueue );
-#define traceUNBLOCKING_ON_QUEUE_RECEIVE( pxQueue ) do{ if( xTraceUnblockingOnQueueReceiveCallback( pxQueue ) != 0 ) { return errQUEUE_EMPTY; } } while( 0 )
+int xTraceUnblockingOnQueueReceive( void * pxQueue );
+#define traceUNBLOCKING_ON_QUEUE_RECEIVE( pxQueue ) do{ if( xTraceUnblockingOnQueueReceive( pxQueue ) != 0 ) { return errQUEUE_EMPTY; } } while( 0 )
 
 #endif /* FREERTOS_CONFIG_H */
