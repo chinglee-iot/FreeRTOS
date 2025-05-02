@@ -187,6 +187,11 @@ void vFakePortInitSpinlock( portSPINLOCK_TYPE *pxSpinlock );
 #define portINIT_SPINLOCK         vFakePortInitSpinlock
 #define portINIT_SPINLOCK_STATIC   { 0 }
 
+#define portENTER_CRITICAL_DATA_GROUP   vFakePortEnterCriticalDataGroup
+#define portEXIT_CRITICAL_DATA_GROUP    vFakePortExitCriticalDataGroup
+void vFakePortEnterCriticalDataGroup( portSPINLOCK_TYPE *pxTaskSpinLock, portSPINLOCK_TYPE *pxISRSpinLock );
+void vFakePortExitCriticalDataGroup( portSPINLOCK_TYPE *pxTaskSpinLock, portSPINLOCK_TYPE *pxISRSpinLock );
+
 extern uint32_t xPortCriticalNestingCount[ configNUMBER_OF_CORES ];
 #define portGET_CRITICAL_NESTING_COUNT( xCoreID )          xPortCriticalNestingCount[ ( xCoreID ) ]
 #define portSET_CRITICAL_NESTING_COUNT( xCoreID, x )        do{ xPortCriticalNestingCount[ ( xCoreID ) ] = ( x ); } while( 0 )
