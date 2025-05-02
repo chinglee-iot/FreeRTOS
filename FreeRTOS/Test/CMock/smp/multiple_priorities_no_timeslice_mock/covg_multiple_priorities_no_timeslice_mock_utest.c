@@ -422,6 +422,7 @@ void test_coverage_prvYieldCore_core_id_ne_current_coreid( void )
     TaskHandle_t xTaskHandle;
 
     task.xTaskRunState = 1;   /* running on core 1 */
+    task.xPreemptionDisable = 1;
     task2.xTaskRunState = -2; /* running on core 2 taskTASK_YIELDING  */
     xTaskHandle = &task;
     pxCurrentTCBs[ 0 ] = &task;
@@ -465,6 +466,7 @@ void test_coverage_prvYieldCore_runstate_eq_yielding( void )
     TaskHandle_t xTaskHandle;
 
     task.xTaskRunState = 1;   /* running on core 1 */
+    task.xPreemptionDisable = 1;
     task2.xTaskRunState = -2; /* running on core 2 taskTASK_YIELDING  */
     xTaskHandle = &task;
     pxCurrentTCBs[ 0 ] = &task;
