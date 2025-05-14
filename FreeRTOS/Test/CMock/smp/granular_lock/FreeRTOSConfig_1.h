@@ -54,7 +54,7 @@
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION          0
 #define configUSE_IDLE_HOOK                              0
 #define configUSE_TICK_HOOK                              0
-#define configUSE_DAEMON_TASK_STARTUP_HOOK               1
+#define configUSE_DAEMON_TASK_STARTUP_HOOK               0
 #define configTICK_RATE_HZ                               ( 1000 )
 #define configMINIMAL_STACK_SIZE                         ( ( unsigned short ) 70 )
 #define configTOTAL_HEAP_SIZE                            ( ( size_t ) ( 52 * 1024 ) )
@@ -81,9 +81,10 @@
 #define portSTACK_GROWTH                                 ( 1 )
 #define configUSE_PASSIVE_IDLE_HOOK                      0
 #define configUSE_TICKLESS_IDLE                          1
+#define configSTACK_DEPTH_TYPE                           uint32_t
 
 /* Software timer related configuration options. */
-#define configUSE_TIMERS                                 1
+#define configUSE_TIMERS                                 0
 #define configTIMER_TASK_PRIORITY                        ( configMAX_PRIORITIES - 1 )
 #define configTIMER_QUEUE_LENGTH                         20
 #define configTIMER_TASK_STACK_DEPTH                     ( configMINIMAL_STACK_SIZE * 2 )
@@ -127,7 +128,7 @@ void vConfigureTimerForRunTimeStats( void );    /* Prototype of function that in
 #define INCLUDE_xTaskGetHandle                    1
 #define INCLUDE_eTaskGetState                     1
 #define INCLUDE_xSemaphoreGetMutexHolder          1
-#define INCLUDE_xTimerPendFunctionCall            1
+#define INCLUDE_xTimerPendFunctionCall            0
 #define INCLUDE_xTaskAbortDelay                   1
 #define INCLUDE_xTaskGetCurrentTaskHandle         1
 

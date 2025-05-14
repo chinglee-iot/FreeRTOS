@@ -7,14 +7,14 @@ export CC ?= /usr/local/bin/gcc
 export LD ?= /usr/local/bin/ld
 
 # Add units here when adding a new unit test directory with the same name
-UNITS       :=  timers
+UNITS       :=  smp
+UNITS       +=  timers
 UNITS       +=  tasks
 UNITS       +=  list
 UNITS       +=  queue
 UNITS       +=  stream_buffer
 UNITS       +=  message_buffer
 UNITS       +=  event_groups
-UNITS       +=  smp
 
 .PHONY: makefile.in
 
