@@ -152,24 +152,5 @@
      #define sbSEND_COMPLETED( pxStreamBuffer )    vGenerateCoreBInterrupt( pxStreamBuffer )
  #endif /* configINCLUDE_MESSAGE_BUFFER_AMP_DEMO */
  
- /* ===========================  INSTRUMENT THROUGH TRACE MACRO  =========================== */
- int xTraceBlockingOnQueueReceive( void * pxQueue );
- #define traceBLOCKING_ON_QUEUE_RECEIVE( pxQueue ) do{ if( xTraceBlockingOnQueueReceive( pxQueue ) != 0 ) { return errQUEUE_EMPTY; } } while( 0 )
- 
- int xTraceUnblockingOnQueueReceive( void * pxQueue );
- #define traceUNBLOCKING_ON_QUEUE_RECEIVE( pxQueue ) do{ if( xTraceUnblockingOnQueueReceive( pxQueue ) != 0 ) { return errQUEUE_EMPTY; } } while( 0 )
- 
- int xTraceBlockingOnQueueSend( void * pxQueue );
- #define traceBLOCKING_ON_QUEUE_SEND( pxQueue ) do{ if( xTraceBlockingOnQueueSend( pxQueue ) != 0 ) { return errQUEUE_FULL; } } while( 0 )
- 
- int xTraceUnblockingOnQueueSend( void * pxQueue );
- #define traceUNBLOCKING_ON_QUEUE_SEND( pxQueue ) do{ if( xTraceUnblockingOnQueueSend( pxQueue ) != 0 ) { return errQUEUE_FULL; } } while( 0 )
- 
- int xTraceEventGroupTaskBlocked( void * pxEventGroup );
- #define traceEVENT_GROUP_BLOCK_ON_BITS_WAITING( pxEventGroup, uxBitsToWaitFor ) do{ if( xTraceEventGroupTaskBlocked( pxEventGroup ) != 0 ) { return 0; } } while( 0 )
- 
- int xTraceEventGroupTaskUnblocked( void * pxEventGroup );
- #define traceEVENT_GROUP_UNBLOCK_ON_BITS_WAITING( pxEventGroup, uxBitsToWaitFor, xMatchFound ) do{ if( xTraceEventGroupTaskUnblocked( pxEventGroup ) != 0 ) { return 0; } } while( 0 )
- 
  #endif /* FREERTOS_CONFIG_H */
  

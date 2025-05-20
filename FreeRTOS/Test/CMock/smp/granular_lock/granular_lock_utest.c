@@ -23,7 +23,7 @@
  * https://github.com/FreeRTOS
  *
  */
-/*! @file granular_lock_timers_utest.c */
+/*! @file granular_lock_utest.c */
 
 /* C runtime includes. */
 #include <stdlib.h>
@@ -45,6 +45,7 @@
 #include "../smp_utest_common.h"
 
 /* Mock includes. */
+//#include "mock_timers.h"
 #include "mock_fake_assert.h"
 #include "mock_fake_port.h"
 #include "mock_portmacro.h"
@@ -57,8 +58,6 @@ extern portSPINLOCK_TYPE xISRSpinlock;
 
 static TaskHandle_t xTaskHandles[ configNUMBER_OF_CORES ] = { NULL };
 uint32_t xPortCriticalNestingCount[ configNUMBER_OF_CORES ] = { 0U };
-
-static int xQueueTestMode = 0;
 
 static BaseType_t xCoreYields[ configNUMBER_OF_CORES ] = { 0 };
 
@@ -211,252 +210,6 @@ static void vFakePortEnableInterrupts_callback( int cmock_num_calls )
     vYieldCores();
 }
 
-/* ============================  Trace Functions  ============================ */
-
-int xTraceBlockingOnQueueReceive( void * pxQueue )
-{
-    int xReturn;
-
-    ( void ) pxQueue;
-
-    if( xQueueTestMode == 0 )
-    {
-        /* After the queue lock is acquired but before the task state is changed, task B
-         * running on core 1 delete task A. Trace macro is used to simulate asynchronous
-         * behavior. */
-        vSetCurrentCore( 1 );
-        vTaskDelete( xTaskHandles[ 0 ] );
-        vSetCurrentCore( 0 );
-        xReturn = 0;
-    }
-    else if( xQueueTestMode == 1 )
-    {
-        /* After the queue lock is acquired but before the task state is changed, task B
-         * running on core 1 delete task A. Trace macro is used to simulate asynchronous
-         * behavior. */
-        vSetCurrentCore( 1 );
-        vTaskSuspend( xTaskHandles[ 0 ] );
-        vSetCurrentCore( 0 );
-        xReturn = 0;
-    }
-    else if( xQueueTestMode == 2 )
-    {
-        static int xTaskCallNumbers = 0;
-
-        if( xTaskCallNumbers == 0 )
-        {
-            /* After the queue lock is acquired but before the task state is changed, task B
-             * running on core 1 delete task A. Trace macro is used to simulate asynchronous
-             * behavior. */
-            vSetCurrentCore( 1 );
-            vTaskSuspend( xTaskHandles[ 0 ] );
-            vSetCurrentCore( 0 );
-            xReturn = 0;
-        }
-        else
-        {
-            xReturn = 0;
-        }
-        xTaskCallNumbers++;
-    }
-    else if( xQueueTestMode == 3 || xQueueTestMode == 4 || 
-             xQueueTestMode == 5 || xQueueTestMode == 6 || 
-             xQueueTestMode == 7 || xQueueTestMode == 8 || 
-             xQueueTestMode == 9 || xQueueTestMode == 10 )
-    {
-        /* For other test modes, don't use this trace point */
-        xReturn = 0;
-    }
-
-    return xReturn;
-}
-
-int xTraceBlockingOnQueueSend( void * pxQueue )
-{
-    int xReturn;
-    
-    ( void ) pxQueue;
-    
-    if( xQueueTestMode == 3 )
-    {
-        /* xQueueSend vs vTaskDelete */
-        vSetCurrentCore( 1 );
-        vTaskDelete( xTaskHandles[ 0 ] );
-        vSetCurrentCore( 0 );
-        xReturn = 0;
-    }
-    else if( xQueueTestMode == 4 )
-    {
-        /* xQueueSend vs vTaskSuspend */
-        vSetCurrentCore( 1 );
-        vTaskSuspend( xTaskHandles[ 0 ] );
-        vSetCurrentCore( 0 );
-        xReturn = 0;
-    }
-    else if( xQueueTestMode == 9 )
-    {
-        /* xSemaphoreGive vs vTaskDelete */
-        vSetCurrentCore( 1 );
-        vTaskDelete( xTaskHandles[ 0 ] );
-        vSetCurrentCore( 0 );
-        xReturn = 0;
-    }
-    else if( xQueueTestMode == 10 )
-    {
-        /* xSemaphoreGive vs vTaskSuspend */
-        vSetCurrentCore( 1 );
-        vTaskSuspend( xTaskHandles[ 0 ] );
-        vSetCurrentCore( 0 );
-        xReturn = 0;
-    }
-    else
-    {
-        xReturn = 0;
-    }
-    
-    return xReturn;
-}
-
-int xTraceUnblockingOnQueueReceive( void * pxQueue )
-{
-    int xReturn;
-
-    ( void ) pxQueue;
-
-    if( xQueueTestMode == 0 )
-    {
-        /* xQueueReceive vs vTaskDelete - return early */
-        xReturn = 1;
-    }
-    else if( xQueueTestMode == 1 )
-    {
-        /* xQueueReceive vs vTaskSuspend - return early */
-        xReturn = 1;
-    }
-    else if( xQueueTestMode == 2 )
-    {
-        static int xTaskCallNumbers = 0;
-        if( xTaskCallNumbers == 0 )
-        {
-            /* Keep looping in the xQueueReceive function. */
-            vSetCurrentCore( 1 );
-            vTaskResume( xTaskHandles[ 0 ] );
-            vSetCurrentCore( 0 );
-            xReturn = 0;
-        }
-        else
-        {
-            xReturn = 1;
-        }
-        xTaskCallNumbers++;
-    }
-    else if( xQueueTestMode == 7 )
-    {
-        /* xSemaphoreTake vs vTaskDelete - return early */
-        xReturn = 1;
-    }
-    else if( xQueueTestMode == 8 )
-    {
-        /* xSemaphoreTake vs vTaskSuspend - return early */
-        xReturn = 1;
-    }
-    else
-    {
-        /* Don't return early for other test modes */
-        xReturn = 0;
-    }
-
-    return xReturn;
-}
-
-int xTraceUnblockingOnQueueSend( void * pxQueue )
-{
-    int xReturn;
-
-    ( void ) pxQueue;
-
-    if( xQueueTestMode == 3 )
-    {
-        /* xQueueSend vs vTaskDelete - return early */
-        xReturn = 1;
-    }
-    else if( xQueueTestMode == 4 )
-    {
-        /* xQueueSend vs vTaskSuspend - return early */
-        xReturn = 1;
-    }
-    else if( xQueueTestMode == 9 )
-    {
-        /* xSemaphoreGive vs vTaskDelete - return early */
-        xReturn = 1;
-    }
-    else if( xQueueTestMode == 10 )
-    {
-        /* xSemaphoreGive vs vTaskSuspend - return early */
-        xReturn = 1;
-    }
-    else
-    {
-        xReturn = 0;
-    }
-
-    return xReturn;
-}
-
-int xTraceEventGroupTaskBlocked( void * pxEventGroup )
-{
-    int xReturn;
-
-    ( void ) pxEventGroup;
-
-    if( xQueueTestMode == 5 )
-    {
-        /* xEventGroupWaitBits vs vTaskDelete */
-        vSetCurrentCore( 1 );
-        vTaskDelete( xTaskHandles[ 0 ] );
-        vSetCurrentCore( 0 );
-        xReturn = 0;
-    }
-    else if( xQueueTestMode == 6 )
-    {
-        /* xEventGroupWaitBits vs vTaskSuspend */
-        vSetCurrentCore( 1 );
-        vTaskSuspend( xTaskHandles[ 0 ] );
-        vSetCurrentCore( 0 );
-        xReturn = 0;
-    }
-    else
-    {
-        xReturn = 0;
-    }
-
-    return xReturn;
-}
-
-int xTraceEventGroupTaskUnblocked( void * pxEventGroup )
-{
-    int xReturn;
-
-    ( void ) pxEventGroup;
-
-    if( xQueueTestMode == 5 )
-    {
-        /* xEventGroupWaitBits vs vTaskDelete - return early */
-        xReturn = 1;
-    }
-    else if( xQueueTestMode == 6 )
-    {
-        /* xEventGroupWaitBits vs vTaskSuspend - return early */
-        xReturn = 1;
-    }
-    else
-    {
-        xReturn = 0;
-    }
-
-    return xReturn;
-}
-
 /* ============================  Unity Fixtures  ============================ */
 
 /*! called before each testcase */
@@ -464,7 +217,6 @@ void setUp( void )
 {
     /* Use the common setup for the testing. */
     commonSetUp();
-
     /* Specify the granular lock specific implementation. */
     vFakePortInitSpinlock_Stub( vFakePortInitSpinlock_callback );
     vFakePortReleaseSpinlock_Stub( vFakePortReleaseSpinlock_callback );
@@ -509,21 +261,19 @@ int suiteTearDown( int numFailures )
 
 /* ==============================  Test Cases  ============================== */
 
-void test_granular_locks_timers_smoke(void)
+void test_granular_locks_smoke(void)
 {
     uint32_t i;
-    
-    /* Create configNUMBER_OF_CORES - 1 tasks of equal priority */
-    for( i = 1; i < configNUMBER_OF_CORES; i++ ){
+
+    /* Create configNUMBER_OF_CORES tasks of equal priority */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ ){
         xTaskCreate( vSmpTestTask, "SMP Task", configMINIMAL_STACK_SIZE, NULL, 1, &xTaskHandles[ i ] );
     }
 
     vTaskStartScheduler();
 
-    /* Timer task at core 0 */
-
     /* Verify all configNUMBER_OF_CORES tasks are in the running state */
-    for( i = 1; i < configNUMBER_OF_CORES ; i++ )
+    for( i = 0; i < configNUMBER_OF_CORES ; i++ )
     {
         verifySmpTask( &xTaskHandles[ i ], eRunning, i );
     }
