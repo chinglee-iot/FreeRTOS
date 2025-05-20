@@ -454,10 +454,10 @@ static void prvInitialiseNewStreamBuffer( StreamBuffer_t * const pxStreamBuffer,
     {
         const BaseType_t xCoreID = ( BaseType_t ) portGET_CORE_ID();
 
-        configASSERT( portGET_CRITICAL_NESTING_COUNT( xCoreID ) > 0U );
-
         /* Get the xYieldPending status inside the critical section. */
         BaseType_t xYieldCurrentTask = xTaskUnlockCanYield();
+
+        configASSERT( portGET_CRITICAL_NESTING_COUNT( xCoreID ) > 0U );
 
         /* Decrement the critical nesting count */
         portDECREMENT_CRITICAL_NESTING_COUNT( xCoreID );
