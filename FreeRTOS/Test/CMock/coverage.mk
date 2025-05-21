@@ -1,31 +1,12 @@
-# Determine if we're in a nested test structure by checking for DISCRIMINATOR
-ifdef DISCRIMINATOR
-    # Nested test structure (e.g., smp/granular_lock)
-    LCOV_LIST       := $(addsuffix .info,$(addprefix $(SCRATCH_DIR)/$(EXEC_PREFIX)_,$(DISCRIMINATOR)))
-    INFO_PATTERN    := $(SCRATCH_DIR)/$(EXEC_PREFIX)_%.info
-    TEST_PATTERN    := $(BIN_DIR)/smp_$(PROJECT)_%_utest
-else
-    # Flat test structure
-    LCOV_LIST       := $(addsuffix .info,$(addprefix $(SCRATCH_DIR)/,$(SUITE_UT_SRC:.c=)))
-    INFO_PATTERN    := $(SCRATCH_DIR)/%_utest.info
-    TEST_PATTERN    := $(BIN_DIR)/$(EXEC_PREFIX)_%_utest
-endif
+COVINFO         :=  $(abspath $(SCRATCH_DIR)/..)/$(EXEC_PREFIX).info
+COVINFO_INITIAL :=  $(SCRATCH_DIR)/$(EXEC_PREFIX)_initial.info
+LCOV_LIST       :=  $(addsuffix .info,$(addprefix $(SCRATCH_DIR)/,$(SUITE_UT_SRC:.c=)))
+PROJ_GCDA_LIST  :=  $(PROJ_SRC_LIST:.c=.gcda)
+COV_REPORT_DIR  :=  $(SCRATCH_DIR)/coverage
+COVINFO_COMBINE :=  $(SCRATCH_DIR)/$(EXEC_PREFIX)_combined.info
 
-# Debug information for coverage
-$(info === Coverage Configuration ===)
-$(info DISCRIMINATOR: $(DISCRIMINATOR))
-$(info LCOV_LIST: $(LCOV_LIST))
-$(info INFO_PATTERN: $(INFO_PATTERN))
-$(info TEST_PATTERN: $(TEST_PATTERN))
 
-# Common variables
-COVINFO         := $(abspath $(SCRATCH_DIR)/..)/$(EXEC_PREFIX).info
-COVINFO_INITIAL := $(SCRATCH_DIR)/$(EXEC_PREFIX)_initial.info
-PROJ_GCDA_LIST := $(PROJ_SRC_LIST:.c=.gcda)
-COV_REPORT_DIR := $(SCRATCH_DIR)/coverage
-COVINFO_COMBINE := $(SCRATCH_DIR)/$(EXEC_PREFIX)_combined.info
-
-GCOV_OPTS       := --unconditional-branches --branch-probabilities
+GCOV_OPTS       :=  --unconditional-branches --branch-probabilities
 
 # Cases that run test binaries cannot be run in parallel.
 .NOTPARALLEL : $(COVINFO) $(LCOV_LIST) $(PROJ_GCDA_LIST)
@@ -37,6 +18,7 @@ NO_DELETE : $(MOCK_HDR_LIST) $(MOCK_SRC_LIST) $(MOCK_OBJ_LIST)      \
             $(SUITE_OBJ_LIST) $(RUNNER_SRC_LIST) $(RUNNER_OBJ_LIST) \
             $(COVINFO) $(LCOV_LIST)
 
+
 # Generate gcov files by default
 run : gcov
 
@@ -44,7 +26,7 @@ gcov : $(PROJ_GCDA_LIST)
 
 clean :
     rm -rf $(SCRATCH_DIR)
-    rm -f $(BIN_DIR)/*$(PROJECT)*
+    rm -f $(BIN_DIR)/$(PROJECT)_utest_*
     rm -f $(COVINFO)
 
 libs :
@@ -55,8 +37,6 @@ $(1)
 endef
 
 $(PROJ_GCDA_LIST) : $(EXEC_LIST)
-    @echo "=== Generating GCDA files ==="
-    @echo "Executables: $(EXEC_LIST)"
     rm -f $(PROJ_DIR)/*.gcda
     mkdir -p $(BIN_DIR)
     # run each test case
@@ -66,46 +46,43 @@ $(PROJ_GCDA_LIST) : $(EXEC_LIST)
 lcov : $(COVINFO)
 
 lcovhtml : $(COVINFO)
-    @echo "=== Generating HTML coverage report ==="
-    @echo "Output directory: $(COV_REPORT_DIR)"
     mkdir -p $(COV_REPORT_DIR)
     genhtml $(COVINFO) $(LCOV_OPTS) --output-directory $(COV_REPORT_DIR)
 
 bin: $(EXEC_LIST)
 
+# Run and append to gcov data files
+
 # Generate callgraph for coverage filtering
 $(PROJ_DIR)/callgraph.json : $(PROJ_SRC_LIST)
-    @echo "=== Generating callgraph ==="
     mkdir -p $(PROJ_DIR)
 #python3 $(UT_ROOT_DIR)/tools/callgraph.py --out $@ $^
 
-# Generate baseline initial coverage data from .gcno file
+# Generate baseline inital coverage data from .gcno file
 $(COVINFO_INITIAL) : $(EXEC_LIST)
-    @echo "=== Generating initial coverage data ==="
-    @echo "Output file: $@"
     lcov $(LCOV_OPTS) --capture --initial --directory $(SCRATCH_DIR) -o $@
 
-# Add debug information before pattern rules
-$(info === Coverage Pattern Debug ===)
-$(info Looking for info files: $(LCOV_LIST))
-$(info Info pattern: $(INFO_PATTERN))
-$(info Test pattern: $(TEST_PATTERN))
-$(info Executables: $(EXEC_LIST))
-
-# Run the test runner and generate coverage info file
-$(INFO_PATTERN) : $(TEST_PATTERN) $(PROJ_DIR)/callgraph.json
-    @echo "=== Generating coverage info for $@ ==="
-    @echo "Using test executable: $<"
+# Run the test runner and genrate a filtered gcov.json.gz file
+$(SCRATCH_DIR)/%_utest.info : $(BIN_DIR)/$(EXEC_PREFIX)_%_utest                \
+                              $(PROJ_DIR)/callgraph.json
     # Remove any existing coverage data
     rm -f $(PROJ_DIR)/*.gcda
 
     # run the testrunner
     $<
 
-    @echo "Capturing coverage data..."
     lcov $(LCOV_OPTS) --directory $(SCRATCH_DIR) --capture -o $@
-    
-    @echo "Coverage summary:"
+    # Gather coverage into a json.gz file
+
+#gcov $(GCOV_OPTS) $(SCRATCH_DIR)/$*/$(PROJECT).gcda \
+#         --json-format --stdout | gzip > $(subst .info,.json.gz,$@)
+
+    # Filter coverage based on tags in unit test file
+#    $(TOOLS_DIR)/filtercov.py --in $(subst .info,.json.gz,$@)   \
+#                              --map $(PROJ_DIR)/callgraph.json  \
+#                              --test $(PROJ_DIR)/$(PROJECT)_utest_$*.c    \
+#                              --format lcov                     \
+#                              --out $@
     lcov $(LCOV_OPTS) --summary $@
 
     # Remove temporary files
@@ -114,28 +91,8 @@ $(INFO_PATTERN) : $(TEST_PATTERN) $(PROJ_DIR)/callgraph.json
 
 # Combine lcov from each test bin into one lcov info file for the suite
 $(COVINFO_COMBINE) : $(LCOV_LIST)
-    @echo "=== Combining coverage data ==="
-    @echo "Input files: $(LCOV_LIST)"
-    @echo "Output file: $@"
     lcov $(LCOV_OPTS) -o $@ $(foreach cov,$(LCOV_LIST),--add-tracefile $(cov) )
 
 # Add baseline / initial coverage generated by gcc to point out untagged functions
 $(COVINFO) : $(COVINFO_COMBINE) $(COVINFO_INITIAL)
-    @echo "=== Generating final coverage report ==="
-    @echo "Initial coverage: $(COVINFO_INITIAL)"
-    @echo "Combined coverage: $(COVINFO_COMBINE)"
-    @echo "Output file: $@"
     lcov $(LCOV_OPTS) -o $@ --add-tracefile $(COVINFO_INITIAL) --add-tracefile $(COVINFO_COMBINE)
-
-# Debug target for coverage configuration
-coverage-debug:
-    @echo "=== Coverage Debug Information ==="
-    @echo "DISCRIMINATOR: $(DISCRIMINATOR)"
-    @echo "LCOV_LIST: $(LCOV_LIST)"
-    @echo "INFO_PATTERN: $(INFO_PATTERN)"
-    @echo "TEST_PATTERN: $(TEST_PATTERN)"
-    @echo "COVINFO: $(COVINFO)"
-    @echo "COVINFO_INITIAL: $(COVINFO_INITIAL)"
-    @echo "COVINFO_COMBINE: $(COVINFO_COMBINE)"
-    @echo "EXEC_LIST: $(EXEC_LIST)"
-    @echo "PROJ_GCDA_LIST: $(PROJ_GCDA_LIST)"
