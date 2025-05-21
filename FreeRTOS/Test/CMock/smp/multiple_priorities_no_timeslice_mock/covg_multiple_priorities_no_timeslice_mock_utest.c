@@ -424,6 +424,7 @@ void test_coverage_prvYieldCore_core_id_ne_current_coreid( void )
     task.xTaskRunState = 1;   /* running on core 1 */
     task.xPreemptionDisable = 1;
     task2.xTaskRunState = -2; /* running on core 2 taskTASK_YIELDING  */
+    xYieldPendings[ 1 ] = pdTRUE;
     xTaskHandle = &task;
     pxCurrentTCBs[ 0 ] = &task;
     pxCurrentTCBs[ 1 ] = &task;

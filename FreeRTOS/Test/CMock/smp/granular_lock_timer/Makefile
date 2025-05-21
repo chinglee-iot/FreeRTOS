@@ -6,17 +6,17 @@ MAKEFILE_ABSPATH    :=  $(abspath $(lastword $(MAKEFILE_LIST)))
 include ../../makefile.in
 
 # PROJECT_SRC lists the .c files under test
-PROJECT_SRC         :=  tasks.c queue.c stream_buffer.c event_groups.c
+PROJECT_SRC         :=  timers.c
 
 # PROJECT_DEPS_SRC list the .c file that are dependencies of PROJECT_SRC files
 # Files in PROJECT_DEPS_SRC are excluded from coverage measurements
-PROJECT_DEPS_SRC    := list.c
+PROJECT_DEPS_SRC    := list.c tasks.c queue.c
 
 # PROJECT_HEADER_DEPS: headers that should be excluded from coverage measurements.
 PROJECT_HEADER_DEPS :=  FreeRTOS.h
 
 # SUITE_UT_SRC: .c files that contain test cases (must end in _utest.c)
-SUITE_UT_SRC        :=  granular_lock_utest.c
+SUITE_UT_SRC        :=  granular_lock_timers_utest.c
 
 # SUITE_SUPPORT_SRC: .c files used for testing that do not contain test cases.
 # Paths are relative to PROJECT_DIR
