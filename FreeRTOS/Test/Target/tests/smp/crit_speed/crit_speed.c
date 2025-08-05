@@ -84,7 +84,7 @@ static void Test_CriticalSectionSpeed( void )
         /* Test taskENTER_CRITICAL() elapsed time */
         uxTemp = portTEST_GET_TIME();
 
-        #if ( portGRANULAR_LOCKING == 1 )
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
             taskENTER_CRITICAL();
         #else
             vTaskEnterCritical();
@@ -94,7 +94,7 @@ static void Test_CriticalSectionSpeed( void )
         /* Test taskEXIT_CRITICAL elapsed time */
         uxTemp = portTEST_GET_TIME();
 
-        #if ( portGRANULAR_LOCKING == 1 )
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
             taskEXIT_CRITICAL();
         #else
             vTaskExitCritical();
@@ -104,6 +104,8 @@ static void Test_CriticalSectionSpeed( void )
 
     printf( "taskENTER_CRITICAL() accumulated elapsed time: %u\n", uxEntryElapsedCumulative );
     printf( "taskEXIT_CRITICAL() accumulated elapsed time: %u\n", uxExitElapsedCumulative );
+    printf( "taskENTER_CRITICAL() elapsed time: %u\n", uxEntryElapsedCumulative / portTEST_NUM_SAMPLES );
+    printf( "taskEXIT_CRITICAL() elapsed time: %u\n", uxExitElapsedCumulative / portTEST_NUM_SAMPLES );
 }
 /*-----------------------------------------------------------*/
 

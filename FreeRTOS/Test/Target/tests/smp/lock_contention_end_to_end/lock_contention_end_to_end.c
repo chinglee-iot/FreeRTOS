@@ -70,7 +70,7 @@
     // #error This test is for FreeRTOS SMP and therefore, requires at least 2 cores.
 #endif /* if configNUMBER_OF_CORES != 2 */
 
-#define testNUMBER_OF_CORES 2
+#define testNUMBER_OF_CORES configNUMBER_OF_CORES
 
 #if ( configRUN_MULTIPLE_PRIORITIES != 1 )
     #error configRUN_MULTIPLE_PRIORITIES must be set to 1 for this test.

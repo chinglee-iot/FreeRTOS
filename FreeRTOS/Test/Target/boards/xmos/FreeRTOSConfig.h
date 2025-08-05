@@ -13,7 +13,7 @@ your application. */
 #define configUSE_PORT_OPTIMISED_TASK_SELECTION 0
 #define configUSE_TICKLESS_IDLE                 0
 #define configCPU_CLOCK_HZ                      100000000
-#define configNUMBER_OF_CORES                   6
+#define configNUMBER_OF_CORES                   7
 #define configTICK_RATE_HZ                      1000
 #define configMAX_PRIORITIES                    32
 #define configMINIMAL_STACK_SIZE                ( configSTACK_DEPTH_TYPE ) 256
@@ -61,7 +61,7 @@ your application. */
 
 /* Software timer related definitions. */
 #define configUSE_TIMERS                        1
-#define configTIMER_TASK_PRIORITY               ( configMAX_PRIORITIES - 1 )
+#define configTIMER_TASK_PRIORITY               ( configMAX_PRIORITIES - 5 )
 #define configTIMER_QUEUE_LENGTH                10
 #define configTIMER_TASK_STACK_DEPTH            portTASK_STACK_DEPTH(prvTimerTask)
 
