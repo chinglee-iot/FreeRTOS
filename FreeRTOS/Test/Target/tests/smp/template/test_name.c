@@ -35,9 +35,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-/* Unity testing includes. */
-#include "unity.h"
-
 /*-----------------------------------------------------------*/
 
 #if ( configNUMBER_OF_CORES < 2 )
@@ -48,9 +45,14 @@
     #error test_config.h must be included at the end of FreeRTOSConfig.h.
 #endif
 
+#include "test_common_config.h"
+
 /*-----------------------------------------------------------*/
 
 /* Declare #defines used in this file here. */
+#ifndef testGET_TIME_FUNCTION
+    #error testGET_TIME_FUNCTION is required to run this test
+#endif
 
 /*-----------------------------------------------------------*/
 
@@ -63,14 +65,14 @@
 /*-----------------------------------------------------------*/
 
 /* Runs before every test, put init calls here. */
-void setUp( void )
+testTEST_CASE_SETUP_TEARDOWN_LINKAGE void testTEST_CASE_SETUP_FUNCTION_NAME( void )
 {
     /* Create FreeRTOS resources required for the test. */
 }
 /*-----------------------------------------------------------*/
 
 /* Runs after every test, put clean-up calls here. */
-void tearDown( void )
+testTEST_CASE_SETUP_TEARDOWN_LINKAGE void testTEST_CASE_TREADOWN_FUNCTION_NAME( void )
 {
     /* Delete all the FreeRTOS resources created in setUp. */
 }
@@ -86,12 +88,12 @@ void Test_TestCaseName( void )
 
 /* Function that runs the test case. This function must be called
  * from a FreeRTOS task. */
-void vRunTestCaseName( void )
+testENTRY_FUNCTION_PROTOTYPE
 {
-    UNITY_BEGIN();
+    testBEGIN_FUNCTION();
 
-    RUN_TEST( Test_TestCaseName );
+    testRUN_TEST_CASE_FUNCTION( Test_TestCaseName );
 
-    UNITY_END();
+    testEND_FUNCTION();
 }
 /*-----------------------------------------------------------*/
