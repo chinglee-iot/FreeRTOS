@@ -648,6 +648,9 @@ static void test_state_protection_basic( portSPINLOCK_TYPE * pxDataGroupTaskSpin
                                          portSPINLOCK_TYPE * pxDataGroupISRSpinlock,
                                          eStateChangeType_t eChangeType )
 {
+    eTaskState expectedState;
+    BaseType_t xExpectedRunningCore;
+
     /* Create tasks */
     xTaskCreate( vSmpTestTask, "Task 1", configMINIMAL_STACK_SIZE, NULL,
                  configMAX_PRIORITIES - 1, &xTaskHandles[ 0 ] );
@@ -716,30 +719,31 @@ static void test_state_protection_basic( portSPINLOCK_TYPE * pxDataGroupTaskSpin
         taskDATA_GROUP_UNLOCK( pxDataGroupTaskSpinlock );
     }
 
-    /* Verify final state */
-    eTaskState expectedState;
-
     switch( eChangeType )
     {
         case STATE_CHANGE_DELETE:
         case STATE_CHANGE_DELETE_SUSPEND:
         case STATE_CHANGE_SUSPEND_DELETE:
             expectedState = eDeleted;
+            xExpectedRunningCore = -1;
             break;
 
         case STATE_CHANGE_SUSPEND:
             expectedState = eSuspended;
+            xExpectedRunningCore = -1;
             break;
 
         case STATE_CHANGE_SUSPEND_RESUME:
             expectedState = eRunning;
+            xExpectedRunningCore = 0;
             break;
 
         default:
             expectedState = eRunning;
+            xExpectedRunningCore = 0;
     }
 
-    verifySmpTask( &xTaskHandles[ 0 ], expectedState, -1 );
+    verifySmpTask( &xTaskHandles[ 0 ], expectedState, xExpectedRunningCore );
 }
 
 /* Critical Section versions */

@@ -226,7 +226,7 @@ void test_coverage_vTaskPreemptionEnable_scheduler_not_running( void )
     TCB_t xTaskTCB = { NULL };
 
     /* Setup variables. */
-    xTaskTCB.uxPreemptionDisable = pdTRUE;
+    xTaskTCB.uxPreemptionDisable = 0U;
 
     /* Clear callback in commonSetUp. */
     vFakePortEnterCriticalSection_StubWithCallback( NULL );
@@ -240,7 +240,7 @@ void test_coverage_vTaskPreemptionEnable_scheduler_not_running( void )
     vTaskPreemptionEnable( &xTaskTCB );
 
     /* Validation. */
-    TEST_ASSERT( xTaskTCB.uxPreemptionDisable == pdFALSE );
+    TEST_ASSERT( xTaskTCB.uxPreemptionDisable == 0U );
 }
 
 /**
@@ -267,7 +267,7 @@ void test_coverage_vTaskPreemptionEnable_scheduler_running( void )
     TCB_t xTaskTCB = { NULL };
 
     /* Setup variable. */
-    xTaskTCB.uxPreemptionDisable = pdTRUE;
+    xTaskTCB.uxPreemptionDisable = 1U;
     xTaskTCB.xTaskRunState = -1; /* taskTASK_NOT_RUNNING. */
 
     xSchedulerRunning = pdTRUE;
@@ -284,7 +284,7 @@ void test_coverage_vTaskPreemptionEnable_scheduler_running( void )
     vTaskPreemptionEnable( &xTaskTCB );
 
     /* Validation. */
-    TEST_ASSERT( xTaskTCB.uxPreemptionDisable == pdFALSE );
+    TEST_ASSERT( xTaskTCB.uxPreemptionDisable == 0U );
 }
 
 /**
@@ -303,9 +303,10 @@ void test_coverage_vTaskPreemptionEnable_null_handle( void )
     TCB_t xTaskTCB = { NULL };
     UBaseType_t uxInterruptMask = 0x12345678;
 
-    xTaskTCB.uxPreemptionDisable = pdTRUE;
+    xTaskTCB.uxPreemptionDisable = 1U;
     xTaskTCB.xTaskRunState = -1; /* taskTASK_NOT_RUNNING. */
     pxCurrentTCBs[ 0 ] = &xTaskTCB;
+    xSchedulerRunning = pdTRUE;
 
     /* Clear callback in commonSetUp. */
     vFakePortEnterCriticalSection_StubWithCallback( NULL );
@@ -325,7 +326,7 @@ void test_coverage_vTaskPreemptionEnable_null_handle( void )
     vTaskPreemptionEnable( NULL );
 
     /* Expection. */
-    TEST_ASSERT( pxCurrentTCBs[ 0 ]->uxPreemptionDisable == pdFALSE );
+    TEST_ASSERT( pxCurrentTCBs[ 0 ]->uxPreemptionDisable == 0U );
 }
 
 /**
@@ -3033,6 +3034,8 @@ void test_coverage_prvCheckTasksWaitingTermination_delete_not_running_task( void
     TEST_ASSERT_EQUAL( uxCurrentNumberOfTasks, 0 );
     TEST_ASSERT_EQUAL( uxDeletedTasksWaitingCleanUp, 0 );
     /* Verify memory allocate count in tearDown function. */
+    vPortFree( pxTaskTCB->pxStack );
+    vPortFree( pxTaskTCB );
 }
 
 /**
