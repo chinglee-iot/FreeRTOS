@@ -317,6 +317,7 @@ void test_coverage_vTaskPreemptionEnable_null_handle( void )
 
     /* Expectations. */
     vFakePortEnterCriticalSection_Expect();
+    vFakePortGetCoreID_ExpectAndReturn( 0 );
     ulFakePortSetInterruptMask_ExpectAndReturn( uxInterruptMask );
     vFakePortGetCoreID_ExpectAndReturn( 0 );
     vFakePortClearInterruptMask_Expect( uxInterruptMask );
@@ -2062,10 +2063,10 @@ void test_coverage_vTaskExitCritical_task_enter_critical_mt_1( void )
     pxCurrentTCBs[ 0 ] = &xTaskTCB;
     xSchedulerRunning = pdTRUE;
 
-    portGET_TASK_LOCK(0);
-    portGET_TASK_LOCK(0);
-    portGET_ISR_LOCK(0);
-    portGET_ISR_LOCK(0);
+    portGET_TASK_LOCK( 0 );
+    portGET_TASK_LOCK( 0 );
+    portGET_ISR_LOCK( 0 );
+    portGET_ISR_LOCK( 0 );
 
     /* Clear callback in commonSetUp. */
     vFakePortGetCoreID_StubWithCallback( NULL );
@@ -2105,8 +2106,8 @@ void test_coverage_vTaskExitCritical_task_not_in_critical( void )
     pxCurrentTCBs[ 0 ] = &xTaskTCB;
     xSchedulerRunning = pdTRUE;
 
-    portGET_TASK_LOCK(0);
-    portGET_ISR_LOCK(0);
+    portGET_TASK_LOCK( 0 );
+    portGET_ISR_LOCK( 0 );
 
     /* Clear callback in commonSetUp. */
     vFakePortGetCoreID_StubWithCallback( NULL );

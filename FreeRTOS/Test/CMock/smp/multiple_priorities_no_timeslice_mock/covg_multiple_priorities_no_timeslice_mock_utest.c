@@ -367,9 +367,9 @@ void test_coverage_vTaskPrioritySet_non_running_state( void )
  *
  * <b>Coverage</b>
  * @code{c}
- * if( pxTCB->uxPreemptionDisable == pdFALSE )
+ * if( pxTCB->uxPreemptionDisable == 0U )
  * @endcode
- * ( pxTCB->uxPreemptionDisable == pdFALSE ) is false.
+ * ( pxTCB->uxPreemptionDisable == 0U ) is false.
  */
 void test_coverage_vTaskPrioritySet_running_state( void )
 {
@@ -378,8 +378,9 @@ void test_coverage_vTaskPrioritySet_running_state( void )
     /* Setup the variables and structure. */
     xTaskTCBs[ 0 ].uxPriority = 4;
     xTaskTCBs[ 0 ].uxBasePriority = 4;
-    xTaskTCBs[ 0 ].uxPreemptionDisable = pdTRUE;
+    xTaskTCBs[ 0 ].uxPreemptionDisable = 1U;
     xTaskTCBs[ 0 ].xTaskRunState = 1;
+    pxCurrentTCBs[ 1 ] = &xTaskTCBs[ 0 ];
 
     BaseType_t xYieldRequired = pdFALSE;
     BaseType_t xYieldForTask = pdFALSE;
@@ -392,61 +393,14 @@ void test_coverage_vTaskPrioritySet_running_state( void )
     listIS_CONTAINED_WITHIN_ExpectAnyArgsAndReturn( pdFALSE );
     vFakePortExitCriticalSection_Ignore();
 
+    vFakePortGetCoreID_ExpectAndReturn( 0 );
+
     /* API call. */
     vTaskPrioritySet( &xTaskTCBs[ 0 ], 2 );
 
     /* Validation. */
     TEST_ASSERT_EQUAL( pdFALSE, xYieldRequired );
     TEST_ASSERT_EQUAL( pdFALSE, xYieldForTask );
-}
-
-/**
- * @brief prvYieldCore - xCoreID is not equal to current core id.
- *
- * This test ensures that the  first condition is true while the second
- * condition is false in the if statement, so we will be performing the
- * action with portYIELD_CORE, and the task is put in the yielding state
- *
- * <b>Coverage</b>
- * @code{c}
- * if( ( portCHECK_IF_IN_ISR() == pdTRUE ) && ( xCoreID == portGET_CORE_ID() ) )
- * ...
- * @endcode
- * ( portCHECK_IF_IN_ISR() == pdTRUE ) is true.
- * ( xCoreID == portGET_CORE_ID() ) is false.
- */
-void test_coverage_prvYieldCore_core_id_ne_current_coreid( void )
-{
-    TCB_t task;
-    TCB_t task2;
-    TaskHandle_t xTestTaskHandle;
-
-    task.xTaskRunState = 1;   /* running on core 1 */
-    task.uxPreemptionDisable = 1;
-    task.uxDeferredStateChange = 0;
-    task2.xTaskRunState = -2; /* running on core 2 taskTASK_YIELDING  */
-    xYieldPendings[ 1 ] = pdTRUE;
-    xTestTaskHandle = &task;
-    pxCurrentTCBs[ 0 ] = &task;
-    pxCurrentTCBs[ 1 ] = &task;
-    pxCurrentTCBs[ 2 ] = &task2;
-    xSchedulerRunning = pdTRUE;
-
-    /* Test Expectations */
-    vFakePortEnterCriticalSection_Expect();
-    /* Entering prvYieldCore */
-    vFakePortGetCoreID_ExpectAndReturn( 2 );
-    vFakePortYieldCore_Expect( 1 );
-    /* Leaving prvYieldCore */
-    vFakePortExitCriticalSection_Expect();
-
-    /* API call */
-    vTaskPreemptionEnable( xTestTaskHandle );
-
-    /* Test Assertions */
-    TEST_ASSERT_EQUAL( pdFALSE, xYieldPendings[ 2 ] );
-    TEST_ASSERT_EQUAL( -2, pxCurrentTCBs[ 1 ]->xTaskRunState ); /* yielding state */
-    TEST_ASSERT_EQUAL( -2, task.xTaskRunState );                /* yielding state */
 }
 
 /**
