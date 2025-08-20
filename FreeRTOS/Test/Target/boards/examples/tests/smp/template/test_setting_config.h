@@ -1,6 +1,6 @@
 /*
  * FreeRTOS V202212.00
- * Copyright (C) 2022 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+ * Copyright (C) 2022 Amazon.com, Inc. or its affiliates.  All Rights Reserved.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy of
  * this software and associated documentation files (the "Software"), to deal in
@@ -24,33 +24,18 @@
  *
  */
 
-#ifndef TEST_CONFIG_H
-#define TEST_CONFIG_H
+#ifndef TEST_SETTING_CONFIG_H
+#define TEST_SETTING_CONFIG_H
 
-/* This file must be included at the end of the FreeRTOSConfig.h. It contains
- * any FreeRTOS specific configurations that the test requires. */
+#define testNOT_USING_UNITY
 
-#ifdef configRUN_MULTIPLE_PRIORITIES
-    #undef configRUN_MULTIPLE_PRIORITIES
-#endif /* ifdef configRUN_MULTIPLE_PRIORITIES */
+#define testRUN_TEST_CASE_FUNCTION( fxn )    fxn()
 
-#ifdef configUSE_CORE_AFFINITY
-    #undef configUSE_CORE_AFFINITY
-#endif /* ifdef configUSE_CORE_AFFINITY */
+#define testBEGIN_FUNCTION()                 do{} while( 0 )
 
-#ifdef configUSE_TASK_PREEMPTION_DISABLE
-    #undef configUSE_TASK_PREEMPTION_DISABLE
-#endif /* ifdef configUSE_TASK_PREEMPTION_DISABLE */
+#define testEND_FUNCTION()                   do{} while( 0 )
 
-#ifdef configUSE_TIME_SLICING
-    #undef configUSE_TIME_SLICING
-#endif /* ifdef configUSE_TIME_SLICING */
+extern UBaseType_t uxTestGetTime( void );
+#define testGET_TIME_FUNCTION    uxTestGetTime
 
-#ifdef configUSE_PREEMPTION
-    #undef configUSE_PREEMPTION
-#endif /* ifdef configUSE_PREEMPTION */
-
-/* Test case configure depends on test case requirements. */
-#define configUSE_PREEMPTION        1
-
-#endif /* ifndef TEST_CONFIG_H */
+#endif /* TEST_SETTING_CONFIG_H */

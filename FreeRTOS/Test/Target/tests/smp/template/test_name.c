@@ -45,7 +45,8 @@
     #error test_config.h must be included at the end of FreeRTOSConfig.h.
 #endif
 
-#include "test_common_config.h"
+#include "test_setting_config.h"
+#include "test_default_setting_config.h"
 
 /*-----------------------------------------------------------*/
 
@@ -65,14 +66,14 @@
 /*-----------------------------------------------------------*/
 
 /* Runs before every test, put init calls here. */
-testTEST_CASE_SETUP_TEARDOWN_LINKAGE void testTEST_CASE_SETUP_FUNCTION_NAME( void )
+testSETUP_FUNCTION_PROTOTYPE( setUp )
 {
     /* Create FreeRTOS resources required for the test. */
 }
 /*-----------------------------------------------------------*/
 
 /* Runs after every test, put clean-up calls here. */
-testTEST_CASE_SETUP_TEARDOWN_LINKAGE void testTEST_CASE_TREADOWN_FUNCTION_NAME( void )
+testTEARDOWN_FUNCTION_PROTOTYPE( tearDown )
 {
     /* Delete all the FreeRTOS resources created in setUp. */
 }
@@ -88,7 +89,7 @@ void Test_TestCaseName( void )
 
 /* Function that runs the test case. This function must be called
  * from a FreeRTOS task. */
-testENTRY_FUNCTION_PROTOTYPE
+testENTRY_FUNCTION_PROTOTYPE( vRunTestCaseName )
 {
     testBEGIN_FUNCTION();
 

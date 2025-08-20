@@ -24,39 +24,35 @@
  *
  */
 
-#ifndef TEST_COMMON_CONFIG_H
-#define TEST_COMMON_CONFIG_H
+#ifndef TEST_DEFAULT_SETTING_CONFIG_H
+#define TEST_DEFAULT_SETTING_CONFIG_H
 
 #ifndef testNOT_USING_UNITY
     #include "unity.h"
 #endif
 
-#ifndef testENTRY_FUNCTION_PROTOTYPE
-    #define testENTRY_FUNCTION_PROTOTYPE  void testENTRY_FUNCTION_NAME( void )
-#endif
-
 #ifndef testRUN_TEST_CASE_FUNCTION
-    #define testRUN_TEST_CASE_FUNCTION RUN_TEST
+    #define testRUN_TEST_CASE_FUNCTION    RUN_TEST
 #endif
 
 #ifndef testBEGIN_FUNCTION
-    #define testBEGIN_FUNCTION UNITY_BEGIN
+    #define testBEGIN_FUNCTION    UNITY_BEGIN
 #endif
 
 #ifndef testEND_FUNCTION
-    #define testEND_FUNCTION UNITY_END
+    #define testEND_FUNCTION    UNITY_END
 #endif
 
-#ifndef testTEST_CASE_SETUP_TEARDOWN_LINKAGE
-    #define testTEST_CASE_SETUP_TEARDOWN_LINKAGE
+#ifndef testSETUP_FUNCTION_PROTOTYPE
+    #define testSETUP_FUNCTION_PROTOTYPE( fxn )    void fxn( void )
 #endif
 
-#ifndef testTEST_CASE_SETUP_FUNCTION_NAME
-    #define testTEST_CASE_SETUP_FUNCTION_NAME setUp
+#ifndef testTEARDOWN_FUNCTION_PROTOTYPE
+    #define testTEARDOWN_FUNCTION_PROTOTYPE( fxn )    void fxn( void )
 #endif
 
-#ifndef testTEST_CASE_TREADOWN_FUNCTION_NAME
-    #define testTEST_CASE_TREADOWN_FUNCTION_NAME tearDown
+#ifndef testENTRY_FUNCTION_PROTOTYPE
+    #define testENTRY_FUNCTION_PROTOTYPE( fxn )    void fxn( void )
 #endif
 
-#endif /* TEST_COMMON_CONFIG_H */
+#endif /* TEST_DEFAULT_SETTING_CONFIG_H */
