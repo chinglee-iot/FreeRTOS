@@ -217,6 +217,7 @@ void test_granular_locks_tasks_xTaskRemoveFromEventList_list_is_empty( void )
     xReturn = xTaskRemoveFromEventList( &xEventList );
 
     TEST_ASSERT_EQUAL( pdFALSE, xReturn );
+    TEST_ASSERT_EQUAL( 0, xEventList.uxNumberOfItems );
 }
 
 /**
@@ -560,9 +561,11 @@ void test_granular_locks_tasks_pvTaskIncrementMutexHeldCount( void )
     vFakePortDisableInterrupts_ExpectAndReturn( 0 );
     vFakePortGetSpinlock_Expect( 0, &xTaskSpinlock );
     vFakePortGetSpinlock_Expect( 0, &xISRSpinlock );
-    ulFakePortSetInterruptMask_ExpectAndReturn( 0 );
 
+    /* Get current task TCB with xTaskGetCurrentTaskHandle. */
+    ulFakePortSetInterruptMask_ExpectAndReturn( 0 );
     vFakePortClearInterruptMask_Expect( 0 );
+
     vFakePortReleaseSpinlock_Expect( 0, &xISRSpinlock );
     vFakePortReleaseSpinlock_Expect( 0, &xTaskSpinlock );
     vFakePortEnableInterrupts_Expect();
@@ -643,6 +646,7 @@ void test_granular_locks_tasks_xCurrentTaskPreemptionEnable_task_not_yielded( vo
     vFakePortGetSpinlock_Expect( 0, &xTaskSpinlock );
     vFakePortGetSpinlock_Expect( 0, &xISRSpinlock );
 
+    /* Get current task TCB with xTaskGetCurrentTaskHandle. */
     ulFakePortSetInterruptMask_ExpectAndReturn( 0x12345678 );
     vFakePortClearInterruptMask_Expect( 0x12345678 );
 
