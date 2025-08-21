@@ -45,7 +45,9 @@
     #error test_config.h must be included at the end of FreeRTOSConfig.h.
 #endif
 
-#include "test_setting_config.h"
+#if ( configTARGET_TEST_USE_CUSTOM_SETTING == 1 )
+    #include "test_setting_config.h"
+#endif
 #include "test_default_setting_config.h"
 
 /*-----------------------------------------------------------*/

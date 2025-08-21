@@ -24,8 +24,9 @@
 
 1. Create a directory in the target's directory which will contain
    the test. For example: `FreeRTOS/Test/Target/boards/pico/tests/smp/multiple_tasks_running`.
-2. Create a C header file `test_setting_config.h` to customize the test framework
-   to adapt your device framework.
+2. ( optional ) If your platform uses a test framework other than Unity, set `configTARGET_TEST_USE_CUSTOM_SETTING`
+   to 1 in FreeRTOSConfig.h and create a `test_setting_config.h` header file to
+   adapt the test framework to your device's requirements.
 3. Create a C file and invoke the test case from a task. The invocation
    usually looks like the following:
     ```c

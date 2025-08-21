@@ -660,6 +660,10 @@
 #define INCLUDE_xTaskGetHandle                 0
 #define INCLUDE_xTaskResumeFromISR             1
 
+/* Set configTARGET_TEST_USE_CUSTOM_SETTING to 1 to include test_setting_config.h
+ * in the target test case source file for custom test framework setting. */
+#define configTARGET_TEST_USE_CUSTOM_SETTING   1
+
 /* Include test_config.h here to run the target test case. */
 #include "test_config.h"
 
