@@ -19,7 +19,8 @@ PROJECT_HEADER_DEPS :=  FreeRTOS.h
 SUITE_UT_SRC        :=  granular_lock_timers_utest.c \
                         granular_lock_queue_utest.c \
                         granular_lock_stream_buffer_utest.c \
-                        granular_lock_event_groups_utest.c
+                        granular_lock_event_groups_utest.c \
+                        covg_granular_lock_tasks_utest.c \
 
 # SUITE_SUPPORT_SRC: .c files used for testing that do not contain test cases.
 # Paths are relative to PROJECT_DIR
