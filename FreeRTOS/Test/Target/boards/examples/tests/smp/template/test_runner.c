@@ -24,33 +24,51 @@
  *
  */
 
-#ifndef TEST_CONFIG_H
-#define TEST_CONFIG_H
+/**
+ * @file test_runner.c
+ * @brief The implementation of test runner task which runs the test.
+ */
 
-/* This file must be included at the end of the FreeRTOSConfig.h. It contains
- * any FreeRTOS specific configurations that the test requires. */
+/* Kernel includes. */
+#include "FreeRTOS.h" /* Must come first. */
+#include "task.h"     /* RTOS task related API prototypes. */
 
-#ifdef configRUN_MULTIPLE_PRIORITIES
-    #undef configRUN_MULTIPLE_PRIORITIES
-#endif /* ifdef configRUN_MULTIPLE_PRIORITIES */
+/*-----------------------------------------------------------*/
 
-#ifdef configUSE_CORE_AFFINITY
-    #undef configUSE_CORE_AFFINITY
-#endif /* ifdef configUSE_CORE_AFFINITY */
+/**
+ * @brief The task that runs the test.
+ */
+static void prvTestRunnerTask( void * pvParameters );
 
-#ifdef configUSE_TASK_PREEMPTION_DISABLE
-    #undef configUSE_TASK_PREEMPTION_DISABLE
-#endif /* ifdef configUSE_TASK_PREEMPTION_DISABLE */
+/**
+ * @brief The test case to run.
+ */
+extern void vRunTestCaseName( void );
+/*-----------------------------------------------------------*/
 
-#ifdef configUSE_TIME_SLICING
-    #undef configUSE_TIME_SLICING
-#endif /* ifdef configUSE_TIME_SLICING */
+UBaseType_t uxTestGetTime( void )
+{
+    return 0U;
+}
 
-#ifdef configUSE_PREEMPTION
-    #undef configUSE_PREEMPTION
-#endif /* ifdef configUSE_PREEMPTION */
+static void prvTestRunnerTask( void * pvParameters )
+{
+    ( void ) pvParameters;
 
-/* Test case configure depends on test case requirements. */
-#define configUSE_PREEMPTION        1
+    /* Run test case. */
+    vRunTestCaseName();
 
-#endif /* ifndef TEST_CONFIG_H */
+    vTaskDelete( NULL );
+}
+/*-----------------------------------------------------------*/
+
+void vRunTest( void )
+{
+    xTaskCreate( prvTestRunnerTask,
+                 "testRunner",
+                 configMINIMAL_STACK_SIZE,
+                 NULL,
+                 configMAX_PRIORITIES - 1,
+                 NULL );
+}
+/*-----------------------------------------------------------*/

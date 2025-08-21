@@ -35,9 +35,6 @@
 #include "FreeRTOS.h"
 #include "task.h"
 
-/* Unity testing includes. */
-#include "unity.h"
-
 /*-----------------------------------------------------------*/
 
 #if ( configNUMBER_OF_CORES < 2 )
@@ -48,9 +45,27 @@
     #error test_config.h must be included at the end of FreeRTOSConfig.h.
 #endif
 
+#if ( configTARGET_TEST_USE_CUSTOM_SETTING == 1 )
+    #include "test_setting_config.h"
+#endif
+#include "test_default_setting_config.h"
+
 /*-----------------------------------------------------------*/
 
 /* Declare #defines used in this file here. */
+/* Additional test macros should be defined here. For example, testGET_TIME_FUNCTION
+ * is a required macro for this test suite:
+ *
+ * @code
+ * #ifndef testGET_TIME_FUNCTION
+ *     #error UBaseType_t testGET_TIME_FUNCTION(void) is required to run this test.
+ * #endif
+ * @endcode
+ *
+ * The function should be:
+ * - Declared in test_name.c
+ * - Defined in test_setting_config.h
+ */
 
 /*-----------------------------------------------------------*/
 
@@ -63,14 +78,14 @@
 /*-----------------------------------------------------------*/
 
 /* Runs before every test, put init calls here. */
-void setUp( void )
+testSETUP_FUNCTION_PROTOTYPE( setUp )
 {
     /* Create FreeRTOS resources required for the test. */
 }
 /*-----------------------------------------------------------*/
 
 /* Runs after every test, put clean-up calls here. */
-void tearDown( void )
+testTEARDOWN_FUNCTION_PROTOTYPE( tearDown )
 {
     /* Delete all the FreeRTOS resources created in setUp. */
 }
@@ -86,12 +101,12 @@ void Test_TestCaseName( void )
 
 /* Function that runs the test case. This function must be called
  * from a FreeRTOS task. */
-void vRunTestCaseName( void )
+testENTRY_FUNCTION_PROTOTYPE( vRunTestCaseName )
 {
-    UNITY_BEGIN();
+    testBEGIN_FUNCTION();
 
-    RUN_TEST( Test_TestCaseName );
+    testRUN_TEST_CASE_FUNCTION( Test_TestCaseName );
 
-    UNITY_END();
+    testEND_FUNCTION();
 }
 /*-----------------------------------------------------------*/
