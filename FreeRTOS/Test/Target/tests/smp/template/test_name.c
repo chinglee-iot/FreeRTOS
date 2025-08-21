@@ -51,9 +51,19 @@
 /*-----------------------------------------------------------*/
 
 /* Declare #defines used in this file here. */
-#ifndef testGET_TIME_FUNCTION
-    #error testGET_TIME_FUNCTION is required to run this test
-#endif
+/* Additional test macros should be defined here. For example, testGET_TIME_FUNCTION
+ * is a required macro for this test suite:
+ *
+ * @code
+ * #ifndef testGET_TIME_FUNCTION
+ *     #error UBaseType_t testGET_TIME_FUNCTION(void) is required to run this test.
+ * #endif
+ * @endcode
+ *
+ * The function should be:
+ * - Declared in test_name.c
+ * - Defined in test_setting_config.h
+ */
 
 /*-----------------------------------------------------------*/
 

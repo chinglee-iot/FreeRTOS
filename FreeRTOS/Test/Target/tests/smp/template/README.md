@@ -24,7 +24,9 @@
 
 1. Create a directory in the target's directory which will contain
    the test. For example: `FreeRTOS/Test/Target/boards/pico/tests/smp/multiple_tasks_running`.
-1. Create a C file and invoke the test case from a task. The invocation
+2. Create a C header file `test_setting_config.h` to customize the test framework
+   to adapt your device framework.
+3. Create a C file and invoke the test case from a task. The invocation
    usually looks like the following:
     ```c
     void prvTestRunnerTask( void * pvParameters )
@@ -33,5 +35,8 @@
         vRunTestCaseName();
     }
     ```
-1. Add the file created above and the test case file to the build system used
+4. Add the file created above and the test case file to the build system used
    for the target.
+
+The [example target](../../../boards/examples/tests/smp/template) provides a ready-to-compile
+FreeRTOS project template, designed to help newcomers create their own target test projects.
