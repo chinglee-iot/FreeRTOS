@@ -24,44 +24,35 @@
  *
  */
 
-/**
- * @file xmos_test_runner.c
- * @brief The implementation of main function to start test runner task.
- *
- * Procedure:
- *   - Initialize environment
- *   - Run the test case
- */
+#ifndef TEST_DEFAULT_SETTING_CONFIG_H
+#define TEST_DEFAULT_SETTING_CONFIG_H
 
-/* Kernel includes. */
-#include "FreeRTOS.h" /* Must come first. */
-#include "task.h"     /* RTOS task related API prototypes. */
+#ifndef testNOT_USING_UNITY
+    #include "unity.h"
+#endif
 
-#include "unity.h"    /* unit testing support functions */
-/*-----------------------------------------------------------*/
+#ifndef testRUN_TEST_CASE_FUNCTION
+    #define testRUN_TEST_CASE_FUNCTION    RUN_TEST
+#endif
 
-static void prvTestRunnerTask( void * pvParameters );
+#ifndef testBEGIN_FUNCTION
+    #define testBEGIN_FUNCTION    UNITY_BEGIN
+#endif
 
-extern void vRunLockContentionEndToEnd( void );
-/*-----------------------------------------------------------*/
+#ifndef testEND_FUNCTION
+    #define testEND_FUNCTION    UNITY_END
+#endif
 
-static void prvTestRunnerTask( void * pvParameters )
-{
-    ( void ) pvParameters;
+#ifndef testSETUP_FUNCTION_PROTOTYPE
+    #define testSETUP_FUNCTION_PROTOTYPE( fxn )    void fxn( void )
+#endif
 
-    /* Run test case. */
-    vRunLockContentionEndToEnd();
+#ifndef testTEARDOWN_FUNCTION_PROTOTYPE
+    #define testTEARDOWN_FUNCTION_PROTOTYPE( fxn )    void fxn( void )
+#endif
 
-    vTaskDelete( NULL );
-}
-/*-----------------------------------------------------------*/
+#ifndef testENTRY_FUNCTION_PROTOTYPE
+    #define testENTRY_FUNCTION_PROTOTYPE( fxn )    void fxn( void )
+#endif
 
-void vRunTest( void )
-{
-    xTaskCreate( prvTestRunnerTask,
-                 "testRunner",
-                 configMINIMAL_STACK_SIZE,
-                 NULL,
-                 configMAX_PRIORITIES - 1,
-                 NULL );
-}
+#endif /* TEST_DEFAULT_SETTING_CONFIG_H */

@@ -5,8 +5,9 @@ PROJECT_NAME = lock_contention_end_to_end
 
 TEST_DIR = $(ROOT_XMOS)/../../tests/smp/$(PROJECT_NAME)
 TEST_BOARD_DIR = $(ROOT_XMOS)/tests/smp/$(PROJECT_NAME)
+TEST_INCLUDE_DIR = $(ROOT_XMOS)/../../tests/include
 
-INCLUDE_DIRS = $(TEST_DIR) $(DIRS_INC_COMMON)
+INCLUDE_DIRS = $(TEST_DIR) $(DIRS_INC_COMMON) $(TEST_INCLUDE_DIR)
 
 SOURCES_TEST_CASE = $(TEST_DIR)/$(PROJECT_NAME).c \
                     $(TEST_BOARD_DIR)/xmos_test_runner.c

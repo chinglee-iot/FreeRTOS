@@ -106,4 +106,8 @@ your application. */
 
 /* A header file that defines trace macro can be included here. */
 
+#define testGET_TIME_FUNCTION   __xcore_get_reference_time
+
+#include "test_config.h"
+
 #endif /* FREERTOS_CONFIG_H */
