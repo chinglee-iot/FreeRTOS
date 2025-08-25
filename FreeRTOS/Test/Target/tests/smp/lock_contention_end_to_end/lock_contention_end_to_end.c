@@ -63,7 +63,7 @@
 #endif
 
 #ifndef testTASK_WITH_AFFINITY
-    #define testTASK_WITH_AFFINITY    ( 1 )
+    #define testTASK_WITH_AFFINITY    ( 0 )
 #endif
 
 #define testNUM_SAMPLES               ( 64U )
@@ -71,6 +71,10 @@
 
 #define TEST_START_BIT                ( 1 << ( configNUMBER_OF_CORES ) )
 #define TEST_END_BIT                  ( 1 << ( configNUMBER_OF_CORES + 1 ) )
+
+#define TEST_BUSYLOOPING_TASK_PRIORITY        ( configMAX_PRIORITIES - 2 )
+#define TEST_PRODUCER_PRIORITY        ( configMAX_PRIORITIES - 3 )
+#define TEST_CONSUMER_PRIORITY        ( configMAX_PRIORITIES - 4 )
 
 /*-----------------------------------------------------------*/
 
@@ -111,6 +115,12 @@ static TaskHandle_t xConsumerTaskHandles[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
+ * @brief Handles of the busylooping task for unused cores.
+ */
+static TaskHandle_t xBusyLoopingTaskHandles[ configNUMBER_OF_CORES - testNUMBER_OF_CORES ];
+/*-----------------------------------------------------------*/
+
+/**
  * @brief Start times of each iteration for each core
  */
 static UBaseType_t uxStartTimes[ testNUMBER_OF_CORES ];
@@ -128,6 +138,13 @@ static UBaseType_t uxElapsedCumulative[ testNUMBER_OF_CORES ];
 static EventGroupHandle_t xControlEventGroup;
 static EventGroupHandle_t xSignalEventGroup;
 
+/*-----------------------------------------------------------*/
+
+static void prvBusyLoopingTask( void * pvParameters )
+{
+    ( void ) pvParameters;
+    for(;;);
+}
 /*-----------------------------------------------------------*/
 
 static void prvProducerTask( void * pvParameters )
@@ -280,7 +297,7 @@ testSETUP_FUNCTION_PROTOTYPE( setUp )
                                            "prod",
                                            configMINIMAL_STACK_SIZE * 4,
                                            ( void * ) ( i ),
-                                           configMAX_PRIORITIES - 4,
+                                           TEST_PRODUCER_PRIORITY,
                                            ( 1 << i ),
                                            &xProducerTaskHandles[ i ] );
         #else
@@ -288,7 +305,7 @@ testSETUP_FUNCTION_PROTOTYPE( setUp )
                                 "prod",
                                 configMINIMAL_STACK_SIZE * 4,
                                 ( void * ) ( i ),
-                                configMAX_PRIORITIES - 4,
+                                TEST_PRODUCER_PRIORITY,
                                 &xProducerTaskHandles[ i ] );
         #endif /* if ( testTASK_WITH_AFFINITY == 1 ) */
         TEST_ASSERT_EQUAL_MESSAGE( pdTRUE, xRet, "Creating producer task failed" );
@@ -301,7 +318,7 @@ testSETUP_FUNCTION_PROTOTYPE( setUp )
                                            "con",
                                            configMINIMAL_STACK_SIZE * 4,
                                            ( void * ) ( i ),
-                                           configMAX_PRIORITIES - 3,
+                                           TEST_CONSUMER_PRIORITY,
                                            ( 1 << i ),
                                            &xConsumerTaskHandles[ i ] );
         #else
@@ -309,11 +326,23 @@ testSETUP_FUNCTION_PROTOTYPE( setUp )
                                 "con",
                                 configMINIMAL_STACK_SIZE * 4,
                                 ( void * ) ( i ),
-                                configMAX_PRIORITIES - 3,
+                                TEST_CONSUMER_PRIORITY,
                                 &xConsumerTaskHandles[ i ] );
         #endif /* if ( testTASK_WITH_AFFINITY == 1 ) */
         TEST_ASSERT_EQUAL_MESSAGE( pdTRUE, xRet, "Creating consumer task failed" );
     }
+
+    #if ( testTASK_WITH_AFFINITY == 0 )
+    for( ;i < configNUMBER_OF_CORES; i++ )
+    {
+        xRet = xTaskCreate( prvBusyLoopingTask,
+                            "busy",
+                            configMINIMAL_STACK_SIZE * 4,
+                            ( void * ) ( i ),
+                            TEST_BUSYLOOPING_TASK_PRIORITY,
+                            &xBusyLoopingTaskHandles[ i - testNUMBER_OF_CORES ] );
+    }
+    #endif
 }
 /*-----------------------------------------------------------*/
 
@@ -329,6 +358,13 @@ testTEARDOWN_FUNCTION_PROTOTYPE( tearDown )
         vTaskDelete( xConsumerTaskHandles[ i ] );
         vQueueDelete( xQueueHandles[ i ] );
     }
+
+    #if ( testTASK_WITH_AFFINITY == 0 )
+    for( ;i < configNUMBER_OF_CORES; i++ )
+    {
+        vTaskDelete( &xBusyLoopingTaskHandles[ i - testNUMBER_OF_CORES ] );
+    }
+    #endif
 }
 /*-----------------------------------------------------------*/
 
