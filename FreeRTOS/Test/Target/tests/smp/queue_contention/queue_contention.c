@@ -15,50 +15,52 @@
  *   - For each core
  *      - Create a queue
  *      - Create a producer task that sends data to the queue
- *   - Repeat for portTEST_NUM_SAMPLES iterations
+ *   - Repeat for testNUM_SAMPLES iterations
  *      - Start the producer tasks
- *      - Measure time elapsed for the producer task fill the queue with portTEST_NUM_ITEMS items
+ *      - Measure time elapsed for the producer task fill the queue with testNUM_ITEMS items
  *        without blocking.
  */
 
 /*-----------------------------------------------------------*/
-#if UPSTREAM_BUILD
-    #include  <stdio.h>
-    #include "FreeRTOS.h"
-    #include "task.h"
-    #include "queue.h"
-    #include "semphr.h"
-    #include "unity.h"
+#include  <stdio.h>
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "event_groups.h"
 
-    #ifndef TEST_CONFIG_H
-        #error test_config.h must be included at the end of FreeRTOSConfig.h.
-    #endif
+#ifndef TEST_CONFIG_H
+    #error test_config.h must be included at the end of FreeRTOSConfig.h.
+#endif
 
-    #define portTEST_NUM_SAMPLES    128
-    #define portTEST_NUM_ITEMS      256
+#if ( configTARGET_TEST_USE_CUSTOM_SETTING == 1 )
+    #include "test_setting_config.h"
+#endif
 
-#else /* UPSTREAM_BUILD */
+#include "test_default_setting_config.h"
 
-/* ESP-IDF doesn't support upstream FreeRTOS test builds yet. We include everything manually here. */
-
-    #include "sdkconfig.h"
-    #include  <stdio.h>
-    #include "freertos/FreeRTOS.h"
-    #include "freertos/task.h"
-    #include "freertos/queue.h"
-    #include "freertos/semphr.h"
-    #include "esp_cpu.h"
-    #include "unity.h"
-
-/*
- * Test macros to be defined by each port
- */
-    #define portTEST_GET_TIME()    ( ( UBaseType_t ) esp_cpu_get_cycle_count() )
-    #define portTEST_NUM_SAMPLES    128
-    #define portTEST_NUM_ITEMS      256
 /*-----------------------------------------------------------*/
 
-#endif /* UPSTREAM_BUILD */
+#ifndef testNUMBER_OF_CORES
+    #define testNUMBER_OF_CORES    ( configNUMBER_OF_CORES )
+#endif
+
+#ifndef testGET_TIME_FUNCTION
+    #error testGET_TIME_FUNCTION must be defined to run the test
+#endif
+
+#ifndef testTASK_WITH_AFFINITY
+    #define testTASK_WITH_AFFINITY    ( 1 )
+#endif
+
+#define testNUM_SAMPLES               ( 128U )
+#define testNUM_ITEMS                 ( 256U )
+
+#define TEST_START_BIT                ( 1 << ( configNUMBER_OF_CORES ) )
+#define TEST_END_BIT                  ( 1 << ( configNUMBER_OF_CORES + 1 ) )
+
+#define TEST_PRODUCER_PRIORITY        ( configMAX_PRIORITIES - 2 )
+
+/*-----------------------------------------------------------*/
 
 #if ( configNUMBER_OF_CORES < 2 )
     #error This test is for FreeRTOS SMP and therefore, requires at least 2 cores.
@@ -68,13 +70,6 @@
     #error configRUN_MULTIPLE_PRIORITIES must be set to 1 for this test.
 #endif /* if ( configRUN_MULTIPLE_PRIORITIES != 1 ) */
 
-#ifndef portTEST_NUM_SAMPLES
-    #error portTEST_NUM_SAMPLES must be defined indicating the number of samples
-#endif
-
-#ifndef portTEST_GET_TIME
-    #error portTEST_GET_TIME must be defined in order to get current time
-#endif
 /*-----------------------------------------------------------*/
 
 /**
@@ -92,25 +87,26 @@ static void prvProducerTask( void * pvParameters );
 /**
  * @brief Handles of the queues accessed by each core
  */
-static QueueHandle_t xQueueHandles[ configNUMBER_OF_CORES ];
+static QueueHandle_t xQueueHandles[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
  * @brief Handles of the producer tasks created for each core
  */
-static TaskHandle_t xProducerTaskHandles[ configNUMBER_OF_CORES ];
+static TaskHandle_t xProducerTaskHandles[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
  * @brief Cumulative elapsed time of all iterations for each core
  */
-static UBaseType_t uxElapsedCumulative[ configNUMBER_OF_CORES ];
+static UBaseType_t uxElapsedCumulative[ testNUMBER_OF_CORES ];
 /*-----------------------------------------------------------*/
 
 /**
- * @brief Counting semaphore to indicate completion of an iteration
+ * @brief Event group to control and wait signal from consumer tasks
  */
-static SemaphoreHandle_t xIterDoneSem;
+static EventGroupHandle_t xControlEventGroup;
+static EventGroupHandle_t xSignalEventGroup;
 /*-----------------------------------------------------------*/
 
 static void prvProducerTask( void * pvParameters )
@@ -119,29 +115,46 @@ static void prvProducerTask( void * pvParameters )
     int iItems;
     UBaseType_t uxTempTime;
 
-    for( iSamples = 0; iSamples < portTEST_NUM_SAMPLES; iSamples++ )
+    BaseType_t testIndex = ( BaseType_t ) ( pvParameters );
+
+    for( iSamples = 0; iSamples < testNUM_SAMPLES; iSamples++ )
     {
-        /* Wait to be started by main task */
-        ulTaskNotifyTake( pdTRUE, portMAX_DELAY );
+        /* Notify main task that iteration is ready */
+        xEventGroupSetBits( xSignalEventGroup, ( 1U << ( testIndex ) ) );
+
+        /* Wait to be started by consumer task */
+        EventBits_t bits = xEventGroupWaitBits(
+            xControlEventGroup, /* Event group handle */
+            TEST_START_BIT,     /* Bits to wait for */
+            pdFALSE,            /* Clear bits before returning */
+            pdTRUE,             /* Wait for all bits */
+            portMAX_DELAY );    /* Wait indefinitely */
 
         /* Record the start time for this sample */
-        uxTempTime = portTEST_GET_TIME();
+        uxTempTime = testGET_TIME_FUNCTION();
 
-        for( iItems = 0; iItems < portTEST_NUM_ITEMS; iItems++ )
+        for( iItems = 0; iItems < testNUM_ITEMS; iItems++ )
         {
             int Temp = iItems;
-            TEST_ASSERT_EQUAL_MESSAGE( pdTRUE, xQueueSend( xQueueHandles[ portGET_CORE_ID() ], &Temp, 0 ), "xQueueSend() failed" );
+            TEST_ASSERT_EQUAL_MESSAGE( pdTRUE, xQueueSend( xQueueHandles[ testIndex ], &Temp, 0 ), "xQueueSend() failed" );
         }
 
         /* Record end time for this iteration and add it to the cumulative count */
-        uxElapsedCumulative[ portGET_CORE_ID() ] += portTEST_GET_TIME() - uxTempTime;
+        uxElapsedCumulative[ testIndex ] += testGET_TIME_FUNCTION() - uxTempTime;
 
         /* Reset queue for next iteration */
-        xQueueReset( xQueueHandles[ portGET_CORE_ID() ] );
-
+        xQueueReset( xQueueHandles[ testIndex ] );
 
         /* Notify main task that iteration is complete */
-        xSemaphoreGive( ( SemaphoreHandle_t ) pvParameters );
+        xEventGroupSetBits( xSignalEventGroup, ( 1U << ( testIndex ) ) );
+
+        /* Wait to be started by consumer task */
+        bits = xEventGroupWaitBits(
+            xControlEventGroup, /* Event group handle */
+            TEST_END_BIT,       /* Bits to wait for */
+            pdFALSE,            /* Clear bits before returning */
+            pdTRUE,             /* Wait for all bits */
+            portMAX_DELAY );    /* Wait indefinitely */
     }
 
     /* Wait to be deleted */
@@ -153,86 +166,95 @@ static void Test_QueueContention( void )
 {
     int iCore;
     int iIter;
+    EventBits_t xEventBits = 0U;
+    int i;
 
-    /* Run test for portTEST_NUM_SAMPLES number of iterations */
-    for( iIter = 0; iIter < portTEST_NUM_SAMPLES; iIter++ )
+    for( i = 0; i < testNUMBER_OF_CORES; i++ )
     {
-        for( iCore = 0; iCore < configNUMBER_OF_CORES; iCore++ )
-        {
-            /* Start the producer task. Start them on the other cores first so
-             * that we don't get preempted immediately. */
-            if( iCore != portGET_CORE_ID() )
-            {
-                xTaskNotifyGive( xProducerTaskHandles[ iCore ] );
-            }
-        }
-        /* now start the producer task of this core */
-        xTaskNotifyGive( xProducerTaskHandles[ portGET_CORE_ID() ] );
+        xEventBits = xEventBits | ( 1 << i );
+    }
+
+    /* Run test for testNUM_SAMPLES number of iterations */
+    for( iIter = 0; iIter < testNUM_SAMPLES; iIter++ )
+    {
+        /* Wait until all cores have ready for the tests. */
+        ( void ) xEventGroupWaitBits( xSignalEventGroup,
+                                      xEventBits,
+                                      pdTRUE,
+                                      pdTRUE,
+                                      portMAX_DELAY );
+        xEventGroupClearBits( xControlEventGroup, TEST_END_BIT );
+        xEventGroupSetBits( xControlEventGroup, TEST_START_BIT );
 
         /* Wait until both cores have completed this iteration */
-        for( iCore = 0; iCore < configNUMBER_OF_CORES; iCore++ )
-        {
-            xSemaphoreTake( xIterDoneSem, portMAX_DELAY );
-        }
+        ( void ) xEventGroupWaitBits( xSignalEventGroup,
+                                      xEventBits,
+                                      pdTRUE,
+                                      pdTRUE,
+                                      portMAX_DELAY );
+        xEventGroupClearBits( xControlEventGroup, TEST_START_BIT );
+        xEventGroupSetBits( xControlEventGroup, TEST_END_BIT );
     }
 
     /* Print average results */
-    printf("Time taken to fill %d items, averaged over %d samples\n", portTEST_NUM_ITEMS, portTEST_NUM_SAMPLES);
-    for( iCore = 0; iCore < configNUMBER_OF_CORES; iCore++ )
+    printf( "Time taken to fill %d items, averaged over %d samples\n", testNUM_ITEMS, testNUM_SAMPLES );
+
+    for( iCore = 0; iCore < testNUMBER_OF_CORES; iCore++ )
     {
-        printf("Core %d: %d\n", iCore, ( uxElapsedCumulative[ iCore ] / portTEST_NUM_SAMPLES ) );
+        printf( "Core %d: %d\n", iCore, ( uxElapsedCumulative[ iCore ] / testNUM_SAMPLES ) );
     }
 }
 /*-----------------------------------------------------------*/
 
 /* Runs before every test, put init calls here. */
-#if UPSTREAM_BUILD
-    void setUp( void )
-#else
-    static void setup_idf( void )
-#endif /* UPSTREAM_BUILD */
+testSETUP_FUNCTION_PROTOTYPE( setUp )
 {
     int i;
 
-    /* Create counting semaphore to indicate iteration completion */
-    xIterDoneSem = xSemaphoreCreateCounting( configNUMBER_OF_CORES, 0 );
-    TEST_ASSERT_NOT_NULL_MESSAGE( xIterDoneSem, "Failed to create counting semaphore");
+    /* Create event group. */
+    xControlEventGroup = xEventGroupCreate();
+    TEST_ASSERT_NOT_NULL_MESSAGE( xControlEventGroup, "Failed to create event group" );
+
+    xSignalEventGroup = xEventGroupCreate();
+    TEST_ASSERT_NOT_NULL_MESSAGE( xSignalEventGroup, "Failed to create event group" );
 
     /* Create separate queues and producer tasks for each core */
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    for( i = 0; i < testNUMBER_OF_CORES; i++ )
     {
         BaseType_t xRet;
 
         /* Separate queues for each core */
-        xQueueHandles[ i ] = xQueueCreate( portTEST_NUM_ITEMS, sizeof(int) );
+        xQueueHandles[ i ] = xQueueCreate( testNUM_ITEMS, sizeof( int ) );
         TEST_ASSERT_NOT_NULL_MESSAGE( xQueueHandles[ i ], "Queue creation failed" );
 
         /* A producer task for each core to send to its queue */
-        xRet = xTaskCreateAffinitySet( prvProducerTask,
-                                       "prod",
-                                       configMINIMAL_STACK_SIZE * 4,
-                                       ( void * ) xIterDoneSem,
-                                       uxTaskPriorityGet( NULL ) + 1,
-                                       ( 1 << i ),
-                                       &xProducerTaskHandles[ i ] );
+        #if ( testTASK_WITH_AFFINITY == 1 )
+            xRet = xTaskCreateAffinitySet( prvProducerTask,
+                                           "prod",
+                                           configMINIMAL_STACK_SIZE * 4,
+                                           ( void * ) i,
+                                           TEST_PRODUCER_PRIORITY,
+                                           ( 1 << i ),
+                                           &xProducerTaskHandles[ i ] );
+        #else
+            xRet = xTaskCreate( prvProducerTask,
+                                "prod",
+                                configMINIMAL_STACK_SIZE * 4,
+                                ( void * ) ( i ),
+                                TEST_PRODUCER_PRIORITY,
+                                &xProducerTaskHandles[ i ] );
+        #endif /* if ( testTASK_WITH_AFFINITY == 1 ) */
         TEST_ASSERT_EQUAL_MESSAGE( pdTRUE, xRet, "Creating producer task failed" );
     }
 }
 /*-----------------------------------------------------------*/
 
-/* Runs after every test, put clean-up calls here. */
-#if UPSTREAM_BUILD
-    void tearDown( void )
-#else
-    static void teardown_idf( void )
-#endif /* UPSTREAM_BUILD */
+testTEARDOWN_FUNCTION_PROTOTYPE( tearDown )
 {
     int i;
 
-    vSemaphoreDelete( xIterDoneSem );
-
     /* Delete tasks and queues */
-    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    for( i = 0; i < testNUMBER_OF_CORES; i++ )
     {
         vTaskDelete( xProducerTaskHandles[ i ] );
         vQueueDelete( xQueueHandles[ i ] );
@@ -240,28 +262,12 @@ static void Test_QueueContention( void )
 }
 /*-----------------------------------------------------------*/
 
-#if UPSTREAM_BUILD
+testENTRY_FUNCTION_PROTOTYPE( vRunQueueContention )
+{
+    UNITY_BEGIN();
 
-    void vRunQueueContention( void )
-    {
-        UNITY_BEGIN();
+    RUN_TEST( Test_QueueContention );
 
-        RUN_TEST( Test_QueueContention );
-
-        UNITY_END();
-    }
+    UNITY_END();
+}
 /*-----------------------------------------------------------*/
-
-#else /* UPSTREAM_BUILD */
-
-/* ESP-IDF doesn't support upstream FreeRTOS test builds yet. Use ESP-IDF specific test registration macro. */
-
-    TEST_CASE( "Test Performance: Queue Contention", "[freertos]" )
-    {
-        setup_idf();
-        Test_QueueContention();
-        teardown_idf();
-    }
-/*-----------------------------------------------------------*/
-
-#endif /* UPSTREAM_BUILD */

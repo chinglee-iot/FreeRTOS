@@ -63,18 +63,18 @@
 #endif
 
 #ifndef testTASK_WITH_AFFINITY
-    #define testTASK_WITH_AFFINITY    ( 0 )
+    #define testTASK_WITH_AFFINITY        ( 1 )
 #endif
 
-#define testNUM_SAMPLES               ( 64U )
-#define testNUM_ITEMS                 ( 64U )
+#define testNUM_SAMPLES                   ( 128U )
+#define testNUM_ITEMS                     ( 256U )
 
-#define TEST_START_BIT                ( 1 << ( configNUMBER_OF_CORES ) )
-#define TEST_END_BIT                  ( 1 << ( configNUMBER_OF_CORES + 1 ) )
+#define TEST_START_BIT                    ( 1 << ( configNUMBER_OF_CORES ) )
+#define TEST_END_BIT                      ( 1 << ( configNUMBER_OF_CORES + 1 ) )
 
-#define TEST_BUSYLOOPING_TASK_PRIORITY        ( configMAX_PRIORITIES - 2 )
-#define TEST_PRODUCER_PRIORITY        ( configMAX_PRIORITIES - 3 )
-#define TEST_CONSUMER_PRIORITY        ( configMAX_PRIORITIES - 4 )
+#define TEST_BUSYLOOPING_TASK_PRIORITY    ( configMAX_PRIORITIES - 2 )
+#define TEST_PRODUCER_PRIORITY            ( configMAX_PRIORITIES - 4 )
+#define TEST_CONSUMER_PRIORITY            ( configMAX_PRIORITIES - 3 )
 
 /*-----------------------------------------------------------*/
 
@@ -143,7 +143,10 @@ static EventGroupHandle_t xSignalEventGroup;
 static void prvBusyLoopingTask( void * pvParameters )
 {
     ( void ) pvParameters;
-    for(;;);
+
+    for( ; ; )
+    {
+    }
 }
 /*-----------------------------------------------------------*/
 
@@ -266,7 +269,7 @@ static void Test_LockContentionEndToEnd( void )
 
     for( iCore = 0; iCore < testNUMBER_OF_CORES; iCore++ )
     {
-        printf( "Core %d: %d\n", iCore, ( int )( uxElapsedCumulative[ iCore ] / testNUM_SAMPLES ) );
+        printf( "Core %d: %d\n", iCore, ( int ) ( uxElapsedCumulative[ iCore ] / testNUM_SAMPLES ) );
     }
 }
 /*-----------------------------------------------------------*/
@@ -333,15 +336,15 @@ testSETUP_FUNCTION_PROTOTYPE( setUp )
     }
 
     #if ( testTASK_WITH_AFFINITY == 0 )
-    for( ;i < configNUMBER_OF_CORES; i++ )
-    {
-        xRet = xTaskCreate( prvBusyLoopingTask,
-                            "busy",
-                            configMINIMAL_STACK_SIZE * 4,
-                            ( void * ) ( i ),
-                            TEST_BUSYLOOPING_TASK_PRIORITY,
-                            &xBusyLoopingTaskHandles[ i - testNUMBER_OF_CORES ] );
-    }
+        for( ; i < configNUMBER_OF_CORES; i++ )
+        {
+            xRet = xTaskCreate( prvBusyLoopingTask,
+                                "busy",
+                                configMINIMAL_STACK_SIZE * 4,
+                                ( void * ) ( i ),
+                                TEST_BUSYLOOPING_TASK_PRIORITY,
+                                &xBusyLoopingTaskHandles[ i - testNUMBER_OF_CORES ] );
+        }
     #endif
 }
 /*-----------------------------------------------------------*/
@@ -360,10 +363,10 @@ testTEARDOWN_FUNCTION_PROTOTYPE( tearDown )
     }
 
     #if ( testTASK_WITH_AFFINITY == 0 )
-    for( ;i < configNUMBER_OF_CORES; i++ )
-    {
-        vTaskDelete( &xBusyLoopingTaskHandles[ i - testNUMBER_OF_CORES ] );
-    }
+        for( ; i < configNUMBER_OF_CORES; i++ )
+        {
+            vTaskDelete( &xBusyLoopingTaskHandles[ i - testNUMBER_OF_CORES ] );
+        }
     #endif
 }
 /*-----------------------------------------------------------*/

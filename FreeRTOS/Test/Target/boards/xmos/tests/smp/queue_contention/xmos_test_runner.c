@@ -62,6 +62,6 @@ void vRunTest( void )
                  "testRunner",
                  configMINIMAL_STACK_SIZE,
                  NULL,
-                 configMAX_PRIORITIES - 2,
+                 configMAX_PRIORITIES - 1,
                  NULL );
 }
