@@ -1110,7 +1110,15 @@ static void prvInterruptTriggerLevelTest( void * pvParameters )
                      * buffer before this task called xStreamBufferReceive(), but
                      * if that is the case then xBytesReceived will only every be
                      * 0 as the interrupt will only have executed once. */
-                    if( xBytesReceived != 1 )
+                    #if( portUSING_GRANULAR_LOCKS == 0 )
+                        if( xBytesReceived != 1 )
+                    #else
+                        /* Application tick and tick increment is not called in the same
+                         * critical section when granular lock enabled. It is possible
+                         * that the application is unblocked first than the tick function
+                         * is called. */
+                        if( ( xBytesReceived != 1 ) && ( xReadBlockTime - xBytesReceived ) != 1 )
+                    #endif
                     {
                         xErrorDetected = pdTRUE;
                     }
@@ -1130,7 +1138,15 @@ static void prvInterruptTriggerLevelTest( void * pvParameters )
                  * than one in that time unless this task has too low a priority. */
                 if( xBytesReceived < xTriggerLevel )
                 {
-                    if( xBytesReceived != 1 )
+                    #if( portUSING_GRANULAR_LOCKS == 0 )
+                        if( xBytesReceived != 1 )
+                    #else
+                        /* Application tick and tick increment is not called in the same
+                         * critical section when granular lock enabled. It is possible
+                         * that the application is unblocked first than the tick function
+                         * is called. */
+                        if( ( xBytesReceived != 1 ) && ( xTriggerLevel - xBytesReceived ) != 1 )
+                    #endif
                     {
                         xErrorDetected = pdTRUE;
                     }
@@ -1152,7 +1168,15 @@ static void prvInterruptTriggerLevelTest( void * pvParameters )
                  * unless this task is running a too low a priority. */
                 if( xBytesReceived < xReadBlockTime )
                 {
-                    if( xBytesReceived != 1 )
+                    #if( portUSING_GRANULAR_LOCKS == 0 )
+                        if( xBytesReceived != 1 )
+                    #else
+                        /* Application tick and tick increment is not called in the same
+                         * critical section when granular lock enabled. It is possible
+                         * that the application is unblocked first than the tick function
+                         * is called. */
+                        if( ( xBytesReceived != 1 ) && ( ( xReadBlockTime - xBytesReceived ) != 1 )  )
+                    #endif
                     {
                         xErrorDetected = pdTRUE;
                     }

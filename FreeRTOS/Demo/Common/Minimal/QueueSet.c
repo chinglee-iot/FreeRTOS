@@ -95,6 +95,10 @@
  * testing of limits easier (don't have to deal with wrapping values). */
     #define queuesetIGNORED_BOUNDARY          ( queuesetALLOWABLE_RX_DEVIATION * 2 )
 
+    #ifndef queuesetTASK_STACK_SIZE
+        #define queuesetTASK_STACK_SIZE configMINIMAL_STACK_SIZE
+    #endif
+
     typedef enum
     {
         eEqualPriority = 0, /* Tx and Rx tasks have the same priority. */
@@ -210,11 +214,11 @@
     void vStartQueueSetTasks( void )
     {
         /* Create the tasks. */
-        xTaskCreate( prvQueueSetSendingTask, "SetTx", configMINIMAL_STACK_SIZE, NULL, queuesetMEDIUM_PRIORITY, &xQueueSetSendingTask );
+        xTaskCreate( prvQueueSetSendingTask, "SetTx", queuesetTASK_STACK_SIZE, NULL, queuesetMEDIUM_PRIORITY, &xQueueSetSendingTask );
 
         if( xQueueSetSendingTask != NULL )
         {
-            xTaskCreate( prvQueueSetReceivingTask, "SetRx", configMINIMAL_STACK_SIZE, ( void * ) xQueueSetSendingTask, queuesetMEDIUM_PRIORITY, &xQueueSetReceivingTask );
+            xTaskCreate( prvQueueSetReceivingTask, "SetRx", queuesetTASK_STACK_SIZE, ( void * ) xQueueSetSendingTask, queuesetMEDIUM_PRIORITY, &xQueueSetReceivingTask );
 
             /* It is important that the sending task does not attempt to write to a
              * queue before the queue has been created.  It is therefore placed into
@@ -598,7 +602,19 @@
             }
 
             /* Ensure the value received was the value expected. */
-            prvCheckReceivedValue( ulReceived );
+            #if ( portUSING_GRANULAR_LOCKS == 1 )
+            {
+                UBaseType_t uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+                {
+                    prvCheckReceivedValue( ulReceived );
+                }
+                taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
+            }
+            #else
+            {
+                prvCheckReceivedValue( ulReceived );
+            }
+            #endif
         }
     }
 /*-----------------------------------------------------------*/

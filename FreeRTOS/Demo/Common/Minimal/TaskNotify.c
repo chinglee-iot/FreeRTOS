@@ -671,7 +671,20 @@ void xNotifyTaskFromISR( void )
                     break;
             }
 
-            ulTimerNotificationsSent++;
+            #if ( configNUMBER_OF_CORES > 1 )
+            {
+                UBaseType_t uxSavedInterruptStatus;
+                uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
+                {
+                    ulTimerNotificationsSent++;
+                }
+                taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
+            }
+            #else
+            {
+                ulTimerNotificationsSent++;
+            }
+            #endif
         }
     }
 }
