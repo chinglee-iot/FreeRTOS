@@ -80,6 +80,7 @@
 #define recmuMAX_COUNT                                   ( 10 )
 
 /* Misc. */
+#define recmuQUICK_CHECK_DELAY                           ( pdMS_TO_TICKS( 2 ) )
 #define recmuSHORT_DELAY                                 ( pdMS_TO_TICKS( 20 ) )
 #define recmuNO_DELAY                                    ( ( TickType_t ) 0 )
 #define recmu15ms_DELAY                                  ( pdMS_TO_TICKS( 15 ) )
@@ -333,6 +334,14 @@ static void prvRecursiveMutexPollingTask( void * pvParameters )
 
                 #if ( INCLUDE_eTaskGetState == 1 )
                 {
+                    #if ( portUSING_GRANULAR_LOCKS == 1 )
+                    {
+                        /* When using granular lock, priority inheritance and higher priority
+                         * blocked is not completed in the same critical section. Adding a
+                         * short delay here to ensure higher priority task blocks itself. */
+                        vTaskDelay( recmuQUICK_CHECK_DELAY );
+                    }
+                    #endif
                     configASSERT( eTaskGetState( xControllingTaskHandle ) == eBlocked );
                     configASSERT( eTaskGetState( xBlockingTaskHandle ) == eBlocked );
                 }

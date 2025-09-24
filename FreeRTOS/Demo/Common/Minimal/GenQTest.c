@@ -471,6 +471,15 @@ static void prvSendFrontAndBackTest( void * pvParameters )
          * mutex, and block when it finds it cannot obtain it. */
         vTaskResume( xHighPriorityMutexTask );
 
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
+        {
+            /* When using granular lock, priority inheritance and higher priority
+             * blocked is not completed in the same critical section. Adding a
+             * short delay here to ensure higher priority task blocks itself. */
+            vTaskDelay( genqSHORT_BLOCK );
+        }
+        #endif
+
         /* This task should now have inherited the priority of the high priority
          * task as by now the high priority task will have attempted to obtain the
          * mutex. */
@@ -483,6 +492,15 @@ static void prvSendFrontAndBackTest( void * pvParameters )
          * the mutex and enter the Blocked state - it won't run yet though as this
          * task has inherited a priority above it. */
         vTaskResume( xSecondMediumPriorityMutexTask );
+
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
+        {
+            /* When using granular lock, priority inheritance and higher priority
+             * blocked is not completed in the same critical section. Adding a
+             * short delay here to ensure higher priority task blocks itself. */
+            vTaskDelay( genqSHORT_BLOCK );
+        }
+        #endif
 
         /* This task should still have the priority of the high priority task as
          * that had already been inherited as is the highest priority of the three
@@ -601,6 +619,15 @@ static void prvSendFrontAndBackTest( void * pvParameters )
             xErrorDetected = pdTRUE;
         }
 
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
+        {
+            /* When using granular lock, priority inheritance and higher priority
+             * blocked is not completed in the same critical section. Adding a
+             * short delay here to ensure higher priority task blocks itself. */
+            vTaskDelay( genqSHORT_BLOCK );
+        }
+        #endif
+
         /* This time, when the high priority task has its delay aborted and it
          * fails to obtain the mutex this task will immediately have its priority
          * lowered down to that of the highest priority task waiting on the mutex,
@@ -680,6 +707,13 @@ static void prvTakeTwoMutexesReturnInDifferentOrder( SemaphoreHandle_t xMutex,
      * suspended (as it would have done in versions up to V7.5.3). */
     #if ( INCLUDE_eTaskGetState == 1 )
     {
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
+        {
+            /* When using granular lock, priority inheritance and higher priority
+             * blocked is not completed in the same critical section. */
+            vTaskDelay( genqSHORT_BLOCK );
+        }
+        #endif
         configASSERT( eTaskGetState( xHighPriorityMutexTask ) == eBlocked );
     }
     #endif /* INCLUDE_eTaskGetState */
@@ -813,6 +847,13 @@ static void prvTakeTwoMutexesReturnInSameOrder( SemaphoreHandle_t xMutex,
      * suspended (as it would have done in versions up to V7.5.3). */
     #if ( INCLUDE_eTaskGetState == 1 )
     {
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
+        {
+            /* When using granular lock, priority inheritance and higher priority
+             * blocked is not completed in the same critical section. */
+            vTaskDelay( genqSHORT_BLOCK );
+        }
+        #endif
         configASSERT( eTaskGetState( xHighPriorityMutexTask ) == eBlocked );
     }
     #endif /* INCLUDE_eTaskGetState */

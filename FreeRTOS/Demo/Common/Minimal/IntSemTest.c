@@ -45,6 +45,8 @@
 /* The priorities of the test tasks. */
 #define intsemMASTER_PRIORITY                   ( tskIDLE_PRIORITY )
 #define intsemSLAVE_PRIORITY                    ( tskIDLE_PRIORITY + 1 )
+#define intsemSHORT_BLOCK                       ( pdMS_TO_TICKS( 2 ) )
+
 
 /* The rate at which the tick hook will give the mutex. */
 #define intsemINTERRUPT_MUTEX_GIVE_PERIOD_MS    ( 100 )
@@ -201,6 +203,14 @@ static void prvTakeAndGiveInTheSameOrder( void )
      * blocked on the semaphore. */
     #if ( INCLUDE_eTaskGetState == 1 )
     {
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
+        {
+            /* When using granular lock, priority inheritance and higher priority
+             * blocked is not completed in the same critical section. Adding a
+             * short delay here to ensure higher priority task blocks itself. */
+            vTaskDelay( intsemSHORT_BLOCK );
+        }
+        #endif
         configASSERT( eTaskGetState( xSlaveHandle ) == eBlocked );
     }
     #endif /* INCLUDE_eTaskGetState */
@@ -303,6 +313,14 @@ static void prvTakeAndGiveInTheOppositeOrder( void )
      * blocked on the semaphore. */
     #if ( INCLUDE_eTaskGetState == 1 )
     {
+        #if ( portUSING_GRANULAR_LOCKS == 1 )
+        {
+            /* When using granular lock, priority inheritance and higher priority
+             * blocked is not completed in the same critical section. Adding a
+             * short delay here to ensure higher priority task blocks itself. */
+            vTaskDelay( intsemSHORT_BLOCK );
+        }
+        #endif
         configASSERT( eTaskGetState( xSlaveHandle ) == eBlocked );
     }
     #endif /* INCLUDE_eTaskGetState */

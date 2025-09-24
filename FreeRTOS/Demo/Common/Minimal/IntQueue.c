@@ -129,15 +129,26 @@
 
 /* Receive a value from the normally empty queue.  This is called from within
  * an interrupt. */
-#define timerNORMALLY_EMPTY_RX()                                                                         \
-    if( xQueueReceiveFromISR( xNormallyEmptyQueue, &uxRxedValue, &xHigherPriorityTaskWoken ) != pdPASS ) \
-    {                                                                                                    \
-        prvQueueAccessLogError( __LINE__ );                                                              \
-    }                                                                                                    \
-    else                                                                                                 \
+#if ( portUSING_GRANULAR_LOCKS == 1 )
+    /* Queue doens't share kernel critical section when granular lock feature is enabled.
+     * Therefore, it is possible that a task can contend with the ISR to receive from
+     * the queue at the same time. */
+    #define timerNORMALLY_EMPTY_RX()                                                                         \
+    if( xQueueReceiveFromISR( xNormallyEmptyQueue, &uxRxedValue, &xHigherPriorityTaskWoken ) == pdPASS ) \
     {                                                                                                    \
         prvRecordValue_NormallyEmpty( uxRxedValue, intqSECOND_INTERRUPT );                               \
     }
+#else
+    #define timerNORMALLY_EMPTY_RX()                                                                         \
+        if( xQueueReceiveFromISR( xNormallyEmptyQueue, &uxRxedValue, &xHigherPriorityTaskWoken ) != pdPASS ) \
+        {                                                                                                    \
+            prvQueueAccessLogError( __LINE__ );                                                              \
+        }                                                                                                    \
+        else                                                                                                 \
+        {                                                                                                    \
+            prvRecordValue_NormallyEmpty( uxRxedValue, intqSECOND_INTERRUPT );                               \
+        }
+#endif
 
 /* Receive a value from the normally full queue.  This is called from within
  * an interrupt. */
@@ -407,12 +418,19 @@ static void prvLowerPriorityNormallyEmptyTask( void * pvParameters )
     {
         if( xQueueReceive( xNormallyEmptyQueue, &uxRxed, intqONE_TICK_DELAY ) != errQUEUE_EMPTY )
         {
-            /* A value should only be obtained when the high priority task is
-             * suspended. */
-            if( eTaskGetState( xHighPriorityNormallyEmptyTask1 ) != eSuspended )
+            #if ( portUSING_GRANULAR_LOCKS == 0 )
             {
-                prvQueueAccessLogError( __LINE__ );
+                /* FIXME : Preemption disable won't check for run status with granular
+                 * locks. lower priority waiting task can enter the critical section
+                 * without yield for higher priority task waiting for the queue. */
+                /* A value should only be obtained when the high priority task is
+                 * suspended. */
+                if( eTaskGetState( xHighPriorityNormallyEmptyTask1 ) != eSuspended )
+                {
+                    prvQueueAccessLogError( __LINE__ );
+                }
             }
+            #endif
 
             prvRecordValue_NormallyEmpty( uxRxed, intqLOW_PRIORITY_TASK );
 
@@ -608,11 +626,18 @@ static void prvLowerPriorityNormallyFullTask( void * pvParameters )
     {
         if( xQueueSend( xNormallyFullQueue, &uxTxed, intqONE_TICK_DELAY ) != errQUEUE_FULL )
         {
-            /* Should only succeed when the higher priority task is suspended */
-            if( eTaskGetState( xHighPriorityNormallyFullTask1 ) != eSuspended )
+            #if ( portUSING_GRANULAR_LOCKS == 0 )
             {
-                prvQueueAccessLogError( __LINE__ );
+                /* FIXME : Preemption disable won't check for run status with granular
+                 * locks. lower priority waiting task can enter the critical section
+                 * without yield for higher priority task waiting for the queue. */
+                /* Should only succeed when the higher priority task is suspended */
+                if( eTaskGetState( xHighPriorityNormallyFullTask1 ) != eSuspended )
+                {
+                    prvQueueAccessLogError( __LINE__ );
+                }
             }
+            #endif
 
             vTaskResume( xHighPriorityNormallyFullTask1 );
             uxLowPriorityLoops2++;
