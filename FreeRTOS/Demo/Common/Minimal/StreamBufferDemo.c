@@ -1009,16 +1009,20 @@ void vPeriodicStreamBufferProcessing( void )
 {
     static size_t xNextChar = 0;
     BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    UBaseType_t uxSavedInterruptStatus;
 
     /* Called from the tick interrupt hook.  If the global stream buffer
      * variable is not NULL then the prvInterruptTriggerTest() task expects a byte
      * to be sent to the stream buffer on each tick interrupt. */
+    uxSavedInterruptStatus = taskENTER_CRITICAL_FROM_ISR();
     if( xInterruptStreamBuffer != NULL )
     {
         /* One character from the pcDataSentFromInterrupt string is sent on each
          * interrupt.  The task blocked on the stream buffer should not be
          * unblocked until the defined trigger level is hit. */
         xStreamBufferSendFromISR( xInterruptStreamBuffer, ( const void * ) &( pcDataSentFromInterrupt[ xNextChar ] ), sizeof( char ), &xHigherPriorityTaskWoken );
+
+        taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
 
         if( xNextChar < strlen( pcDataSentFromInterrupt ) )
         {
@@ -1027,6 +1031,7 @@ void vPeriodicStreamBufferProcessing( void )
     }
     else
     {
+        taskEXIT_CRITICAL_FROM_ISR( uxSavedInterruptStatus );
         /* Start at the beginning of the string being sent again. */
         xNextChar = 0;
     }

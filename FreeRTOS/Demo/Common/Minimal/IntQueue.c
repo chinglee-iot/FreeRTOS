@@ -418,19 +418,12 @@ static void prvLowerPriorityNormallyEmptyTask( void * pvParameters )
     {
         if( xQueueReceive( xNormallyEmptyQueue, &uxRxed, intqONE_TICK_DELAY ) != errQUEUE_EMPTY )
         {
-            #if ( portUSING_GRANULAR_LOCKS == 0 )
+            /* A value should only be obtained when the high priority task is
+             * suspended. */
+            if( eTaskGetState( xHighPriorityNormallyEmptyTask1 ) != eSuspended )
             {
-                /* FIXME : Preemption disable won't check for run status with granular
-                 * locks. lower priority waiting task can enter the critical section
-                 * without yield for higher priority task waiting for the queue. */
-                /* A value should only be obtained when the high priority task is
-                 * suspended. */
-                if( eTaskGetState( xHighPriorityNormallyEmptyTask1 ) != eSuspended )
-                {
-                    prvQueueAccessLogError( __LINE__ );
-                }
+                prvQueueAccessLogError( __LINE__ );
             }
-            #endif
 
             prvRecordValue_NormallyEmpty( uxRxed, intqLOW_PRIORITY_TASK );
 
@@ -626,18 +619,11 @@ static void prvLowerPriorityNormallyFullTask( void * pvParameters )
     {
         if( xQueueSend( xNormallyFullQueue, &uxTxed, intqONE_TICK_DELAY ) != errQUEUE_FULL )
         {
-            #if ( portUSING_GRANULAR_LOCKS == 0 )
+            /* Should only succeed when the higher priority task is suspended */
+            if( eTaskGetState( xHighPriorityNormallyFullTask1 ) != eSuspended )
             {
-                /* FIXME : Preemption disable won't check for run status with granular
-                 * locks. lower priority waiting task can enter the critical section
-                 * without yield for higher priority task waiting for the queue. */
-                /* Should only succeed when the higher priority task is suspended */
-                if( eTaskGetState( xHighPriorityNormallyFullTask1 ) != eSuspended )
-                {
-                    prvQueueAccessLogError( __LINE__ );
-                }
+                prvQueueAccessLogError( __LINE__ );
             }
-            #endif
 
             vTaskResume( xHighPriorityNormallyFullTask1 );
             uxLowPriorityLoops2++;
