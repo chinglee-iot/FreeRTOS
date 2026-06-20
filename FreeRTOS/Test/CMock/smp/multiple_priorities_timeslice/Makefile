@@ -4,6 +4,7 @@
 # Do not move this line below the include
 MAKEFILE_ABSPATH    :=  $(abspath $(lastword $(MAKEFILE_LIST)))
 include ../../makefile.in
+include ../smp.in
 
 # PROJECT_SRC lists the .c files under test
 PROJECT_SRC         :=  tasks.c

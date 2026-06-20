@@ -1,0 +1,4 @@
+
+# Add print more information to locate test case failure
+CFLAGS  += -DUNITY_INCLUDE_PRINT_FORMATTED=1
+

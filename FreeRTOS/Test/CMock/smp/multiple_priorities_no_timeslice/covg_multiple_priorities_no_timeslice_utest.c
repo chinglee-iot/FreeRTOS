@@ -317,7 +317,6 @@ void test_coverage_vTaskPreemptionEnable_null_handle( void )
 
     /* Expectations. */
     vFakePortEnterCriticalSection_Expect();
-    vFakePortGetCoreID_ExpectAndReturn( 0 );
     ulFakePortSetInterruptMask_ExpectAndReturn( uxInterruptMask );
     vFakePortGetCoreID_ExpectAndReturn( 0 );
     vFakePortClearInterruptMask_Expect( uxInterruptMask );
@@ -412,6 +411,9 @@ void test_coverage_vTaskPreemptionEnable_task_running( void )
     vFakePortGetCoreID_StubWithCallback( NULL );
 
     /* Expectations. */
+    vFakePortEnterCriticalSection_Expect();
+    vFakePortExitCriticalSection_Expect();
+
     vFakePortEnterCriticalSection_Expect();
     vFakePortGetCoreID_ExpectAndReturn( 0 ); /* Expection in prvYieldCore. */
     vFakePortExitCriticalSection_Expect();
@@ -3302,34 +3304,39 @@ void test_coverage_xTaskResumeFromISR_task_suspended_uxpriority_lesser( void )
  */
 void test_coverage_xTaskResumeAll_task_in_pending_ready_list( void )
 {
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
+    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1 ] = { NULL };
     BaseType_t xAlreadyYielded;
     List_t xList;
+    BaseType_t i;
 
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[ 0 ].uxPriority = 1;
-    xTaskTCBs[ 0 ].xTaskRunState = 0;
-    vListInitialiseItem( &( xTaskTCBs[ 0 ].xStateListItem ) );
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[ 0 ].uxPriority ], &xTaskTCBs[ 0 ].xStateListItem );
-    listSET_LIST_ITEM_OWNER( &( xTaskTCBs[ 0 ].xStateListItem ), &xTaskTCBs[ 0 ] );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
+    /* Create tasks as current running task on each core. */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskTCBs[ i ].uxPriority = 1;
+        xTaskTCBs[ i ].xTaskRunState = 0;
+        vListInitialiseItem( &( xTaskTCBs[ i ].xStateListItem ) );
+        listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[ i ].uxPriority ], &xTaskTCBs[ i ].xStateListItem );
+        listSET_LIST_ITEM_OWNER( &( xTaskTCBs[ i ].xStateListItem ), &xTaskTCBs[ i ] );
+        uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
+
+        xYieldPendings[ i ] = pdFALSE;
+        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
+    }
 
     /* Create a task in the pending ready list. */
-    xTaskTCBs[ 1 ].uxPriority = 2; /* The priority is not higher than current running task. */
-    xTaskTCBs[ 1 ].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem( &( xTaskTCBs[ 1 ].xStateListItem ) );
-    listSET_LIST_ITEM_OWNER( &( xTaskTCBs[ 1 ].xStateListItem ), &xTaskTCBs[ 1 ] );
-    listINSERT_END( &xPendingReadyList, &xTaskTCBs[ 1 ].xStateListItem );
+    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 2; /* The priority is not higher than current running task. */
+    xTaskTCBs[ configNUMBER_OF_CORES ].xTaskRunState = taskTASK_NOT_RUNNING;
+    vListInitialiseItem( &( xTaskTCBs[ configNUMBER_OF_CORES ].xStateListItem ) );
+    listSET_LIST_ITEM_OWNER( &( xTaskTCBs[ configNUMBER_OF_CORES ].xStateListItem ), &xTaskTCBs[ configNUMBER_OF_CORES ] );
+    listINSERT_END( &xPendingReadyList, &xTaskTCBs[ configNUMBER_OF_CORES ].xStateListItem );
     vListInitialise( &xList );
-    vListInitialiseItem( &( xTaskTCBs[ 1 ].xEventListItem ) );
-    listSET_LIST_ITEM_VALUE( &( xTaskTCBs[ 1 ].xEventListItem ),
+    vListInitialiseItem( &( xTaskTCBs[ configNUMBER_OF_CORES ].xEventListItem ) );
+    listSET_LIST_ITEM_VALUE( &( xTaskTCBs[ configNUMBER_OF_CORES ].xEventListItem ),
                              taskEVENT_LIST_ITEM_VALUE_IN_USE );
-    listINSERT_END( &xList, &( xTaskTCBs[ 1 ].xEventListItem ) );
+    listINSERT_END( &xList, &( xTaskTCBs[ configNUMBER_OF_CORES ].xEventListItem ) );
     uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
 
     /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
 
     uxTopReadyPriority = 1;
     xSchedulerRunning = pdTRUE;
@@ -3351,9 +3358,9 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list( void )
     /* The task priority is no higher than current running task. */
     TEST_ASSERT_EQUAL( pdFALSE, xAlreadyYielded );
     /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[ 1 ].xEventListItem.pvContainer, NULL );
+    TEST_ASSERT_EQUAL( xTaskTCBs[ configNUMBER_OF_CORES ].xEventListItem.pvContainer, NULL );
     /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[ 1 ].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[ 1 ].uxPriority ] );
+    TEST_ASSERT_EQUAL( xTaskTCBs[ configNUMBER_OF_CORES ].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority ] );
 }
 
 /** @brief xTaskResumeAll - resume all suspended tasks
@@ -3372,34 +3379,39 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list( void )
  */
 void test_coverage_xTaskResumeAll_task_in_pending_ready_list_uxpriority_lesser( void )
 {
-    TCB_t xTaskTCBs[ 2 ] = { NULL };
+    TCB_t xTaskTCBs[ configNUMBER_OF_CORES + 1 ] = { NULL };
     BaseType_t xAlreadyYielded;
     List_t xList;
+    BaseType_t i;
 
-    /* Create a task as current running task on core 0. */
-    xTaskTCBs[ 0 ].uxPriority = 1;
-    xTaskTCBs[ 0 ].xTaskRunState = 0;
-    vListInitialiseItem( &( xTaskTCBs[ 0 ].xStateListItem ) );
-    listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[ 0 ].uxPriority ], &xTaskTCBs[ 0 ].xStateListItem );
-    listSET_LIST_ITEM_OWNER( &( xTaskTCBs[ 0 ].xStateListItem ), &xTaskTCBs[ 0 ] );
-    uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
+    /* Create tasks as current running task on each core. */
+    for( i = 0; i < configNUMBER_OF_CORES; i++ )
+    {
+        xTaskTCBs[ i ].uxPriority = 1;
+        xTaskTCBs[ i ].xTaskRunState = 0;
+        vListInitialiseItem( &( xTaskTCBs[ i ].xStateListItem ) );
+        listINSERT_END( &pxReadyTasksLists[ xTaskTCBs[ i ].uxPriority ], &xTaskTCBs[ i ].xStateListItem );
+        listSET_LIST_ITEM_OWNER( &( xTaskTCBs[ i ].xStateListItem ), &xTaskTCBs[ i ] );
+        uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
+
+        xYieldPendings[ i ] = pdFALSE;
+        pxCurrentTCBs[ i ] = &xTaskTCBs[ i ];
+    }
 
     /* Create a task in the pending ready list. */
-    xTaskTCBs[ 1 ].uxPriority = 0; /* The priority is not higher than current running task. */
-    xTaskTCBs[ 1 ].xTaskRunState = taskTASK_NOT_RUNNING;
-    vListInitialiseItem( &( xTaskTCBs[ 1 ].xStateListItem ) );
-    listSET_LIST_ITEM_OWNER( &( xTaskTCBs[ 1 ].xStateListItem ), &xTaskTCBs[ 1 ] );
-    listINSERT_END( &xPendingReadyList, &xTaskTCBs[ 1 ].xStateListItem );
+    xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority = 0; /* The priority is not higher than current running task. */
+    xTaskTCBs[ configNUMBER_OF_CORES ].xTaskRunState = taskTASK_NOT_RUNNING;
+    vListInitialiseItem( &( xTaskTCBs[ configNUMBER_OF_CORES ].xStateListItem ) );
+    listSET_LIST_ITEM_OWNER( &( xTaskTCBs[ configNUMBER_OF_CORES ].xStateListItem ), &xTaskTCBs[ configNUMBER_OF_CORES ] );
+    listINSERT_END( &xPendingReadyList, &xTaskTCBs[ configNUMBER_OF_CORES ].xStateListItem );
     vListInitialise( &xList );
-    vListInitialiseItem( &( xTaskTCBs[ 1 ].xEventListItem ) );
-    listSET_LIST_ITEM_VALUE( &( xTaskTCBs[ 1 ].xEventListItem ),
+    vListInitialiseItem( &( xTaskTCBs[ configNUMBER_OF_CORES ].xEventListItem ) );
+    listSET_LIST_ITEM_VALUE( &( xTaskTCBs[ configNUMBER_OF_CORES ].xEventListItem ),
                              taskEVENT_LIST_ITEM_VALUE_IN_USE );
-    listINSERT_END( &xList, &( xTaskTCBs[ 1 ].xEventListItem ) );
+    listINSERT_END( &xList, &( xTaskTCBs[ configNUMBER_OF_CORES ].xEventListItem ) );
     uxCurrentNumberOfTasks = uxCurrentNumberOfTasks + 1;
 
     /* Default value for portGET_CORE_ID is 0. This can be changed with vSetCurrentCore. */
-    xYieldPendings[ 0 ] = pdFALSE;
-    pxCurrentTCBs[ 0 ] = &xTaskTCBs[ 0 ];
 
     uxTopReadyPriority = 1;
     xSchedulerRunning = pdTRUE;
@@ -3421,9 +3433,9 @@ void test_coverage_xTaskResumeAll_task_in_pending_ready_list_uxpriority_lesser( 
     /* The task priority is no higher than current running task. */
     TEST_ASSERT_EQUAL( pdFALSE, xAlreadyYielded );
     /* The task in pending ready list should not in any event list now. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[ 1 ].xEventListItem.pvContainer, NULL );
+    TEST_ASSERT_EQUAL( xTaskTCBs[ configNUMBER_OF_CORES ].xEventListItem.pvContainer, NULL );
     /* The task in pending ready list should be added back to ready list. */
-    TEST_ASSERT_EQUAL( xTaskTCBs[ 1 ].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[ 1 ].uxPriority ] );
+    TEST_ASSERT_EQUAL( xTaskTCBs[ configNUMBER_OF_CORES ].xStateListItem.pvContainer, &pxReadyTasksLists[ xTaskTCBs[ configNUMBER_OF_CORES ].uxPriority ] );
 }
 
 /**

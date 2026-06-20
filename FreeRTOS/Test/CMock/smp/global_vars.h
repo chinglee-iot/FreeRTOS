@@ -96,6 +96,10 @@ typedef struct tskTaskControlBlock       /* The old naming convention is used to
         UBaseType_t uxDeferredStateChange; /**< Used to indicate if the task's state change is deferred. */
     #endif
 
+    #if ( portUSING_GRANULAR_LOCKS == 1 )
+        portSPINLOCK_TYPE xTCBSpinlock;
+    #endif
+
     #if ( ( portSTACK_GROWTH > 0 ) || ( configRECORD_STACK_HIGH_ADDRESS == 1 ) )
         StackType_t * pxEndOfStack; /**< Points to the highest valid address for the stack. */
     #endif

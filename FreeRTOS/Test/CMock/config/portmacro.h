@@ -173,6 +173,9 @@ typedef unsigned long    UBaseType_t;
     void vFunction( void * ( pvParameters ) )
 #endif
 
+/* Granular lock types. */
+#define portSPINLOCK_TYPE    uint32_t
+
 #if ( configUSE_PORT_OPTIMISED_TASK_SELECTION == 1 )
     static uint8_t ucPortCountLeadingZeros( uint32_t ulBitmap )
     {

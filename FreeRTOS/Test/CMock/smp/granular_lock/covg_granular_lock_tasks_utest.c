@@ -158,13 +158,8 @@ void test_granular_locks_tasks_xTaskRemoveFromEventList_list_is_not_empty( void 
     uxSchedulerSuspended = 0U;
     xSchedulerRunning = pdTRUE;
 
-    vFakePortDisableInterrupts_ExpectAndReturn( 0 );
-    vFakePortGetSpinlock_Expect( 0, &xTaskSpinlock );
     vFakePortGetSpinlock_Expect( 0, &xISRSpinlock );
-
     vFakePortReleaseSpinlock_Expect( 0, &xISRSpinlock );
-    vFakePortReleaseSpinlock_Expect( 0, &xTaskSpinlock );
-    vFakePortEnableInterrupts_Expect();
 
     xReturn = xTaskRemoveFromEventList( &xEventList );
 
@@ -206,13 +201,9 @@ void test_granular_locks_tasks_xTaskRemoveFromEventList_list_is_empty( void )
     xSchedulerRunning = pdTRUE;
     pxCurrentTCBs[ 0 ] = &xTaskTCB;
 
-    vFakePortDisableInterrupts_ExpectAndReturn( 0 );
-    vFakePortGetSpinlock_Expect( 0, &xTaskSpinlock );
+    /* Enter and exit ISR only critical section. */
     vFakePortGetSpinlock_Expect( 0, &xISRSpinlock );
-
     vFakePortReleaseSpinlock_Expect( 0, &xISRSpinlock );
-    vFakePortReleaseSpinlock_Expect( 0, &xTaskSpinlock );
-    vFakePortEnableInterrupts_Expect();
 
     xReturn = xTaskRemoveFromEventList( &xEventList );
 
@@ -355,13 +346,9 @@ void test_granular_locks_tasks_vTaskInternalSetTimeOutState( void )
     xNumOfOverflows = 0x11223344;
     xTickCount = 0x12345678;
 
-    vFakePortDisableInterrupts_ExpectAndReturn( 0 );
-    vFakePortGetSpinlock_Expect( 0, &xTaskSpinlock );
+    /* Enter and exit ISR only critical section. */
     vFakePortGetSpinlock_Expect( 0, &xISRSpinlock );
-
     vFakePortReleaseSpinlock_Expect( 0, &xISRSpinlock );
-    vFakePortReleaseSpinlock_Expect( 0, &xTaskSpinlock );
-    vFakePortEnableInterrupts_Expect();
 
     vTaskInternalSetTimeOutState( &xTimeout );
 
@@ -617,45 +604,4 @@ void test_granular_locks_tasks_xTaskIncrementTick_scheduler_suspended( void )
     xReturn = xTaskIncrementTick();
 
     TEST_ASSERT_EQUAL( pdFALSE, xReturn );
-}
-
-/**
- * @brief xCurrentTaskPreemptionEnable - Enable preemption of current task.
- *
- * xReturn is pdFALSE. Task preemption disable count is decreased.
- *
- * <b>Coverage</b>
- * @code{c}
- * BaseType_t xCurrentTaskPreemptionEnable( void )
- * {
- *     ...
- * }
- * @endcode
- */
-void test_granular_locks_tasks_xCurrentTaskPreemptionEnable_task_not_yielded( void )
-{
-    BaseType_t xReturn;
-    TCB_t xTaskTCB = { NULL };
-
-    pxCurrentTCBs[ 0 ] = &xTaskTCB;
-    xTaskTCB.uxPreemptionDisable = 1U;
-    xTaskTCB.xTaskRunState = 0U;
-    xSchedulerRunning = pdTRUE;
-
-    vFakePortDisableInterrupts_ExpectAndReturn( 0 );
-    vFakePortGetSpinlock_Expect( 0, &xTaskSpinlock );
-    vFakePortGetSpinlock_Expect( 0, &xISRSpinlock );
-
-    /* Get current task TCB with xTaskGetCurrentTaskHandle. */
-    ulFakePortSetInterruptMask_ExpectAndReturn( 0x12345678 );
-    vFakePortClearInterruptMask_Expect( 0x12345678 );
-
-    vFakePortReleaseSpinlock_Expect( 0, &xISRSpinlock );
-    vFakePortReleaseSpinlock_Expect( 0, &xTaskSpinlock );
-    vFakePortEnableInterrupts_Expect();
-
-    xReturn = xCurrentTaskPreemptionEnable();
-
-    TEST_ASSERT_EQUAL( pdFALSE, xReturn );
-    TEST_ASSERT_EQUAL( 0U, xTaskTCB.uxPreemptionDisable );
 }

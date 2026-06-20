@@ -79,9 +79,21 @@ void commonTearDown( void );
 /**
  * @brief Verify task current and run states
  */
-void verifySmpTask( TaskHandle_t * xTaskHandle,
-                    eTaskState eCurrentState,
-                    TaskRunning_t xTaskRunState );
+#define verifySmpTask( xTaskHandle, eExpectedCurrentState, xExpectedTaskRunState )                                                                                  \
+    do {                                                                                                                                                            \
+        TaskStatus_t xTaskDetails;                                                                                                                                  \
+        vTaskGetInfo( *xTaskHandle, &xTaskDetails, pdTRUE, eInvalid );                                                                                              \
+        if( ( xExpectedTaskRunState ) != xTaskDetails.xHandle->xTaskRunState )                                                                                      \
+        {                                                                                                                                                           \
+            TEST_PRINTF( "%s:%d Expected run state %d, current run state %d", __FUNCTION__, __LINE__, xExpectedTaskRunState, xTaskDetails.xHandle->xTaskRunState ); \
+            TEST_ASSERT_EQUAL_INT_MESSAGE( ( xExpectedTaskRunState ), xTaskDetails.xHandle->xTaskRunState, "Task Verification Failed: Incorrect xTaskRunState" );   \
+        }                                                                                                                                                           \
+        if( ( eExpectedCurrentState ) != xTaskDetails.eCurrentState )                                                                                               \
+        {                                                                                                                                                           \
+            TEST_PRINTF( "%s:%d Expected state %d, current state %d", __FUNCTION__, __LINE__, xExpectedTaskRunState, xTaskDetails.xHandle->xTaskRunState );         \
+            TEST_ASSERT_EQUAL_INT_MESSAGE( ( eExpectedCurrentState ), xTaskDetails.eCurrentState, "Task Verification Failed: Incorrect eCurrentState" );            \
+        }                                                                                                                                                           \
+    } while( 0 )
 
 /**
  * @brief Verify the Idle task is executing on a specific core

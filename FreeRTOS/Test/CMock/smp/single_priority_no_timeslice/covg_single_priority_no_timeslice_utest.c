@@ -187,15 +187,18 @@ void test_coverage_prvCheckForRunStateChange_first_time_suspend_scheduler( void 
     vFakePortCheckIfInISR_StopIgnore();
     vFakePortEnableInterrupts_StopIgnore();
     vFakePortGetTaskLock_StubWithCallback( NULL );
+    vFakePortGetISRLock_StubWithCallback( NULL );
     vFakePortReleaseTaskLock_StubWithCallback( NULL );
+    vFakePortReleaseISRLock_StubWithCallback( NULL );
 
     /* Expection. */
     vFakePortEnableInterrupts_StubWithCallback( prvPortEnableInterruptsCb );
 
+    vFakePortReleaseISRLock_Expect( 0 );
     vFakePortReleaseTaskLock_Expect( 0 );
+
     vFakePortGetTaskLock_Expect( 0 );
     vFakePortGetISRLock_Expect( 0 );
-    vFakePortReleaseISRLock_Expect( 0 );
 
     /* API Call. */
     prvCheckForRunStateChange();
