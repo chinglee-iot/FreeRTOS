@@ -24,46 +24,10 @@
  *
  */
 
-/*-----------------------------------------------------------
-* Example console I/O wrappers.
-*----------------------------------------------------------*/
+#ifndef MAIN_NETWORKING_H
+#define MAIN_NETWORKING_H
 
-#include <stdarg.h>
-#include <stdio.h>
+/* Initializes the network and starts the TCP task. */
+void main_tcp_echo_client_tasks( void );
 
-#include <FreeRTOS.h>
-#include <semphr.h>
-
-#include "console.h"
-
-static SemaphoreHandle_t xStdioMutex;
-static StaticSemaphore_t xStdioMutexBuffer;
-
-void console_init( void )
-{
-    #if( configSUPPORT_STATIC_ALLOCATION == 1 )
-    {
-        xStdioMutex = xSemaphoreCreateMutexStatic( &xStdioMutexBuffer );
-    }
-    #else /* if( configSUPPORT_STATIC_ALLOCATION == 1 ) */
-    {
-        xStdioMutex = xSemaphoreCreateMutex( );
-    }
-    #endif /* if( configSUPPORT_STATIC_ALLOCATION == 1 ) */
-}
-
-void console_print( const char * fmt,
-                    ... )
-{
-    va_list vargs;
-
-    va_start( vargs, fmt );
-
-    xSemaphoreTake( xStdioMutex, portMAX_DELAY );
-
-    vprintf( fmt, vargs );
-
-    xSemaphoreGive( xStdioMutex );
-
-    va_end( vargs );
-}
+#endif /* MAIN_NETWORKING_H */
