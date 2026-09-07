@@ -29,4 +29,6 @@
   :strippables:
     - PRIVILEGED_FUNCTION
     - portDONT_DISCARD
+  :includes_c_post_header:
+    - "undef_timer_macros.h"
 

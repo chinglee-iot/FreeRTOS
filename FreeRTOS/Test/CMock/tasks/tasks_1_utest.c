@@ -3962,6 +3962,7 @@ void test_xTaskRemoveFromEventList_fail( void )
     ptcb = task_handle;
 
     /* Expectations */
+    listLIST_IS_EMPTY_ExpectAndReturn( &eventList, pdFALSE );
     listGET_OWNER_OF_HEAD_ENTRY_ExpectAndReturn( &eventList, ptcb );
     listREMOVE_ITEM_Expect( &( ptcb->xEventListItem ) );
     listREMOVE_ITEM_Expect( &( ptcb->xStateListItem ) );
@@ -4007,6 +4008,7 @@ void test_xTaskRemoveFromEventList_sched_suspended( void )
     TEST_ASSERT_EQUAL( task_handle2, pxCurrentTCB );
 
     /* Expectations */
+    listLIST_IS_EMPTY_ExpectAndReturn( &eventList, pdFALSE );
     listGET_OWNER_OF_HEAD_ENTRY_ExpectAndReturn( &eventList, ptcb );
     /*uxListRemove_ExpectAndReturn( &ptcb->xEventListItem, pdTRUE ); */
     listREMOVE_ITEM_Expect( &( ptcb->xEventListItem ) );

@@ -160,20 +160,42 @@ static BaseType_t xTaskRemoveFromEventListStub( const List_t * const pxEventList
     /* check that xTaskRemoveFromEventList was called from within a critical section */
     TEST_ASSERT_TRUE_MESSAGE( td_port_isInCriticalSection(), "xTaskRemoveFromEventList was called outside of a critical section." );
 
-    ListItem_t * pxItem = listGET_HEAD_ENTRY( pxEventList );
+    if( listLIST_IS_EMPTY( pxEventList ) == pdFALSE )
+    {
+        ListItem_t * pxItem = listGET_HEAD_ENTRY( pxEventList );
 
-    TickType_t xItemPriority = ( configMAX_PRIORITIES - listGET_LIST_ITEM_VALUE( pxItem ) );
+        TickType_t xItemPriority = ( configMAX_PRIORITIES - listGET_LIST_ITEM_VALUE( pxItem ) );
 
-    ( void ) uxListRemove( pxItem );
+        ( void ) uxListRemove( pxItem );
 
-    xReturnValue = ( xItemPriority > DEFAULT_PRIORITY );
+        xReturnValue = ( xItemPriority > DEFAULT_PRIORITY );
 
-    xYieldPending |= xReturnValue;
+        xYieldPending |= xReturnValue;
+    }
 
     return( xReturnValue );
 }
 
+static BaseType_t xTaskRemoveFromEventListFromISRStub( const List_t * const pxEventList,
+                                                       int cmock_num_calls )
+{
+    BaseType_t xReturnValue = pdFALSE;
 
+    if( listLIST_IS_EMPTY( pxEventList ) == pdFALSE )
+    {
+        ListItem_t * pxItem = listGET_HEAD_ENTRY( pxEventList );
+
+        TickType_t xItemPriority = ( configMAX_PRIORITIES - listGET_LIST_ITEM_VALUE( pxItem ) );
+
+        ( void ) uxListRemove( pxItem );
+
+        xReturnValue = ( xItemPriority > DEFAULT_PRIORITY );
+
+        xYieldPending |= xReturnValue;
+    }
+
+    return( xReturnValue );
+}
 
 static void vTaskPlaceOnEventListStub( List_t * const pxEventList,
                                        const TickType_t xTicksToWait,
@@ -226,6 +248,7 @@ void td_task_register_stubs( void )
     xTaskCheckForTimeOut_Stub( &td_task_xTaskCheckForTimeOutStub );
 
     xTaskRemoveFromEventList_Stub( &xTaskRemoveFromEventListStub );
+    xTaskRemoveFromEventListFromISR_Stub( &xTaskRemoveFromEventListFromISRStub );
     vTaskPlaceOnEventList_Stub( &vTaskPlaceOnEventListStub );
 }
 

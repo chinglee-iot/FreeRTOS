@@ -1696,6 +1696,14 @@
     #define traceRETURN_xTaskDelayUntil( xShouldDelay )
 #endif
 
+#ifndef traceENTER_xTaskPeriodicDelay
+    #define traceENTER_xTaskPeriodicDelay( pxPreviousWakeTime, xTimeIncrement )
+#endif
+
+#ifndef traceRETURN_xTaskPeriodicDelay
+    #define traceRETURN_xTaskPeriodicDelay( xIncrements )
+#endif
+
 #ifndef traceENTER_vTaskDelay
     #define traceENTER_vTaskDelay( xTicksToDelay )
 #endif
@@ -2018,6 +2026,14 @@
 
 #ifndef traceRETURN_xTaskRemoveFromEventList
     #define traceRETURN_xTaskRemoveFromEventList( xReturn )
+#endif
+
+#ifndef traceENTER_xTaskRemoveFromEventListFromISR
+    #define traceENTER_xTaskRemoveFromEventListFromISR( pxEventList )
+#endif
+
+#ifndef traceRETURN_xTaskRemoveFromEventListFromISR
+    #define traceRETURN_xTaskRemoveFromEventListFromISR( xReturn )
 #endif
 
 #ifndef traceENTER_vTaskRemoveFromUnorderedEventList
